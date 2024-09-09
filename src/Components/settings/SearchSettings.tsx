@@ -65,6 +65,7 @@ const SearchSettings = ({
   setOpenCustomFunctionPanel,
   setOpenAdditionalManagerSetting,
   openExcludeUserListPanel,
+  setRestrictedPanel
 }) => {
   const { translation } = useLanguage();
   const [search, setSearch] = useState("");
@@ -113,8 +114,8 @@ const SearchSettings = ({
     },
     {
       iconName: "AreaChart",
-      translateKey: "OrganizationChartType",
-      label: "Organization chart type",
+      translateKey: "OrganizationChart",
+      label: "Organization chart",
       onClick: openPanelOrgChartType,
     },
     // {
@@ -168,12 +169,12 @@ const SearchSettings = ({
       label: "Align employee basic information",
       onClick: OpenEmpInfoAlignModal,
     },
-    {
-      iconName: "Balloons",
-      translateKey: "BallonLabel",
-      label: "Birthday and work anniversary images",
-      onClick: OpenPanelBdayAnniImg,
-    },
+    // {
+    //   iconName: "Balloons",
+    //   translateKey: "BallonLabel",
+    //   label: "Birthday and work anniversary images",
+    //   onClick: OpenPanelBdayAnniImg,
+    // },
     // {
     //   iconName: "Filter",
     //   translateKey: "Clearalphabet",
@@ -355,18 +356,24 @@ const SearchSettings = ({
       translateKey: "Executive",
       onClick: () => setOpenExecutiveAssistantRelationship(true),
     },
-    {
-      iconName: "Group",
-      label: "Filter upcoming birthdays & work anniversaries",
-      translateKey: "FltUpcmingBdAnni",
-      onClick: OpenFilterBirthAndAniv,
-    },
+    // {
+    //   iconName: "Group",
+    //   label: "Filter upcoming birthdays & work anniversaries",
+    //   translateKey: "FltUpcmingBdAnni",
+    //   onClick: OpenFilterBirthAndAniv,
+    // },
     {
       iconName: "FrontCamera",
       label: "Import users pronouns",
       translateKey: "importuserspronouns",
       onClick: openPronouns,
     },
+    // {
+    //   iconName: "Lock",
+    //   label: "Restricted access",
+    //   translateKey: "RestrictedAccess",
+    //   onClick: ()=>setRestrictedPanel(true),
+    // },
     {
       iconName: "Import",
       label: "Import users",
@@ -393,8 +400,8 @@ const SearchSettings = ({
     },
     {
       iconName: "Group",
-      label: "Upcoming birthdays & work anniversaries",
-      translateKey: "UpcmingBdAnni",
+      label: "Birthdays & work anniversaries",
+      translateKey: "BirthdaysAndAnniv",
       onClick: OpenUpcomingBithAndAnivAdv,
     },
   ];

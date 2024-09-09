@@ -256,13 +256,9 @@ function CustomDelete(props) {
       .then(() => {
         // setSaved(true);
         // SuccessMsg();
-        // props.SweetAlertCustomfunc("success",translation.SettingSaved)
+        // props.SweetAlertCustomFields("success",translation.SettingSaved)
         GetSettingData();
-        // props.dismiss();
-        SuccessMsg();
-        setTimeout(() => {
-          messageDismiss();
-        }, 5000);
+     
       });
   }
   //
@@ -275,7 +271,7 @@ function CustomDelete(props) {
       });
     console.log(updatedCustomList, "updatelist");
     if (updatedCustomList.length == 0) {
-      props.SweetAlertCustomfunc("info", "Please select field!");
+      props.SweetAlertCustomFields("info", "Please select field!");
       // setAlert(true);
       setTimeout(() => {
         messageDismiss();
@@ -294,9 +290,9 @@ function CustomDelete(props) {
     console.log(updatedParsedData, "par");
     if (Object.keys(parsedData).length > 0) {
       updateSetting(updatedParsedData);
-      props.SweetPromptCustomFunc(
-        "question",
-        "Are you sure you want to delete selected custom field(s)?"
+      props.SweetAlertCustomFields(
+        "success",
+        translation.SettingSaved
       );
     }
   };

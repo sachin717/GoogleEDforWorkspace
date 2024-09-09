@@ -5,6 +5,7 @@ import { useLanguage } from "../../Language/LanguageContext";
 import styled from "styled-components";
 import "./Edp.scss"
 import { useSttings } from "./store";
+import { color } from "html2canvas/dist/types/css/types/color";
 
 const Container = styled.div`
  .item-139:hover .ms-Icon {
@@ -23,9 +24,17 @@ const commandBarItemStyles = {
       padding: "8px 12px",
       margin: "0px !important",
     },
+    
     "& .activeColor": {
       backgroundColor: "rgb(0, 120, 212) !important",
+      color:"#fff",
     },
+    "& .farItem:hover span i": {
+      color:"#fff",
+    },
+  
+   
+
   },
 };
 
@@ -82,7 +91,7 @@ const CommandBar: React.FC<IShowPanelProps> = (props) => {
       ariaLabel: "Settings",
       iconOnly: true,
       iconProps: { iconName: "Settings" },
-      className: selectedLetter === "Settings" ? "activeColor" : "",
+      className: selectedLetter === "Settings" ? "activeColor" : "farItem",
       onClick: () => {
         props.setShowOrgChart(false);
         props.setShowHomePage(false);
@@ -118,7 +127,7 @@ if (props?.parsedData?.IsAdmin?.includes(currentUserId)) {
         ariaLabel: "Export To CSV",
         iconOnly: true,
         iconProps: { iconName: "ExcelDocument" },
-        className: selectedLetter === "Export To CSV" ? "activeColor" : "",
+        className: selectedLetter === "Export To CSV" ? "activeColor" : "farItem",
         onClick: () => {props.setDownloadCsvModal(true); props.setshowDashboard(false);},
       });
     }
@@ -129,10 +138,14 @@ if (props?.parsedData?.IsAdmin?.includes(currentUserId)) {
         ariaLabel: "Birthday and anniversary",
         iconOnly: true,
         iconProps: { iconName: "BirthdayCake" },
-        className: selectedLetter === "birthAniv" ? "activeColor" : "",
+        className: selectedLetter === "birthAniv" ? "activeColor" : "farItem",
         onClick: () =>{ 
           props.setBirthAndAnivModalOpen(true);
-          props.setshowDashboard(false);
+          // props.setshowDashboard(false);
+          // props.setShowHomePage(true);
+          
+
+
         
         }
       });
@@ -170,7 +183,7 @@ if (props?.parsedData?.IsAdmin?.includes(currentUserId)) {
         ariaLabel: "Dashboard",
         iconOnly: true,
         iconProps: { iconName: "BIDashboard" },
-        className: selectedLetter === "dashboard" ? "activeColor" : "",
+        className: selectedLetter === "dashboard" ? "activeColor" : "farItem",
         onClick: () => {
           props.setshowDashboard(true);
           props.setShowOrgChart(false);
@@ -187,6 +200,7 @@ if (props?.parsedData?.IsAdmin?.includes(currentUserId)) {
         text: "Print to PDF",
         ariaLabel: "Print to PDF",
         iconProps: { iconName: "Print" },
+        className: selectedLetter === "Print" ? "activeColor" : "farItem",
         iconOnly: true,
         onClick:()=>{
           if(props.showHomePage){
@@ -202,7 +216,7 @@ if (props?.parsedData?.IsAdmin?.includes(currentUserId)) {
         ariaLabel: "Organizational Chart",
         iconOnly: true,
         iconProps: { iconName: "Org" },
-        className: selectedLetter === "Org" ? "activeColor" : "",
+        className: selectedLetter === "Org" ? "activeColor" : "farItem",
         onClick: () => {
           props.setSettings(false);
           props.setShowHomePage(false);

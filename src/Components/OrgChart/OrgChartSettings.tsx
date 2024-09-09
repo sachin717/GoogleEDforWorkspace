@@ -1,9 +1,11 @@
 import { Checkbox, IconButton, Separator } from "@fluentui/react";
 import { Label, Panel, PrimaryButton, TextField } from "@fluentui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "../SCSS/OrgChartPage.module.scss";
 import PreviewCard from "./PreviewCard";
 import { useLanguage } from "../../Language/LanguageContext";
+import { useSttings } from "../SelectSource/store";
+import { updateSettingData } from "../Helpers/HelperFunctions";
 
 const OrgChartSettings = ({
   handleOnDismiss,
@@ -31,27 +33,54 @@ const OrgChartSettings = ({
   const [jobFontSize, setJobFontSize] = useState(jobTitleFontSize);
   const [depFontSize, setDepFontSize] = useState(departmentFontSize);
 
-  // name font styles controls
   const [boldName, setBoldName] = useState(headerTextFontStyles.bold);
   const [italicName, setItalicName] = useState(headerTextFontStyles.italic);
   const [underlineName, setUnderlineName] = useState(
     headerTextFontStyles.underline
   );
 
-  // job title font styles controls
   const [boldJob, setBoldJob] = useState(jobTitleFontStyle.bold);
   const [italicJob, setItalicJob] = useState(jobTitleFontStyle.italic);
   const [underlineJob, setUnderlineJob] = useState(jobTitleFontStyle.underline);
 
-  // department font styles controls
   const [boldDep, setBoldDep] = useState(departmentFontStyles.bold);
   const [italicDep, setItalicDep] = useState(departmentFontStyles.italic);
   const [underlineDep, setUnderlineDep] = useState(
     departmentFontStyles.underline
   );
+
   const { translation } = useLanguage();
-  // button to save the all Panel settings
+  const { appSettings } = useSttings();
+
   const save = () => {
+    const KEY = "OrgChartStyles";
+
+    const setting = {
+      ...appSettings,
+      [KEY]: {
+        position,
+        headFontSize,
+        jobFontSize,
+        depFontSize,
+        headerText: {
+          italic: italicName,
+          underline: underlineName,
+          bold: boldName,
+        },
+        jobTitle: {
+          bold: boldJob,
+          italic: italicJob,
+          underline: underlineJob,
+        },
+        department: {
+          bold: boldDep,
+          italic: italicDep,
+          underline: underlineDep,
+        },
+      },
+    };
+
+    updateSettingData(setting);
     setHeaderFontSize(headFontSize);
     setImagePosition(position);
     setJobTitleFontSize(jobFontSize);
@@ -72,6 +101,25 @@ const OrgChartSettings = ({
       underline: underlineDep,
     });
   };
+
+  useEffect(() => {
+    setPosition(appSettings?.OrgChartStyles?.position || "center")
+    setHeadFontSize(appSettings?.OrgChartStyles?.headFontSize || "20");
+    setJobFontSize(appSettings?.OrgChartStyles?.jobFontSize || "15");
+    setDepFontSize(appSettings?.OrgChartStyles?.depFontSize || "15");
+
+    setBoldName(appSettings?.OrgChartStyles?.headerText.bold || false);
+    setItalicName(appSettings?.OrgChartStyles?.headerText.italic || false);
+    setUnderlineName(appSettings?.OrgChartStyles?.headerText.underline || false);
+
+    setBoldJob(appSettings?.OrgChartStyles?.jobTitle?.bold || false);
+    setItalicJob(appSettings?.OrgChartStyles?.jobTitle?.italic || false);
+    setUnderlineJob(appSettings?.OrgChartStyles?.jobTitle?.underline || false);
+
+    setBoldDep(appSettings?.OrgChartStyles?.department?.bold || false);
+    setItalicDep(appSettings?.OrgChartStyles?.department?.italic || false);
+    setUnderlineDep(appSettings?.OrgChartStyles?.department?.underline || false);
+  }, []);
 
   return (
     <div>

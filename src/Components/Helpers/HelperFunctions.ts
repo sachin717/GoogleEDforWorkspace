@@ -367,7 +367,7 @@ export async function updateSettingData(uparsedData) {
     .getBlockBlobClient(mappedcustomcol[0].blobfilename)
     .upload(_parsedData, Buffer.byteLength(_parsedData))
     .then(() => {
-      console.log("updated.....");
+      console.log("updated...");
     });
 }
 export function getCurrentUser() {

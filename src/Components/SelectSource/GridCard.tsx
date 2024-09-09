@@ -17,6 +17,7 @@ import HoverCardComponent from "../HoverCard";
 import { gapi } from "gapi-script";
 import { useLanguage } from "../../Language/LanguageContext";
 import ModalOrgChart from "../OrgChart/ModalOrgChart";
+import GetQRCode from "../GetQRCode";
 
 const modalPropsStyles = {
   main: {
@@ -46,6 +47,7 @@ function GridCard({
   const [selectedUser, setSelectedUser] = useState("");
   const [isChartOpen, openChartModal] = useState(false);
   const [labelValue, setLabelValue] = useState<any>();
+  const [isQROpen, setIsQROpen] = useState(false);
   const { appSettings } = useSttings();
   const {
     CollaborationSettings: { Chat, Mobile, WorkPhone },
@@ -145,6 +147,7 @@ function GridCard({
         <div style={{ padding: "0 10px" }}>
           <div style={{ display: "flex" }}>
             <div style={{ width: "80px", padding: "8px 0" }}>
+              
               <Persona
                 imageInitials={item.initials}
                 size={PersonaSize.size72}
@@ -456,7 +459,11 @@ function GridCard({
           src={FarraAnimationGif}
         />
       )}
+      {
+        isQROpen && <GetQRCode user={item} isOpen={isQROpen} onDismiss={setIsQROpen}/>
+      }
 
+      <IconButton style={{position:"absolute", top:"0px", left:"0px"}} onClick={()=>setIsQROpen(true)} iconProps={{iconName:"QRCode"}}/>
       <Modal
         isOpen={isChartOpen}
         onDismiss={() => openChartModal(false)}
@@ -488,7 +495,7 @@ function GridCard({
         </div>
 
         <div className={chart.orgChartContainer}>
-          {<ModalOrgChart userObj={users} selected={item?.email} />}
+          {<ModalOrgChart email={item?.email} />}
         </div>
       </Modal>
 

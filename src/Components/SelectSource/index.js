@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import CommandBar from "./CommandBar";
 import { gapi } from "gapi-script";
@@ -23,6 +23,7 @@ import {
   removeDuplicatesFromObject,
   removeFavicon,
   customFunctionFilter,
+  updateSettingData,
 } from "../Helpers/HelperFunctions";
 
 import { usePDF } from "react-to-pdf";
@@ -95,7 +96,6 @@ const GoogleEmployeeDirectory = () => {
 
   // -------------- GLOBAL STATE------------
   const {
-    changeTopManager,
     changeVariable,
     changeUserData,
     changeUserArray,
@@ -204,6 +204,7 @@ const GoogleEmployeeDirectory = () => {
         setIsUserSignedIn(false);
       });
   };
+  
 
   const signInWithGoogle = () => {
     gapi.load("client:auth2", async () => {
@@ -358,14 +359,31 @@ const GoogleEmployeeDirectory = () => {
     let res = ExcludeUsers(staffList, parsedData);
     return res;
   }
+  function executeOncePerDay(callback) {
+    
+    const today = new Date().toDateString();
+  
+   
+    const lastExecutionDate = localStorage.getItem('lastExecutionDate');
+  
+  
+    if (lastExecutionDate !== today) {
+      
+      callback();
+  
+   
+      localStorage.setItem('lastExecutionDate', today);
+    }
+  }
+  
+
+
 
   async function blobCall() {
     setshowProgress(true);
     var domain = gapi.auth2
       .getAuthInstance()
       .currentUser.le.wt.cu.split("@")[1];
-    // changeTopManager("james@megazap.us");
-    // console.log(gapi.auth2.getAuthInstance().currentUser.le.wt.cu);
     var _domain = domain.replace(/\./g, "_");
     var storagedetails =
       '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
@@ -850,24 +868,13 @@ const GoogleEmployeeDirectory = () => {
     }
   }
 
-  const getFilterAttributesValues = (valuesArray, field) => {
-    const res = valuesArray
-      ?.filter((value) => value.Active === true)
-      ?.map((value) => ({ value: value[field], label: value[field] }));
-    return res;
-  };
-
   const listFiles = () => {
-    // setloader(true);
-    // setshowProgress(true);
     gapi.client.load("admin", "directory_v1", () => {});
-    changeTopManager("adele.v@megazap.us");
     let additionManagerData = [];
     let AssistantData = [];
     getAllUsersInOrg().then((data) => {
       setUnFormatedUserData(data);
       console.log("getAllUsersInOrg...................", data);
-      changeTopManager("adele.v@megazap.us");
       changeUserData(data);
       var mappedfields =
         '[{"ExistingList":"About Me","ExternalList":"About_Me"},{"ExistingList":"School","ExternalList":"CF1"},{"ExistingList":"Date of Birth","ExternalList":"DOB"},{"ExistingList":"Date of Join","ExternalList":"DOJ"},{"ExistingList":"Skills","ExternalList":"Skills"},{"ExistingList":"Projects","ExternalList":"Projects"},{"ExistingList":"Hobbies","ExternalList":"Hobbies"}]';
@@ -991,6 +998,7 @@ const GoogleEmployeeDirectory = () => {
             mappedfields: mappedfields,
             AdditionalManager: additionManagerData,
             AssistantData: AssistantData,
+            isAdmin:user.isAdmin,
           };
           additionManagerData = [];
           AssistantData = [];
@@ -1004,6 +1012,7 @@ const GoogleEmployeeDirectory = () => {
         );
 
         changeUserArray(staffMember);
+        setAllUsers(staffMember);
 
         const domainOptions = staffMember.map((user) => ({
           value: user.email.split("@")[1],
@@ -1018,14 +1027,19 @@ const GoogleEmployeeDirectory = () => {
         }));
 
         const userDeps = staffMember.map((x)=>({value:x.department, label:x.department}));
-
         let settingListDeps = parsedData.FilterAttribute.departments.filter((x)=>{
           if(x.Active){
             return x;
           }
         }).map((x)=>({label:x.Department, value:x.Department}));
 
-        const uniqueDep = removeDuplicatesFromObject([...userDeps, ...settingListDeps],"value")
+        const userJobTitles = staffMember.map((x)=>({value:x.job, label:x.job}));
+        const settingListJobs = parsedData.FilterAttribute?.jobTitles.filter((x)=>x.Active == true).map((x)=>({value:x.JobTitle, label:x.JobTitle}));
+
+        const uniqueJobs = removeDuplicatesFromObject([...userJobTitles, ...settingListJobs],"value");
+        const uniqueDep = removeDuplicatesFromObject([...userDeps, ...settingListDeps],"value");
+
+        setJobDropDown(uniqueJobs)
         setDepDropDown(uniqueDep);
 
         const filterAttribute = parsedData?.FilterAttribute;
@@ -1038,28 +1052,9 @@ const GoogleEmployeeDirectory = () => {
         setLocations(allFALocations);
         setEmails(userEmails);
 
-        const visibleDeprtments = getFilterAttributesValues(
-          allFADepartments,
-          "Department"
-        );
-        const visibleJobTitles = getFilterAttributesValues(
-          allFAJobTitles,
-          "JobTitle"
-        );
-        const visibleLocations = getFilterAttributesValues(
-          allFALocations,
-          "Location"
-        );
-
-        // setDepDropDown(visibleDeprtments);
-        setJobDropDown(visibleJobTitles);
-        setLocationDropDown(visibleLocations);
-
         setExcludeOptionsForDomain(
           removeDuplicatesFromObject(domainOptions, "value")
         );
-
-        // allUsers = employees;
 
         if (
           parsedData?.Users &&
@@ -1070,6 +1065,26 @@ const GoogleEmployeeDirectory = () => {
           setUserArray(usersData);
           let decryptedData = decryptData(parsedData.Users);
           setNonM365(JSON.parse(decryptedData));
+          executeOncePerDay(() => {
+            // this code is for when we update some fileds from dashboard settings of any user, so spreading that dashboard fields into data
+            let GoogleUsers= parsedData?.AllUsersData?.GoogleUsers.map((item)=>{
+               return usersData?.map((user)=>{
+                if(user?.email==item?.email){
+                  return {
+                    ...item,...user
+                  }
+                }
+               })
+            })
+            GoogleUsers=GoogleUsers.flat().filter((item)=>{
+              return item!=null;
+            });
+             console.log("qqqqqq",GoogleUsers);
+              let data={GoogleUsers:GoogleUsers,NonGoogleUser:JSON.parse(decryptedData)}
+              updateSettingData({...parsedData,AllUsersData:data});
+              setAppSettings({...parsedData,AllUsersData:data});
+              console.log("daliy call")
+          });
 
           // try {
           //   decryptedData = JSON.parse(decryptedData);
@@ -1103,9 +1118,19 @@ const GoogleEmployeeDirectory = () => {
             let usersData = [...decryptedData];
             usersData = ExcludeExternalUsers(usersData, parsedData);
             setUserArray(usersData);
+            executeOncePerDay(() => {
+              let data={...parsedData,NonGoogleUser:usersData}
+              updateSettingData(data);
+              setAppSettings(data);
+              console.log("daliy call")
+          });
           }
         } else {
           setUserArray(staffMember);
+          let data={...parsedData,GoogleUsers:staffMember}
+          updateSettingData(data);
+          setAppSettings(data);
+          console.log("daliy call")
         }
         setFormatedUserData(staffMember);
 
@@ -1414,6 +1439,7 @@ const GoogleEmployeeDirectory = () => {
     setAssistant,
     setUnFormatedUserData,
     setFormatedUserData,
+    setAllUsers
   } = useFields();
 
   const clearFilters = () => {
@@ -2037,6 +2063,7 @@ const GoogleEmployeeDirectory = () => {
                     isBirthAndAnivModalOpen={isBirthAndAnivModalOpen}
                     setBirthAndAnivModalOpen={setBirthAndAnivModalOpen}
                     Users={UserArray}
+                    showHomePage={showHomePage}
                   />
 
                   {showDashboard && (
@@ -2078,39 +2105,52 @@ const GoogleEmployeeDirectory = () => {
 };
 
 const TopBarFilter = ({ optimization }) => {
-  const { departmentFields } = useFields();
+  const { departmentFields,FormatedUserData } = useFields();
   const [selectedTab, setSelectedTab] = useState("");
 
   return (
     <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-      {departmentFields.map((x) => (
-        <div
-          key={x.value}
-          style={{
-            padding: "0px 10px 3px",
-            backgroundColor: "rgb(0, 112, 220, .4)",
-            fontSize: "14px",
-            cursor: "pointer",
-            color: "rgb(0, 112, 220)",
-            height: "15px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            userSelect: "none",
-            boxSizing: "border-box",
-            height: "35px",
-          }}
-          className={`${styles.topbarfilter} topbarFilter ${
-            selectedTab === x.value ? "topbarfilterBorderBottom" : ""
-          } `}
-          onClick={() => {
-            setSelectedTab(x.value);
-            optimization(x.value, "departments");
-          }}
-        >
-          {x.label}
-        </div>
-      ))}
+      {departmentFields.map((x) => {
+        let count = 0;
+        for(let i = 0; i <FormatedUserData.length; i++){
+          if(FormatedUserData[i].department === x.value){
+            count++;
+          }
+        }; 
+
+        return (
+          <div
+            key={x.value}
+            style={{
+              padding: "0px 10px 3px",
+              backgroundColor: "rgb(0, 112, 220, .4)",
+              fontSize: "13px",
+              cursor: "pointer",
+              color: "rgb(0, 112, 220)",
+              height: "15px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              userSelect: "none",
+              boxSizing: "border-box",
+              height: "35px",
+              columnGap:"5px",
+              minWidth:"100px",
+              fontWeight:"400"
+            }}
+            className={`${styles.topbarfilter} topbarFilter ${
+              selectedTab === x.value ? "topbarfilterBorderBottom" : ""
+            } `}
+            onClick={() => {
+              setSelectedTab(x.value);
+              optimization(x.value, "departments");
+            }}
+          >
+            <p>{x.label}</p>
+            <p style={{fontWeight:"600", fontSize:"18px"}}>{count}</p>
+          </div>
+        )
+      })}
     </div>
   );
 };

@@ -13,7 +13,7 @@ import {
   PrimaryButton,
   Stack,
   TextField,
-} from "@fluentui/react";
+} from "office-ui-fabric-react";
 import { gapi } from "gapi-script";
 import { useBoolean } from "@fluentui/react-hooks";
 import { style } from "./styles";
@@ -493,14 +493,15 @@ function EditProfile(props: any) {
     <NewDocumentWrapper>
       <div id="editProfile">
     
-        <Icon
-          iconName="save"
+        <IconButton
+          iconProps={{iconName:"save"}}
           onClick={bthdaytemp}
           style={{
             position: "fixed",
             right: "60px",
-            top: "16px",
+            top: "6px",
             color: "white",
+            zIndex:"111",
             cursor: "pointer",
           }}
         />

@@ -1,10 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { OrgChart } from "d3-org-chart";
-import { Icon, Spinner, SpinnerSize } from "@fluentui/react";
-import useStore from "../SelectSource/store";
 import OrgChartSettings from "./OrgChartSettings";
-import { IconButton, Modal } from "@fluentui/react";
-import { useLanguage } from "../../Language/LanguageContext";
+import { IconButton, Modal, Icon } from "@fluentui/react";
 import EmployeeDetailModal from "../SelectSource/EmployeeDetailModal";
 import { useSttings } from "../SelectSource/store";
 import { useFields } from "../../context/store";
@@ -29,7 +26,6 @@ const iconButtonStyles = {
 };
 
 export default function FullOrgChart() {
-  const { topManager, userArray, typeOrg, orgChartHead } = useStore();
   const [chartData, setChartData] = useState([]);
   const [rootChartNode, setRootChartNode] = useState<any>(null);
   const [isOpenSettingPanel, setIsOpenSettingsPanel] = useState(false);
@@ -74,184 +70,73 @@ export default function FullOrgChart() {
     departmentFontStyles,
     jobTitleFontStyle,
   ];
-  const { translation } = useLanguage();
   const { appSettings } = useSttings();
+  const { allUsers } = useFields();
   //  ------------------ STYLE STATES ENDS-------------
 
   const d3Container = useRef(null);
   let chart = null;
 
-  useEffect(() => {
-    if (appSettings.orgChartType === "StanderdOrgCharts") {
-      // Find the selected user
-      const selectedUser = userArray.find((user) => user.email === topManager);
+  const getChartData = (rootEmail: string) => {
+    if (rootEmail == "") return;
+    const root = allUsers.find((x: any) => x.email === rootEmail);
+    const reportees = allUsers.filter((x: any) => root.email === x.manager);
 
-      if (!selectedUser) return;
-      // Initialize tree with the selected user
-
-      let tree = [
-        {
-          id: selectedUser.id,
-          parentId: "", // This is the root, so parentId is empty
-          name: selectedUser.userName ?? selectedUser.name,
-          jobTitle: selectedUser.job,
-          department: selectedUser.department,
-          location: selectedUser.location,
-          imageUrl: selectedUser.image,
-          tag: selectedUser.name,
-          email: selectedUser.email,
-          manager: selectedUser.manager,
-        },
-      ];
-
-      // Function to add managers to the tree
-      const addManagersToTree = (currentUser, tree) => {
-        console.log("currentUser..", currentUser);
-        if (!currentUser.manager) return; // Stop if there's no manager
-
-        const manager = userArray.find(
-          (user) => user.email === currentUser.manager
-        );
-        if (manager) {
-          // Add the manager to the tree if not already present
-          if (!tree.some((user) => user.email === manager.email)) {
-            tree.unshift({
-              id: manager.id,
-              parentId: "", // This manager is the root, so parentId is empty
-              tag: manager.name,
-              email: manager.email,
-              manager: manager.manager,
-              //--------------
-              imageUrl: manager.image,
-              name: manager.userName ?? manager.name,
-              jobTitle: manager.job,
-              department: manager.department,
-              location: manager.location,
-            });
-          }
-
-          // Update the parentId of the current user to the manager's id
-          const currentUserIndex = tree.findIndex(
-            (user) => user.email === currentUser.email
-          );
-          if (currentUserIndex !== -1) {
-            tree[currentUserIndex].parentId = manager.id;
-          }
-        }
-      };
-
-      // Function to add reportees to the tree
-      const addReporteesToTree = (userEmail, tree) => {
-        console.log("userEmail............", { userEmail, tree });
-        userArray
-          .filter((user) => user.manager === userEmail)
-          .forEach((reportee) => {
-            // Add the reportee to the tree if not already present
-            if (!tree.some((user) => user.email === reportee.email)) {
-              tree.push({
-                id: reportee.id,
-                parentId: tree.find((user) => user.email === userEmail).id, // Set the parentId to the current user's id
-                positionName: reportee.name,
-                imageUrl: reportee.image,
-                tag: reportee.name,
-                email: reportee.email,
-                manager: reportee.manager,
-                //-------------
-                name: reportee.userName ?? reportee.name,
-                jobTitle: reportee.job,
-                department: reportee.department,
-                location: reportee.location,
-              });
-            }
-          });
-      };
-
-      // Add managers to the tree, if any
-      addManagersToTree(selectedUser, tree);
-
-      // Add reportees to the tree, starting with the selected user's email
-      addReporteesToTree(selectedUser.email, tree);
-
-      console.log("Final tree structure if condition", tree);
-      setChartData(tree);
-    } else {
-      console.log(topManager, "selecyted user");
-
-      const selectedUser = userArray.find(
-        (user) => user.email === appSettings.orgChartHead
-      );
-      if (!selectedUser) return;
-
-      const tree = [];
-
-      // Function to add a user to the tree
-      const addUserToTree = (user, parentId = "") => {
-        console.log("addUserToTree..........", user);
-        tree.push({
-          id: user.id,
-          parentId: parentId,
-          imageUrl: user.image, //img
-          userName: user.userName ?? user.name, //name
-          jobTitle: user.job, // jobTitle
-          location: user.location, //location
-          department: user.department, //department
-          //----------
-          name: user.userName ?? user.name,
-          positionName: user.department,
-          email: user.email,
-          manager: user.manager,
-          tag: user.name,
-          user: user,
-        });
-      };
-
-      // Recursive function to add reportees to the tree
-      const addReporteesToTree = (managerEmail) => {
-        const reportees = userArray.filter(
-          (user) => user.manager === managerEmail
-        );
-        reportees.forEach((reportee) => {
-          if (!tree.some((t) => t.email === reportee.email)) {
-            const parent = tree.find((t) => t.email === managerEmail);
-            addUserToTree(reportee, parent ? parent.id : "");
-            addReporteesToTree(reportee.email);
-          }
-        });
-      };
-
-      // Initialize the tree with the topManager as the root
-      addUserToTree(selectedUser);
-
-      // Add all direct and indirect reportees of the topManager
-      addReporteesToTree(selectedUser.email);
-
-      console.log("Final tree structure",tree);
-      setChartData(tree);
-    }
-  }, [topManager, userArray, appSettings.orgChartType]);
-
-  useEffect(() => {
-    if (!chart && chartData.length > 0 && d3Container.current) {
-      chart = new OrgChart();
-      chart.container(d3Container.current).data(chartData).render();
-    } else if (chartData.length === 1) {
-      // If there's only one node, manually set its position
-      const singleNode = chartData[0];
-      singleNode.x = 50;
-      singleNode.y = 50;
-      chart = new OrgChart();
-      chart.container(d3Container.current).data(chartData).render();
-    } else if (chartData.length === 0) {
-      console.log("0");
-    }
-
-    return () => {
-      if (chart && d3Container.current) {
-        d3Container.current.innerHTML = "";
-        chart = null;
-      }
+    const rootUser = {
+      id: root.id,
+      parentId: "",
+      imageUrl: root.image,
+      name: root.name,
+      jobTitle: root.job,
+      department: root.department,
+      location: root.location,
     };
-  }, [chartData]);
+
+    const reporteesToRoot = reportees.map((x: any) => {
+      return {
+        id: x.id,
+        parentId: root.id,
+        imageUrl: x.image,
+        name: x.name,
+        jobTitle: x.job,
+        department: x.department,
+        location: x.location,
+      };
+    });
+
+    setChartData([...reporteesToRoot, rootUser]);
+    setRootChartNode(rootUser);
+  };
+
+  useEffect(() => {
+    getChartData(appSettings.OrgChart?.chartHead?.value || "");
+    setHeaderFontSize(appSettings?.OrgChartStyles?.headFontSize || "20");
+    setImagePosition(appSettings?.OrgChartStyles?.position || "center");
+    setJobTitleFontSize(appSettings?.OrgChartStyles?.jobFontSize || "15");
+    setDepartmentFontSize(appSettings?.OrgChartStyles?.depFontSize || "15");
+
+    setDepartmentFontStyles(
+      appSettings?.OrgChartStyles?.department || {
+        bold: false,
+        italic: false,
+        underline: false,
+      }
+    );
+    setHeaderTextFontStyles(
+      appSettings?.OrgChartStyles?.headerText || {
+        bold: false,
+        italic: false,
+        underline: false,
+      }
+    );
+    setJobTitleFontStyle(
+      appSettings?.OrgChartStyles?.jobTitle || {
+        bold: false,
+        italic: false,
+        underline: false,
+      }
+    );
+  }, []);
 
   const handleNodeClick = (node: any) => {
     const user = FormatedUserData.find((x: any) => x.id === node.data.id);
@@ -261,7 +146,6 @@ export default function FullOrgChart() {
 
   // useEffect which renders the chart on DOM
   useEffect(() => {
-    setRootChartNode(chartData[0]);
     if (!chart) {
       chart = new OrgChart();
     }
@@ -270,13 +154,10 @@ export default function FullOrgChart() {
       .container(d3Container.current)
       .data(chartData)
       .childrenMargin((node) => 60)
-      .nodeWidth((d) => 250)
-      .nodeHeight((d) => 175)
-      .onNodeClick((d, i, arr) => {
-        handleNodeClick(d);
-      })
-
-      .buttonContent(({ node, state }) => {
+      .nodeWidth(() => 250)
+      .nodeHeight(() => 175)
+      .onNodeClick((d: any) => handleNodeClick(d))
+      .buttonContent(({ node }) => {
         const buttonStyles = `
           color:#FFF;
           padding:3px 6px;
@@ -296,10 +177,9 @@ export default function FullOrgChart() {
                 </div>`;
       })
 
-      .nodeContent(function (d, i, arr, state) {
+      .nodeContent((d: any) => {
         const { imageUrl, name, jobTitle, department, location } = d.data;
 
-        //---------- Styles for org chart--------
         const orgChartStyles = {
           imgCon: `
             text-align: ${imagesPosition};
@@ -378,20 +258,22 @@ export default function FullOrgChart() {
           `,
         };
 
+        const initial = name[0];
+
         //---------- Styles for org chart end--------
 
         // ----------------Org Chart Card------------
+
         return `
         <div style="${orgChartStyles.wrapper}">
           <div style="${orgChartStyles.container}">
             <div style="${orgChartStyles.imgCon}">
-              ${`
-                <img
-                  src="${imageUrl}";
-                  alt="IMAGE"
-                  style="${orgChartStyles.img}"
-                />
-              `}
+              <img
+                src="${imageUrl}";
+                onerror="this.src='${`https://api.dicebear.com/9.x/initials/svg?backgroundColor=0070DC&seed=${initial}`}'"
+                alt="IMAGE"
+                style="${orgChartStyles.img}"
+              />
             </div>
             <div style="${orgChartStyles.textWrapper}">
               <div style="${orgChartStyles.textContainer}">

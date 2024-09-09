@@ -91,6 +91,8 @@ import Collaboration from "../settings/Collaboration";
 import ViewsShowHideModule from "../settings/ViewsShowHideModule";
 import GeneralShowHideModule from "../settings/GeneralShowHideModule";
 import { useCustomStyles } from "./Utils/useCustomstyle";
+import OrgChart from "../settings/OrgChart";
+import RestrictedAccess from "../settings/RestrictedAccess";
 
 let departmentList: { label: any; value: any }[] = [];
 let jobTitleList: { label: any; value: any }[] = [];
@@ -102,11 +104,19 @@ let finalDataNonM365: any = [];
 let optionList: any = [];
 var managerEmail = "";
 
-const BirthAndAnivfilterOptions = [
-  { key: "currentDay", text: "Current Day", checked: true },
+// const BirthAndAnivfilterOptions = [
+//   { key: "currentDay", text: "Current Day", checked: true },
+//   { key: "currentWeek", text: "Current Week" },
+//   { key: "currentMonth", text: "Current Month" },
+//   { key: "upcomingMonth", text: "Upcoming Month" },
+// ];
+const BirthAndAnivfilterOptions =  [
+  { key: "currentDay", text: "Current Day" },
   { key: "currentWeek", text: "Current Week" },
+  { key: "currentWeekAndNextWeek", text: "Current & Next week " },
   { key: "currentMonth", text: "Current Month" },
-  { key: "upcomingMonth", text: "Upcoming Month" },
+  { key: "currentMonthAndNextMonth", text: "Current & Next Month" },
+
 ];
 
 const PivotStyles: IPivotStyles = {
@@ -159,6 +169,7 @@ const AdvanceSetting = (props: any) => {
     true
   );
   const { SweetAlert: SweetAlertDomain } = SweetAlerts("#domain",true);
+  const { SweetAlert: SweetAlertCustomFields , SweetPrompt: SweetPromptCustomFieldsDelete} = SweetAlerts("#customFields",true);
   const { SweetAlert: SweetAlertJobTitle } = SweetAlerts("#jobTitle",true);
   const { SweetAlert: SweetAlertCsvPanel } = SweetAlerts("#csvpanel",true);
 
@@ -168,6 +179,7 @@ const AdvanceSetting = (props: any) => {
     SweetAlert: SweetAlertCustomfunc,
     SweetPrompt: SweetPromptCustomFunc,
   } = SweetAlerts("#customfunc", true);
+  const { SweetAlert: SweetAlertBirthAndAnnivSetting } = SweetAlerts("#birthAndAnnivSetting", true);
   const { SweetAlert: SweetAlertPrononus } = SweetAlerts("#pronouns", true);
   const { SweetAlert: SweetAlertImportUser } = SweetAlerts("#importuser", true);
   const { SweetAlert: SweetAlertShowHideForView } = SweetAlerts(
@@ -244,6 +256,7 @@ const AdvanceSetting = (props: any) => {
   const [bLogo, setBlogo] = React.useState<any>("");
   const [selectedBithFilter, setSelectedBithFilter] = useState("");
   const [HideShowPronouns, setHideShowPronouns] = useState<any>(false);
+  const [filterBirthdayData, setfilterBirthdayData] = useState<any>([]);
   const [autoLoad, setAutoLoad] = React.useState(false);
   const [excludeByNameOptions, setExcludeByNameOptions] =
     React.useState(usersnameOptions);
@@ -802,17 +815,17 @@ const AdvanceSetting = (props: any) => {
 
       updateSetting(setting);
       setAppSettings(setting);
-      SweetAlertOutSidePanel("success", translation.SettingSaved);
+      SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
     } catch (error) {
       console.error("Error processing image:", error);
-      SweetAlertOutSidePanel("success", "Something went wrong");
+      SweetAlertBirthAndAnnivSetting("success", "Something went wrong");
     }
   }
   function handleRemoveBithImg() {
-    updateSetting({ ...parsedData, BirthdayAndAnniversaryImage: "" });
+    updateSetting({ ...appSettings, BirthdayAndAnniversaryImage: "" });
     setImageToCrop("");
     setShowBirthAnivImg("");
-    SweetAlertOutSidePanel("success", translation.SettingSaved);
+    SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
   }
 
   function handleCustomHomePageUrl() {
@@ -1191,7 +1204,7 @@ const AdvanceSetting = (props: any) => {
       ...appSettings,
       SelectedUpcomingBirthAndAniv: upcomingBirthAndAnivAdv,
     });
-    SweetAlertOutSidePanel("success", translation.SettingSaved);
+    SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
   }
   function handleSyncUserInfo() {
     updateSettingData({
@@ -1211,6 +1224,13 @@ const AdvanceSetting = (props: any) => {
       [view]: !prevState[view],
     }));
   };
+  function handleSaveFiltersBirthAndAnniv(){
+    if (Object.keys(appSettings)?.length) {
+      updateSettingData({ ...appSettings, BirthAndAnivFilter: filterBirthdayData });
+      SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
+      setAppSettings({ ...appSettings, BirthAndAnivFilter: filterBirthdayData });
+    }
+  }
 
   const handleBithAndAnivChange = (event: any, val: any) => {
     setSelectedBithFilter(event.target.name);
@@ -1252,11 +1272,8 @@ const AdvanceSetting = (props: any) => {
         upcomingMonth: false,
       };
     }
-    if (Object.keys(parsedData)?.length) {
-      updateSettingData({ ...parsedData, BirthAndAnivFilter: data });
-      SweetAlertOutSidePanel("success", translation.SettingSaved);
-      setAppSettings({ ...parsedData, BirthAndAnivFilter: data });
-    }
+    setfilterBirthdayData(data);
+  
   };
 
   function getFirstAvailableView(views) {
@@ -2019,6 +2036,8 @@ const AdvanceSetting = (props: any) => {
   const [openAdditionalManagerSetting, setOpenAdditionalManagerSetting] =
     useState(false);
 
+  const [restrictedPanel, setRestrictedPanel] = useState(false);
+
   const generalSettingProps = {
     openBdayAnniTemplt,
     openPanelUpldLogo,
@@ -2089,6 +2108,7 @@ const AdvanceSetting = (props: any) => {
     openCustomFunctionPanel,
     setOpenCustomFunctionPanel,
     setOpenAdditionalManagerSetting,
+    setRestrictedPanel
   };
 
   const pagesProps = {
@@ -2107,7 +2127,7 @@ const AdvanceSetting = (props: any) => {
 
   return (
     <div>
-      
+      <OrgChart isOpenOrgChartType={isOpenOrgChartType} dismissPanelOrgChartType={dismissPanelOrgChartType} />
       <SearchSettings {...SettingsComponent} />
 
       <ExecutiveAssistantRelationship
@@ -2150,6 +2170,8 @@ const AdvanceSetting = (props: any) => {
         onDismiss={dismissPanelRolePermission}
       />
 
+      <RestrictedAccess isOpen={restrictedPanel} onDismiss={setRestrictedPanel}/>
+
       <Panel
         type={PanelType.custom}
         customWidth="650px"
@@ -2185,6 +2207,140 @@ const AdvanceSetting = (props: any) => {
           </div>
         </div>
       </Panel>
+      
+      <Panel
+  type={PanelType.custom}
+  customWidth="650px"
+  headerText={
+    translation?.BirthdaysAndAnniv??
+    "Birthdays and Work anniversaries"
+  }
+  isOpen={isOpenUpcomingBithAndAnivAdv}
+  onDismiss={dismissUpcomingBithAndAnivAdv}
+  closeButtonAriaLabel={"Close"}
+>
+  <div id="birthAndAnnivSetting">
+ 
+    <div style={{ borderBottom: "1px solid #ddd"}}>
+      <Label>{translation?.UpcomingBirthdays??"Upcoming Birthdays and Work Anniversaries"}</Label>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "20px",
+          padding: "10px",
+      
+        }}
+      >
+        
+          <div style={{  display: "grid",
+            gridTemplateColumns: "repeat(2  , 1fr)",
+            gap: "10px"
+             }}>
+            <Checkbox
+              label="Google & Non-GUser"
+              style={{ whiteSpace: "nowrap" }}
+              checked={upcomingBirthAndAnivAdv === "Google & Imported User"}
+              onChange={onCheckboxChangeUpcomingBirthAndAniv("Google & Imported User")}
+            />
+            <Checkbox
+              label="Imported User"
+              style={{ whiteSpace: "nowrap" }}
+              checked={upcomingBirthAndAnivAdv === "importedUser"}
+              onChange={onCheckboxChangeUpcomingBirthAndAniv("importedUser")}
+            />
+          </div>
+
+          <PrimaryButton
+            onClick={handleUpcomingBirthAndAnivAdv}
+            text={translation.save}
+          />
+        
+      </div>
+    </div>
+
+   
+    <div style={{ borderBottom: "1px solid #ddd"}}>
+      <Label>Filter Options</Label>
+      <div style={{display:"flex",justifyContent:"space-between"}}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "10px",
+            padding: "10px",
+          }}
+        >
+          {BirthAndAnivfilterOptions?.map((option,index) => (
+            <Checkbox
+              key={option.key}
+              label={option.text}
+              name={option.key}
+              value={option.key}
+              checked={selectedBithFilter === option.key}
+              onChange={(e, val) => handleBithAndAnivChange(e, val)}
+              className={`filter-checkbox ${index==1?'checkboxItem':''}`}
+              style={{ whiteSpace: "nowrap" ,marginLeft:"34px"}}
+            />
+          ))}
+        </div>
+        <div style={{ textAlign: "right", padding: "10px" }}>
+          <PrimaryButton
+            onClick={handleSaveFiltersBirthAndAnniv}
+            text={translation.save}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div>
+
+            <Label>{translation?.BdayAnniTempText??"Birthdays and Work anniversaries image"}</Label>
+            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
+            <p>{translation?.BithandAnnivUploadNote??"Note: Please upload the logo if it is 338 x 120 px in size, maintaining the same aspect ratio. Use a transparent background or a background color for a better viewing experience."}</p>
+          
+            <input
+              id="fileUploadforBith"
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={onUploadFile}
+            />
+            <div style={{ display: "flex", gap: "10px" }}>
+              <PrimaryButton
+                text={translation.save}
+                // style={{ margin: "auto" }}
+                onClick={handleUploadBithImg}
+              />
+              <PrimaryButton
+                text={translation.Upload}
+                // style={{ margin: "auto" }}
+                onClick={() =>
+                  document.getElementById("fileUploadforBith").click()
+                }
+              />
+              <PrimaryButton
+                text={translation.Remove}
+                // style={{ margin: "auto" }}
+                onClick={handleRemoveBithImg}
+              />
+
+            </div>
+            {imageToCrop?.length || showBirthAnivImg?.length ? (
+              <img
+                width={338}
+                height={120}
+                style={{ objectFit: "contain" }}
+                src={imageToCrop ?? showBirthAnivImg}
+              />
+            ) : (
+              ""
+            )}
+          </div>
+          </div>
+  </div>
+</Panel>
+
 
       <Panel
         type={PanelType.custom}
@@ -2228,11 +2384,11 @@ const AdvanceSetting = (props: any) => {
         closeButtonAriaLabel={"Close"}
       >
         <Stack
-          id="customfunc"
+          id="customFields"
           style={{ padding: "5px", display: "flex", flexDirection: "row" }}
         >
           <Pivot
-            style={{ paddingTop: "15px", width: "100%" }}
+            style={{ width: "100%" }}
             aria-label="Large Link Size Pivot Example"
           >
             <PivotItem
@@ -2252,7 +2408,7 @@ const AdvanceSetting = (props: any) => {
                   headerText={translation.add ? translation.add : "Add"}
                 >
                   <CustomAdd
-                    SweetAlertCustomfunc={SweetAlertCustomfunc}
+                    SweetAlertCustomFields={SweetAlertCustomFields}
                     dismiss={dismissPanelCustomField}
                   />
                 </PivotItem>
@@ -2262,8 +2418,8 @@ const AdvanceSetting = (props: any) => {
                   }
                 >
                   <CustomDelete
-                    SweetPromptCustomFunc={SweetPromptCustomFunc}
-                    SweetAlertCustomfunc={SweetAlertCustomfunc}
+                     SweetAlertCustomFields={SweetAlertCustomFields}
+                     SweetPromptCustomFieldsDelete={SweetPromptCustomFieldsDelete}
                     dismiss={dismissPanelCustomField}
                   />
                 </PivotItem>
@@ -2314,7 +2470,7 @@ const AdvanceSetting = (props: any) => {
           </div>
         </MiniModals>
       )}
-
+{/* 
       {isOpenUpcomingBithAndAnivAdv && (
         <MiniModals
           isPanel={false}
@@ -2350,7 +2506,7 @@ const AdvanceSetting = (props: any) => {
             />
           </div>
         </MiniModals>
-      )}
+      )} */}
 
       {isOpenModalShowGrp && (
         <MiniModals
@@ -2601,7 +2757,7 @@ const AdvanceSetting = (props: any) => {
                 headerText={
                   translation.Excludeduserlist
                     ? translation.Excludeduserlist
-                    : "Excluded user list"
+                    : "Excluded user by email"
                 }
                 isOpen={isOpenExcludeUserEmailListPanel}
                 onDismiss={dismissExcludeEmilUserListPanel}
@@ -2775,7 +2931,7 @@ const AdvanceSetting = (props: any) => {
         </MiniModals>
       )}
 
-      {isOpenPanelBdayAnniImg && (
+      {/* {isOpenPanelBdayAnniImg && (
         <MiniModals
           isPanel={false}
           width={"600px"}
@@ -2844,7 +3000,7 @@ const AdvanceSetting = (props: any) => {
             </div>
           </div>
         </MiniModals>
-      )}
+      )} */}
 
       {isOpenModalViews && (
         <MiniModals
@@ -3379,7 +3535,7 @@ const AdvanceSetting = (props: any) => {
 
   
 
-      {isOpenOrgChartType && (
+      {isOpenOrgChartType && false && (
         <MiniModals
           isPanel={false}
           crossButton={true}
@@ -3571,6 +3727,7 @@ const AdvanceSetting = (props: any) => {
           </div>
         </MiniModals>
       )}
+
        <Panel
                         type={PanelType.custom}
                         customWidth="650px"

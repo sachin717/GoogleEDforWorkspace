@@ -27,7 +27,6 @@ const FilterAttributes = ({ isOpen, onDismiss }:any) => {
   const [openJobPanel, setOpenJobPanel] = useState(false);
   const [openLocationPanel, setOpenLocationPanel] = useState(false);
   const { departments, locations, jobTitles } = useFields();
-  console.log("FIEDS......",locations,jobTitles,departments);
   const { appSettings,setAppSettings } = useSttings();
   const [allDepartments, setAllDepartments] = useState(departments);
   const [allJobTitles, setAllJballJobTitles] = useState(jobTitles);

@@ -445,14 +445,14 @@ function CustomAdd(props) {
       console.log(updatedParsedData, "pa");
       if (Object.keys(parsedData).length > 0) {
         updateSetting(updatedParsedData);
-        // props.SweetAlertCustomfunc("success",translation.SettingSaved);
+        props.SweetAlertCustomFields("success",translation.SettingSaved);
       }
       settitles((prevFormData) => [...prevFormData, data]);
       console.log(titles, "titles");
     } else {
       // setError(true);
       // ErrorMsg();
-      props.SweetAlertCustomfunc("info", "Please select property");
+      props.SweetAlertCustomFields("info", "Please select property");
       // Display a message indicating that the property already exists
       console.log(`${selectedPropertyName} already exists.`);
     }
@@ -531,7 +531,7 @@ function CustomAdd(props) {
       // setAlert(true);
       setTimeout(() => {
         // messageDismiss();
-        props.dismissPanelCustomField();
+        props.dismiss();
       }, 5000);
       return;
     }
@@ -587,7 +587,7 @@ function CustomAdd(props) {
 
         setTimeout(() => {
           // messageDismiss();
-          props.dismissPanelCustomField();
+          props.dismiss();
         }, 5000);
         //  GetSettingData();
       });
@@ -614,14 +614,14 @@ function CustomAdd(props) {
       .upload(_parsedData, Buffer.byteLength(_parsedData))
       .then(() => {
         // setSaved(true);
-        props.SweetAlertCustomfunc("success", translation.SettingSaved);
+        // props.SweetAlertCustomFields("success", translation.SettingSaved);
         GetSettingData();
         // props.dismiss();
 
         // SuccessMsg();
         setTimeout(() => {
           // messageDismiss();
-          props.dismissPanelCustomField();
+          props.dismiss();
         }, 5000);
       });
   }

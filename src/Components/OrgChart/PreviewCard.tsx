@@ -1,7 +1,8 @@
 import { Label } from "@fluentui/react";
-import styles from "../SCSS/PreviewCard.module.scss";
 import styled from "styled-components";
 import { useLanguage } from "../../Language/LanguageContext";
+import defaultimage from "../assets/images/DefaultImg1.png";
+import { useEffect, useState } from "react";
 
 const Container = styled.div`
   width: 250px;
@@ -28,15 +29,13 @@ const PreviewCard = ({
   boldDep,
   locationFontSize,
 }) => {
-  const {
-    languagePartUpdate,
-    setLanguagePartUpdate,
-    translation,
-    setTranslation,
-    languages,
-    setLanguage,
-    getTranslation,
-  } = useLanguage();
+  const { translation } = useLanguage();
+  const [image, setImage] = useState("");
+
+  useEffect(() => {
+    setImage(rootChartNode?.imageUrl);
+  }, []);
+
   return (
     <div>
       <Label>{translation.Preview}</Label>
@@ -58,8 +57,8 @@ const PreviewCard = ({
                   height: "60px",
                   objectFit: "cover",
                 }}
-                src={rootChartNode?.imageUrl}
-                alt="IMG"
+                src={image}
+                onError={() => setImage(`https://api.dicebear.com/9.x/initials/svg?backgroundColor=0070DC&seed=${rootChartNode?.name[0]}`)}
               />
             </div>
             <div

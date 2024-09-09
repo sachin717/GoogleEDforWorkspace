@@ -27,4 +27,7 @@ export const useFields = create((set) => ({
   setLocationDropDown: (value) => set({ locationFields: value }),
   setExcludeOptionsForDomain: (value) =>
     set({ excludeOptionsForDomain: value }),
+  
+  allUsers:[],
+  setAllUsers:(value)=>set({allUsers:value}),
 }));

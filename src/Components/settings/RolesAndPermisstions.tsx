@@ -551,7 +551,7 @@ function RolesAndPermisstions(props: any) {
                             optionList?.length > 0 ? (
                               optionList?.map((item2: any, key: any) => {
                                 return (
-                                  <>
+                                  <div key={key}>
                                     <ul className="DBPPStyleUL">
                                       <li className="DBPPStyle">
                                         <div
@@ -604,7 +604,7 @@ function RolesAndPermisstions(props: any) {
                                         </div>
                                       </li>
                                     </ul>
-                                  </>
+                                  </div>
                                 );
                               })
                             ) : (
@@ -647,9 +647,9 @@ function RolesAndPermisstions(props: any) {
                   </tr>
                 </thead>
                 <tbody>
-                  {addroles.map((x: any) => {
+                  {addroles.map((x: any, key) => {
                     return (
-                      <tr>
+                      <tr key={key}>
                         <td>
                           {" "}
                           <Checkbox

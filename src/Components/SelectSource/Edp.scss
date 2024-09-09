@@ -1,3 +1,4 @@
+
 @import "~@fluentui/react/dist/sass/References.scss";
 // @import '~@fluentui/react/dist/css/fabric.css';
 
@@ -96,6 +97,7 @@
   display: grid !important;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
 }
+
 
 //  bithday aniv css
 
@@ -327,7 +329,7 @@ div:where(.swal2-container) div:where(.swal2-popup) {
 }
 .ms-Panel-headerText {
   color: #fff;
-  line-height: 32px;
+  // line-height: 32px;
   font-size: 17px;
 }
 .ms-Panel-navigation .ms-Button-icon {
@@ -964,3 +966,4 @@ color: blue;
   white-space: nowrap;
   color: var(--lightThemeTextColorBlack) !important;
 }
+

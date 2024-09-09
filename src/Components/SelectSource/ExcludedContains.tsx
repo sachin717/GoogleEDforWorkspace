@@ -127,7 +127,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
 <div className={"tabMainDiv"} id="excludedContains">
 
      <div style={{ padding: "0%" }}>
-                <Label>Select contains to exclude</Label>
+                <Label>Enter string to exclude</Label>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "end", gap: "8px" }}>
                     <TextField
@@ -135,7 +135,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
                 onChange={(e: any) =>
                   setExcludedValues({ value: e.target.value })
                 }
-                placeholder="Exclude user "
+                placeholder="Exclude string "
               />
 
                         

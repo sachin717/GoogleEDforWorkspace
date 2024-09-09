@@ -1,4 +1,13 @@
 :global{
+  .checkboxItem{
+    margin-left: 43 !important;
+  } 
+  .filter-checkbox{
+    white-space: nowrap !important;
+  }
+  .filterbirthAndAnniv{
+    width: 300px !important;
+  }
   .barchart,.linechart{
     padding: 10px !important;
   }

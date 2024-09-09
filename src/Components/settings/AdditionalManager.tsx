@@ -147,7 +147,7 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
             <th>{translation.Displayname?translation.Displayname:"Display name"}</th>
                       </tr>
                     </thead>
-                    {userWithAssistant.length ? (
+                    {userWithAssistant?.length ? (
                       <tbody>
                         {userWithAssistant.map((x, i) => {
                           return (
@@ -266,7 +266,7 @@ const Delete = ({ userWithAssistant, setUsersWithAssistant,translation }) => {
             <th>{translation.Displayname?translation.Displayname:"Display name"}</th>
           </tr>
         </thead>
-        {userWithAssistant.length ? (
+        {userWithAssistant?.length ? (
           <tbody>
             {userWithAssistant.map((x, i) => {
               return (

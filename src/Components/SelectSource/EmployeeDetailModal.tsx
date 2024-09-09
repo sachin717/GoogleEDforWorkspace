@@ -1879,7 +1879,7 @@ const EmployeeDetailModal = (props: any) => {
             </div>
 
             <div className={styles.orgChartContainer}>
-              {<ModalOrgChart userObj={userArray} selected={selectedUser} />}
+              {<ModalOrgChart email={selectedUser} />}
             </div>
           </Modal>
 
