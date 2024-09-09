@@ -1,0 +1,144 @@
+.modalWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.heading {
+  color: rgb(0, 112, 220);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.iconBtnContainer {
+  display: flex;
+  position: absolute;
+  right: 0;
+}
+
+.orgChartContainer {
+  display: table;
+  padding-bottom: 20px;
+  width: 100%;
+  position: relative;
+  z-index: 1000;
+}
+
+.iconBtn:hover {
+  background-color: #ededed;
+}
+.pronouns{
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 10px;
+  padding-top: 2px;
+  text-align: center;
+  padding: 2px 8px;
+  height: 17px;
+  color: #69797e;
+  margin-left: 5px;
+}
+
+.empMainDetail {
+  font-size: 12px;
+  font-weight: 400;
+  padding-bottom: 1px;
+  color: #333;
+  min-width: fit-content;
+  
+}
+
+.empMainDetailE {
+  font-size: 11px;
+  font-weight: 400;
+  padding-bottom: 1px;
+  // color: #333
+}
+
+.pronounsButton {
+  border: none;
+  padding: 0px;
+  height: 24px;
+  background-color: #f5f5f5;
+  color: #333;
+  font-weight: 400;
+
+}
+
+.pronounsButton :hover {
+  color: white;
+  background-color: rgb(0, 112, 220);
+}
+
+.pronounsButton1 {
+  border: none;
+  padding: 0px;
+  height: 24px;
+  background-color: #f5f5f5;
+  color: var(--textIconColor);
+  cursor: text;
+  font-size: 11px;
+  min-width: 58px;
+  // width: 75px;
+}
+
+.addPrnsModal {
+  color: rgb(0, 112, 220);
+  cursor: pointer;
+}
+
+.addPrnsModal:hover {
+  text-decoration: underline;
+}
+
+.pronounsText {
+  padding-top: 2px;
+  background-color: #f5f5f5;
+  text-align: center;
+  font-size: 10px;
+  border-radius: 4px;
+  color: "[theme:themePrimary]";
+}
+.Employeedetails {
+  padding: 7px;
+  margin: 0px 3rem 0rem 3rem;
+  background-color: white;
+  border-radius: 5px;
+}
+.closeEmpDetails {
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  cursor: pointer;
+}
+
+.pronounsNonM365 {
+  padding-top: 2px;
+  background-color: #f5f5f5;
+  text-align: center;
+  font-size: 10px;
+  border-radius: 4px;
+  margin-top: 2px;
+  color: #333;
+}
+.modalContent {
+  overflow: hidden;
+  max-height: 0px;
+  transition: max-height 1s ease; /* Smooth transition for height */
+  position: relative;
+  // padding-top: 10px;
+}
+ 
+.modalContentInitial {
+  // max-height: 158px; /* Initial height when opening */
+display: none;
+max-height: 0px;
+}
+ 
+.modalContentFull {
+  max-height: 1000px;
+ 
+}
+ 

@@ -1,0 +1,141 @@
+
+
+
+.mini_popup_modal {
+   
+  position: relative;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+    // padding: 15px;
+    
+    
+    background-color: white;
+    border: 1px solid #ccc;
+
+   
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    transition: 0.3s all;
+    
+  }
+ .overlay{
+    height: 100vh;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: grid;
+    
+    place-items: center;
+    z-index: 100;
+ }
+ .heading{
+    color: #fff !important;
+    font-size: 18px !important;
+    font-weight: 400 !important;
+    margin-left: 10px !important;
+    
+ }
+ .popup_head{
+
+    width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+//   position: absolute;
+//   left: 0;
+//   top: 0;
+  padding: 10px 0;
+  color: #fff !important;
+  background-color: var(--lightdarkBG) !important;
+ }
+ .ms-Panel-contentInner{
+  position: relative;
+ }
+  .absolute{
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  }
+//   .mini_popup_modal.visible {
+//     display: block;
+//   }
+  .message{
+    text-align: center !important;
+    font-size: 15px !important;
+    font-weight: 400 !important;
+  }
+  .child_content{
+    padding: 15px;
+    overflow-y:auto !important; 
+    transition: all 0.25s ease-in-out !important;
+   
+  }
+ 
+  .btn_box{
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    
+    
+  }
+ 
+  .cancel-icon{
+   color:#fff !important;
+   font-size: 20px !important;
+    cursor: pointer;
+    margin-right: 10px !important;
+    
+  }
+
+  .popup_btn {
+   
+    font-size: 18px;
+    outline: none;
+    font-weight: 600;
+    padding: 10px 30px;
+    background-color:  var(--lightdarkBG);
+    border: 1px solid gray;
+   
+    
+    cursor: pointer;
+    background-color: transparent;
+  }
+  .popup_head h3{
+    margin: 0;
+  }
+  .primary{
+     background-color:  var(--lightdarkBG)
+     ;
+     color:#fff;
+
+  }
+  .primary:hover{
+    background-color:var(--lightdarkHoverBG) !important;
+   
+  }
+  .close{
+    color: black !important;
+  }
+  .close:hover{
+    color: black !important;
+    background-color: transparent !important;
+  }
+  .close{
+    color: black !important;
+  }
+ 
+  .toptip{
+    color:#fff !important;
+    height: 22px !important;
+  }
+  .toptip:hover{
+    background-color: transparent;
+  }
+ .popInnerBox{
+     position:absolute !important;
+     width:100% !important;
+     background:#fff !important;
+ }

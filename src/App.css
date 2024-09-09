@@ -1,0 +1,98 @@
+/* .App {
+  text-align: center;
+} */
+ body{
+  padding-right:0 !important;
+  }
+#ViewDiv {
+  display: block !important;
+  width: 100%;
+  page-break-inside: avoid !important;
+  position: relative !important;
+  overflow-x: visible !important;
+  page-break-before: auto;
+  page-break-after: auto;
+
+}
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+.docCardStyle {
+  padding: 10px;
+  width: 8%;
+  text-align: center;
+  display: inline-block;
+  color: #000;
+  border: none;
+  flex: 0 1 0;
+  min-width: 170px;
+  border: 1px solid #ddd;
+  margin: 0px 12px 12px 0px;
+  position: relative;
+  background: #fff;
+  overflow: hidden;
+  padding-bottom: 45px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+@media screen and (min-width: 641px) {
+  .uploadCSVblkStyles .downloadButton {
+    max-width: 60%;
+  }
+
+  g .CanvasComponent.LCS .CanvasZone {
+    padding: 0 0px;
+  }
+
+  .CanvasComponent.LCS .CanvasSection--read:not(.CanvasSection--fullWidth) .ControlZone {
+    margin-top: 0px;
+  }
+}
+.App-header {
+  background-color: #1f5edd;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media screen and (min-width: 641px) {
+  .uploadCSVblkStyles .downloadButton {
+    max-width: 60%;
+  }
+
+  g .CanvasComponent.LCS .CanvasZone {
+    padding: 0 0px;
+  }
+
+  .CanvasComponent.LCS .CanvasSection--read:not(.CanvasSection--fullWidth) .ControlZone {
+    margin-top: 0px;
+  }
+} 
+
+
+.sample{
+  width: 12%;
+  color:red;
+}
+

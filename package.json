@@ -1,0 +1,82 @@
+{
+  "name": "googlereact",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@azure/identity": "^1.0.3",
+    "@azure/storage-blob": "^12.2.0-preview.1",
+    "@fluentui/react": "^8.114.3",
+    "@fluentui/react-components": "^9.45.0",
+    "@fluentui/web-components": "^2.5.16",
+    "@react-oauth/google": "^0.12.1",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/user-event": "^13.5.0",
+    "buffer": "^6.0.3",
+    "chart.js": "^4.4.3",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "crypto-js": "^4.2.0",
+    "d3-org-chart": "^3.1.1",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "gapi-script": "^1.2.0",
+    "googleapis": "^130.0.0",
+    "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.10.2",
+    "jsencrypt": "^3.3.2",
+    "jspdf": "^2.5.1",
+    "office-ui-fabric-react": "^7.204.0",
+    "papaparse": "^5.4.1",
+    "react": "^17.0.2",
+    "react-beautiful-dnd": "^13.1.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^17.0.2",
+    "react-dropzone": "^14.2.3",
+    "react-image-crop": "^11.0.5",
+    "react-quill": "^2.0.0",
+    "react-scripts": "^5.0.1",
+    "react-select": "^5.8.0",
+    "react-to-pdf": "^1.0.1",
+    "sass": "^1.71.1",
+    "styled-components": "^6.1.8",
+    "sweetalert2": "^11.12.2",
+    "typescript": "^4.9.5",
+    "unparse": "^1.2.19-alpha.11",
+    "url": "^0.11.3",
+    "web-vitals": "^2.1.4",
+    "webpack": "^5.89.0",
+    "xlsx": "^0.18.5",
+    "zustand": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/d3-org-chart": "^3.1.2",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.69",
+    "@types/react": "^17.0.80",
+    "@types/react-dom": "^17.0.25"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

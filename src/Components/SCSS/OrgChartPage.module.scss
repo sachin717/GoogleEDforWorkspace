@@ -1,0 +1,49 @@
+.container {
+  text-align: end;
+  padding: 5px 0px;
+  font-size: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.cancleBtn{
+  justify-content: end;
+  justify-self: flex-end;
+  position: absolute;
+  right: 15px;
+}
+
+/*------------------ Org Chart Settings SCSS----------------------*/
+.nameStyles {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bold {
+  background-color: rgb(0, 120, 212);
+  color: #fff;
+}
+
+.italic {
+  background-color: rgb(0, 120, 212);
+  color: #fff;
+}
+
+.underline {
+  background-color: rgb(0, 120, 212);
+  color: #fff;
+}
+
+.fontStylesGroup{
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.orgChartHeader{
+  margin-left: 10px;
+  color: rgb(0, 120, 212);
+  text-align: center;
+  font-size: 18px;
+}

@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "argon-magnet-408506",
+  "private_key_id": "11c800fc391a1225ba7559d242a7e0d7c86ba75c",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC59b/hiKv2x3iH\ni/0GVuTxU3pFw1BAizg6KEj/7lt5ffhzmQODtwS+ZCimzF2wT4/XGjy2U4tqpTJb\nClUZfJQpK+NuOa5Ymz10kGxoHyvb0dP1i0hH6omJrl30vJDbyFixGpSx2a1JUDR5\nIHUF3JhpGgDradZ75kL/8IoO9qzrr0ZRWm6zilzqMJf19moAzHU3mkaKaCL2fg5r\n8TgYkxvMILe/BI1cJ9y+bJ9p2WLl2JAly6IuJHQY2Qe086PGSzCgm4KJlNANPcVY\n0b13p05Elqed8vZfrtUw6QHCjQSkt5XSsBaugOaI2FkL3eJsnl79TYjkUhEQ7EXu\nW1pGB4X/AgMBAAECggEAGx7DLQCyLPY6q/Csu5PI+tr/o5Slq8Fst1VFuYbecgb+\n84OWzCBRFvU41S6hNpk73eqL0n63qpt3ZGigMEHcwm5jUkwjkvTnpGF7Cz+0ipqn\njLwTPrhuoOo8S04u2tF1VzWMXFhl2cx9LUcgWfT/M0t2uTPWcyZfPMACBRxQ7A7Z\nuQDxL6sqNd0KKuo26k4SEeGPlmLRPGqqTifUSWGpITNAdDCE1syIjdu7Rda2dWSO\nGhTQLw4ooZYswricuYImph2geGJvaohVWm+mtvXl8XKrtjmW3aJ+gYVs0VNX1ru1\nnkrU1aXMDwg+I9/JAIpKX1PtOFJJyTFmdlDAZWTrYQKBgQDdv3IMY1+W2HT409FU\ntVGyksCIxLDiA7IBP9FM/w6rQP4y9zGOX/1PoguUcf19twhkSnDe5yVsXgYxwODO\nji6cCjdlZhBjh5H8hZEAW9zrLPqOuYyU4ENrG+sby4NYAWT4P80S5JK3hUjeoDkZ\nNGAZ8umTf0sOeu8FS4iJi38InwKBgQDWryW4MIsTUsotlR6jHgSb8SD3UeF1QscW\nAKndE7BOvIqreNn0aPxBBiP0B682B0rkiRa7g24oZCHl8STjED33ohfH23BSus8T\na9WFgqA8US8d0+f3I+EHiscUYCBOoupKRkar3q4lUEoZBm6nXVKfpzjzW1qDBGXt\nBwkmjPSmoQKBgQCCBDBApzty3LOo+bkxK6cdRwJwrrLvsi76oIp91MarDs5834dE\n7W8+88pKXZO91EWtWCBZ8bl1kqObJHYrZh5aC3tzjqZpVSH5p+7fAP3FPngimxSc\nbenZsWLmxyrZvOeQzwfU3gRQamvRbKxN5PG8BTuC6g3+DYJ73k/OJeZ0DQKBgHMT\nFRvi4VltQjQmv3Jd78iK+sm3GSvarI5tsp9vI01BIO+C6wlokPZlzTXMPK2wQQO5\nO/ctHwoFimoP1V7k4OJw/2BAjre5rK/TWHOlLjDGr4PEh41grQl26PlSAV9FUmKX\nwt/zj9Muc1lwqjWJ/3TWlN9VM3IRFHV2FQCWA7mhAoGAPGTXEjFcftCfDJ+uI4u3\nPHM3Sf/ErPGVx2TqV4LkK654Bse/H57y0xobGnwvlylYBUnW9/9Ta4Q2xB93hw8Q\np8BxJVRF6R273L4iVKO9S5cnQkZ+6QGyOFCT9DWZ3DlHSrgPTbFEmYJaiHXCcbe9\ngpevDqpyEjZeBUS6HUED+uE=\n-----END PRIVATE KEY-----\n",
+  "client_email": "parjinder@argon-magnet-408506.iam.gserviceaccount.com",
+  "client_id": "110566721718775729940",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/parjinder%40argon-magnet-408506.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -1,0 +1,105 @@
+.iconForSync.swal2-icon.swal2-warning {
+  color: #f9a825 !important;
+  border-color: #f9a825 !important;
+}
+
+.swal2-popup {
+  border-radius: 0px !important;
+}
+
+.swal2-icon.swal2-warning,
+.swal2-icon.swal2-info {
+  border-color: #f9a825 !important;
+  color: #f9a825 !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: #338703 !important;
+  color: #338703 !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+  border: 0.25em solid #338703 !important;
+}
+
+.swal2-icon.swal2-success [class^="swal2-success-line"] {
+  background-color: #3e9b0a !important;
+}
+
+.swal2-html-container {
+  color: var(--color-body-contentColor) !important;
+  font-family: "Segoe UI WestEuropean", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+}
+
+.swal2-popup .swal2-modal .swal2-icon-warning .swal2-show {
+  .swal2-popup {
+    display: none;
+    position: relative;
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 100%);
+    width: 32em;
+    max-width: 100%;
+    padding: 0 0 1.25em;
+    border: none;
+    border-radius: 15px;
+    background: #fff;
+    color: #545454;
+    font-family: inherit;
+    font-size: 1rem;
+  }
+}
+
+.removeCheckboxpadding .fui-Checkbox__indicator {
+  margin: 6px 0px !important;
+  width: 19px;
+  height: 18px;
+}
+
+.removeCheckboxpadding .fui-Label {
+  margin-left: 6px;
+}
+
+.removeCheckboxpadding {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.peoplePickerCC {
+  display: flex;
+  gap: 5px;
+}
+
+.peoplePickerCC .ms-BasePicker-text {
+  background-color: #fff;
+  border: 1px solid var(--lightThemeBorderColor);
+  max-width: 200px;
+  max-height: 60;
+}
+
+.swal2-styled.swal2-confirm {
+  background-color: rgb(0, 120, 212) !important;
+  border: black !important;
+  min-width: 103px !important;
+  max-width: 10px !important;
+  -ms-flex-align: center !important;
+  align-items: center !important;
+  color: #fff !important;
+
+  &:focus {
+    box-shadow: 0 0 0 1px rgb(138, 136, 134) !important;
+  }
+}
+
+.swal2-styled {
+  border-radius: 0px !important;
+}
+
+.swal2-styled.swal2-cancel {
+  border: 1px solid rgb(138, 136, 134) !important;
+  background-color: #ffffff !important;
+  color: black !important;
+  border-radius: -0.75em !important;
+}
