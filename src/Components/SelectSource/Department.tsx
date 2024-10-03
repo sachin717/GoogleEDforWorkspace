@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import ReactSelect from "react-select";
 import { Icon } from "office-ui-fabric-react";
 import useStore from "./store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, departmentFields }) => {
     const { translation } = useLanguage();
@@ -54,7 +54,7 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
         const updatedExcludeByDept = appSettings?.ExcludeByDepartment.filter(dept => !selectedDept.includes(dept.value));
         const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedExcludeByDept };
         
-        updateSettingData(updatedParsedData);
+        updateSettingJson(SETTING_LIST,updatedParsedData);
         setAppSettings(updatedParsedData);
         setExcludedDept(updatedExcludeByDept);
         SweetAlertExcludeDept("success", translation.SettingSaved);
@@ -86,7 +86,7 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
                 const updatedExcluded = [...currentExcluded, ...excludedValues];
                 const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedExcluded };
                 
-                updateSettingData(updatedParsedData);
+                updateSettingJson(SETTING_LIST,updatedParsedData);
                 setAppSettings(updatedParsedData);
                 SweetAlertExcludeDept("success", translation.SettingSaved);
             }

@@ -1,11 +1,12 @@
-import { Checkbox, IconButton, Separator } from "@fluentui/react";
+import { Checkbox, IconButton, PanelType, Separator } from "@fluentui/react";
 import { Label, Panel, PrimaryButton, TextField } from "@fluentui/react";
 import { useEffect, useState } from "react";
 import styles from "../SCSS/OrgChartPage.module.scss";
 import PreviewCard from "./PreviewCard";
 import { useLanguage } from "../../Language/LanguageContext";
 import { useSttings } from "../SelectSource/store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
+import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const OrgChartSettings = ({
   handleOnDismiss,
@@ -28,6 +29,7 @@ const OrgChartSettings = ({
   jobTitleFontStyle,
   rootChartNode,
 }: any) => {
+  const { SweetAlert } = SweetAlerts("#orgchartPanel", true);
   const [position, setPosition] = useState<any>(imagesPosition);
   const [headFontSize, setHeadFontSize] = useState(headerFontSize);
   const [jobFontSize, setJobFontSize] = useState(jobTitleFontSize);
@@ -80,7 +82,7 @@ const OrgChartSettings = ({
       },
     };
 
-    updateSettingData(setting);
+    updateSettingJson(SETTING_LIST, setting);
     setHeaderFontSize(headFontSize);
     setImagePosition(position);
     setJobTitleFontSize(jobFontSize);
@@ -100,17 +102,20 @@ const OrgChartSettings = ({
       italic: italicDep,
       underline: underlineDep,
     });
+    SweetAlert("success", "Setting Saved");
   };
 
   useEffect(() => {
-    setPosition(appSettings?.OrgChartStyles?.position || "center")
+    setPosition(appSettings?.OrgChartStyles?.position || "center");
     setHeadFontSize(appSettings?.OrgChartStyles?.headFontSize || "20");
     setJobFontSize(appSettings?.OrgChartStyles?.jobFontSize || "15");
     setDepFontSize(appSettings?.OrgChartStyles?.depFontSize || "15");
 
     setBoldName(appSettings?.OrgChartStyles?.headerText.bold || false);
     setItalicName(appSettings?.OrgChartStyles?.headerText.italic || false);
-    setUnderlineName(appSettings?.OrgChartStyles?.headerText.underline || false);
+    setUnderlineName(
+      appSettings?.OrgChartStyles?.headerText.underline || false
+    );
 
     setBoldJob(appSettings?.OrgChartStyles?.jobTitle?.bold || false);
     setItalicJob(appSettings?.OrgChartStyles?.jobTitle?.italic || false);
@@ -118,22 +123,22 @@ const OrgChartSettings = ({
 
     setBoldDep(appSettings?.OrgChartStyles?.department?.bold || false);
     setItalicDep(appSettings?.OrgChartStyles?.department?.italic || false);
-    setUnderlineDep(appSettings?.OrgChartStyles?.department?.underline || false);
+    setUnderlineDep(
+      appSettings?.OrgChartStyles?.department?.underline || false
+    );
   }, []);
 
   return (
     <div>
       <Panel
-        headerText={
-          translation.CustomizeChart
-            ? translation.CustomizeChart
-            : "Customize Chart"
-        }
+        headerText={translation.CustomizeChart ?? "Customize Chart"}
         isOpen={isOpen}
         onDismiss={() => handleOnDismiss(false)}
+        type={PanelType.custom}
+        customWidth="380px"
       >
         {/* --------------------- name font setting------------------ */}
-        <div className={styles.nameStyles}>
+        <div id="orgchartPanel" className={styles.nameStyles}>
           <div>
             <Label>
               {translation.EmployeeNameFontSize
@@ -303,12 +308,7 @@ const OrgChartSettings = ({
           />
         </div>
         <div>
-          <PrimaryButton
-            onClick={() => {
-              save();
-              handleOnDismiss(false);
-            }}
-          >
+          <PrimaryButton onClick={() => save()}>
             {translation.save}
           </PrimaryButton>
         </div>

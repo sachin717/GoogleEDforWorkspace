@@ -15,7 +15,8 @@ import { useLanguage } from "../../Language/LanguageContext";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
 import getschemasfields from "../SelectSource/getCustomSchema";
 import { useSttings } from "../SelectSource/store";
-import { removeDuplicatesFromObject, updateSettingData } from "../Helpers/HelperFunctions";
+import { removeDuplicatesFromObject} from "../Helpers/HelperFunctions";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const CustomFunction = ({
   isOpen,
@@ -51,7 +52,6 @@ const CustomFunction = ({
     };
     setData(appSettings?.CustomFunctionData)
     ListData();
-    // setData();
   }, []);
 
   useEffect(() => {
@@ -76,7 +76,7 @@ const CustomFunction = ({
       if (index !== -1) {
         data[index] = editItem;
         const setting = { ...appSettings, [KEY]: data };
-        updateSettingData(setting);
+        updateSettingJson(SETTING_LIST, setting);
         setAppSettings(setting);
         setData(data);
         EditAlert("success", translation.SettingSaved);
@@ -96,7 +96,7 @@ const CustomFunction = ({
       );
       setData(updatedList);
       const setting = { ...appSettings, [KEY]: updatedList };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
       setCustomFunction("");
       setFetchedValue("");
@@ -235,7 +235,7 @@ const Delete = ({ data, setData, translation }) => {
       const KEY = "CustomFunctionData";
       const deleted = data.filter((x) => !customFunctions.includes(x.property));
       const setting = { ...appSettings, [KEY]: deleted };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
       setData(deleted);
       deleteSweetAlert("success", translation.SettingSaved);

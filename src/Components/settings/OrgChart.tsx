@@ -8,10 +8,13 @@ import MiniModals from "../SelectSource/MiniModals";
 import { useLanguage } from "../../Language/LanguageContext";
 import { useSttings } from "../SelectSource/store";
 import ReactSelect from "react-select";
-import { getCurrentUser, updateSettingData } from "../Helpers/HelperFunctions";
+import { getCurrentUser } from "../Helpers/HelperFunctions";
 import { useFields } from "../../context/store";
+import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
+import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const OrgChart = ({ dismissPanelOrgChartType, isOpenOrgChartType }) => {
+  const {SweetAlert} = SweetAlerts("#orgchart-modal");
   const orgChartTypes = [
     { key: "FullOrgChart", text: "Full Org Chart" },
     { key: "TwoLevelOrgChart", text: "Org Chart - Two levels" },
@@ -32,25 +35,30 @@ const OrgChart = ({ dismissPanelOrgChartType, isOpenOrgChartType }) => {
         ...appSettings,
         [KEY]: { chartType: selectedType, chartHead: { label: label , value: value } },
       };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
     } else {
       const setting = {
         ...appSettings,
         [KEY]: { chartType: selectedType, chartHead: chartHead },
       };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
     }
+    SweetAlert("success",translation.SettingSaved);
   };
 
   useEffect(() => {
-    setChartHead(appSettings?.OrgChart?.chartHead);
-    setSelectedType(appSettings?.OrgChart?.chartType);
+    const getSettingData = async()=>{
+      const data = await getSettingJson(SETTING_LIST)
+      setChartHead(data?.OrgChart?.chartHead);
+      setSelectedType(data?.OrgChart?.chartType);
+    }
+    getSettingData();
   }, []);
 
   return (
-    <div>
+    <div id="orgchart-modal">
       {isOpenOrgChartType && (
         <MiniModals
           isPanel={false}

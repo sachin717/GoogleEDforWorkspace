@@ -42,7 +42,7 @@ const TileView = (props) => {
     <>
         <div>
           <div className="tileView">
-            {props.employees.map((item) => {
+            {props.employees.map((item, i) => {
               const examplePersona = {
                 //imageUrl: item.img,
                 imageInitials: item.initials,
@@ -63,7 +63,7 @@ const TileView = (props) => {
               };
 
               return (
-                <div className="empView">
+                <div key={i} className="empView">
                   <div className="makeCenterStyles">
                     <div
                       style={diffStyle}

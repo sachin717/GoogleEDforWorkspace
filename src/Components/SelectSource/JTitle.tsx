@@ -18,12 +18,12 @@ import { Buffer } from "buffer";
 //import styles from "../Edp.module.scss";
 import { SearchBox } from "@fluentui/react/lib/SearchBox";
 import { IIconProps } from "@fluentui/react/lib/Icon";
-import useStore from "./store";
+import useStore, { useSttings } from "./store";
 import { gapi } from "gapi-script";
 import ReactSelect from "react-select";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { Icon } from "office-ui-fabric-react";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 const filterIcon: IIconProps = { iconName: "Filter" };
 
 
@@ -74,8 +74,11 @@ function JTitle(props) {
   const searchRef = React.useRef(null);
   const searchBoxRef = React.useRef(null);
   allItems=props?.appSettings?.ExcludeByJobTitle;
+
+  const { appSettings } = useSttings();
+
   React.useEffect(()=>{
-   
+    setShowButton(true)
     settitles(props?.appSettings?.ExcludeByJobTitle)
     console.log("j",props?.appSettings?.ExcludeByJobTitle)
     },[])
@@ -132,7 +135,7 @@ function JTitle(props) {
       const updatedParsedData = { ...props.appSettings, [KEY_NAME4]: updatedExcludeByJlist };
       if(Object.keys(props?.appSettings)?.length){
         console.log(updatedParsedData,'updated')
-        updateSettingData(updatedParsedData);
+        updateSettingJson(SETTING_LIST,updatedParsedData);
         props.setAppSettings(updatedParsedData);
       }
    
@@ -159,7 +162,7 @@ function JTitle(props) {
          
         if (Object.keys(updatedParsedData).length > 0) {
           console.log(updatedParsedData);
-          updateSettingData(updatedParsedData);
+          updateSettingJson(SETTING_LIST,updatedParsedData);
           props.setAppSettings(updatedParsedData);
           props.SweetAlertJobTitle("success", translation.SettingSaved);
         }
@@ -290,7 +293,7 @@ const handleBlur = () => {
           )}
         </table>
       </div>
-      {showButton && <PrimaryButton text={"Include"} onClick={include} />}
+      {titles?.length ? <PrimaryButton text={"Include"} onClick={include} />:""}
     </div>
   );
 }

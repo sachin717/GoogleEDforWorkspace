@@ -1,21 +1,27 @@
-import { Label, Panel, PanelType, Toggle } from "@fluentui/react";
+import {
+  Label,
+  Panel,
+  PanelType,
+  PrimaryButton,
+  TextField,
+  Toggle,
+} from "@fluentui/react";
 import { useLanguage } from "../../Language/LanguageContext";
 import styles from "../SCSS/Ed.module.scss";
 import { useEffect, useState } from "react";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { useSttings } from "../SelectSource/store";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
-const ViewsShowHideModule = ({
-    isOpen,
-    onDismiss,
-}) => {
+const ViewsShowHideModule = ({ isOpen, onDismiss }) => {
   const { translation } = useLanguage();
   const [visibleReportIncorrectIcon, setVisibleResportIncorrectIcon] =
     useState(false);
   const [ShowJoyfulAnimation, setShowJoyfulAnimation] = useState(false);
   const [ShowExtFields, setShowExtFields] = useState(false);
   const [ShowAsDropdown, setShowAsDropdown] = useState(false);
+  const [showInputBox, setShowInputBox] = useState(false);
+  const [emails, setEmails] = useState("");
 
   const { appSettings, setAppSettings } = useSttings();
   const { SweetAlert: SweetAlertShowHideForView } = SweetAlerts(
@@ -24,6 +30,11 @@ const ViewsShowHideModule = ({
   );
 
   const onVisibleReportIncorrectIconChange = (e: any, checked: any) => {
+    if (checked === true) {
+      setShowInputBox(true);
+    } else {
+      setShowInputBox(false);
+    }
     setVisibleResportIncorrectIcon(checked);
     const updatedSHMStates = {
       visibleReportIncorrectIcon: checked,
@@ -31,7 +42,7 @@ const ViewsShowHideModule = ({
       ShowExtFields,
       ShowAsDropdown,
     };
-    updateSettingData({
+    updateSettingJson(SETTING_LIST, {
       ...appSettings,
       ShowHideViewModules: updatedSHMStates,
     });
@@ -47,7 +58,7 @@ const ViewsShowHideModule = ({
       ShowExtFields,
       ShowAsDropdown,
     };
-    updateSettingData({
+    updateSettingJson(SETTING_LIST, {
       ...appSettings,
       ShowHideViewModules: updatedSHMStates,
     });
@@ -63,7 +74,7 @@ const ViewsShowHideModule = ({
       ShowExtFields: checked,
       ShowAsDropdown,
     };
-    updateSettingData({
+    updateSettingJson(SETTING_LIST, {
       ...appSettings,
       ShowHideViewModules: updatedSHMStates,
     });
@@ -79,7 +90,7 @@ const ViewsShowHideModule = ({
       ShowExtFields,
       ShowAsDropdown: checked,
     };
-    updateSettingData({
+    updateSettingJson(SETTING_LIST, {
       ...appSettings,
       ShowHideViewModules: updatedSHMStates,
     });
@@ -87,13 +98,32 @@ const ViewsShowHideModule = ({
     SweetAlertShowHideForView("success", translation.SettingSaved);
   };
 
+  const handelSaveEmails = () => {
+    const KEY = "ReportEmails";
+    const setting = { ...appSettings, [KEY]: emails };
+    console.log("setting", {setting, emails});
+    updateSettingJson(SETTING_LIST, setting);
+    setAppSettings(setting);
+    SweetAlertShowHideForView("success", translation.SettingSaved);
+  };
+
   useEffect(() => {
     setVisibleResportIncorrectIcon(
       appSettings.ShowHideViewModules.visibleReportIncorrectIcon
     );
+
+    if(appSettings.ShowHideViewModules.visibleReportIncorrectIcon){
+      setShowInputBox(true)
+    }else{
+      setShowInputBox(false);
+    }
+
+    setEmails(appSettings.ReportEmails)
+
     setShowJoyfulAnimation(
       appSettings?.ShowHideViewModules?.ShowJoyfulAnimation
     );
+
     setShowExtFields(appSettings?.ShowHideViewModules?.ShowExtFields);
     setShowAsDropdown(appSettings?.ShowHideViewModules?.ShowAsDropdown);
   }, []);
@@ -120,6 +150,18 @@ const ViewsShowHideModule = ({
               }
             />
           </div>
+          {showInputBox && (
+            <div style={{ display: "flex", gap: "10px", alignItems:"end" }}>
+              <TextField
+                value={emails}
+                onChange={(e: any) => setEmails(e.target.value)}
+                placeholder="Email Id(s) to report incorrect info separated by comma"
+                label="Email Id(s) to report incorrect info"
+                styles={{ root: { width: "100%" } }}
+              />
+              <PrimaryButton onClick={handelSaveEmails}>Save</PrimaryButton>
+            </div>
+          )}
 
           <div className={styles.seprator}></div>
 

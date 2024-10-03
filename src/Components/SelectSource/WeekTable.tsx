@@ -17,9 +17,10 @@ import {
 import "sweetalert2/dist/sweetalert2.css";
 import { SweetAlerts } from "./Utils/SweetAlert";
 import { PrimaryButton } from "@fluentui/react";
-import { getCurrentUser, updateSettingData } from "../Helpers/HelperFunctions";
+import { getCurrentUser } from "../Helpers/HelperFunctions";
 import { useSttings } from "./store";
 import { useLanguage } from "../../Language/LanguageContext";
+import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const ListStyles = {
   headerWrapper: {
@@ -56,10 +57,12 @@ const ListStyles = {
 const WeekTable = ({
   showWWTable,
   user,
+  settingData,
   isPanelOpenWorkWeek,
   closePanelWorkWeek,
   OpenPanelWorkWeek,
 }) => {
+  // const [settingData,setSettingData]=useState<any>({})
   const [weekIndex, setWeekIndex] = useState(0);
   const [items, setItems] = useState([]);
   const { translation } = useLanguage();
@@ -240,14 +243,32 @@ const WeekTable = ({
       ),
     },
   ];
+//   async function getSettingsData(){
+//     let data=await getSettingJson(SETTING_LIST);
+//     return data;
+//   }
+//   useEffect(() => {
+//     const fetchData = async () => {
+//         const data = await getSettingsData();
+//         setSettingData(data);
+//     };
+
+//     fetchData(); 
+// }, []);
+function parseDate(dateString) {
+  const [day, month] = dateString.split('-').map(Number);
+  const currentYear = new Date().getFullYear(); // Use the current year
+  return new Date(currentYear, month - 1, day); // Month is 0-indexed in JS
+}
+
 
   useEffect(() => {
-    const data = appSettings?.WorkWeekData?.find(
+    const data = settingData?.WorkWeekData?.find(
       (item) => item.email === user.email
     );
     if (data) {
       if (
-        formatDate(new Date()) > data.NextWeek[data?.NextWeek?.length - 1]?.date
+        parseDate(formatDate(new Date())) > parseDate(data.NextWeek[data?.NextWeek?.length - 1]?.date)
       ) {
         setWeekData();
       } else {
@@ -257,7 +278,7 @@ const WeekTable = ({
           const newItemsNext = transformDatesToItems(datesNext, selectedOption);
           setItemsNextWeek(newItemsNext);
         } else {
-          if (appSettings?.WorkWeekData?.length) {
+          if (settingData?.WorkWeekData?.length) {
             if (showWWTable && user?.email) {
               // const data = appSettings?.WorkWeekData?.find((item) => item.email === user.email);
 
@@ -306,7 +327,6 @@ const WeekTable = ({
     //   const currentWorkWeekData = appSettings?.WorkWeekData || [];
     //   const updatedSettings = [...currentWorkWeekData, updatedWorkWeekData];
 
-    //   updateSettingData({ ...appSettings, WorkWeekData: updatedSettings });
     //   setAppSettings({ ...appSettings, WorkWeekData: updatedSettings });
 
     // }
@@ -324,7 +344,7 @@ const WeekTable = ({
   function hasCurrentWeekPassed() {
  
     const today = formatDate(new Date());
-    const data = appSettings?.WorkWeekData?.find(
+    const data = settingData?.WorkWeekData?.find(
       (item) => item.email === user.email
     );
   
@@ -499,9 +519,6 @@ const WeekTable = ({
   };
 
   const handleSaveNextWeek = () => {
-    console.log(itemsNextWeek);
-    // updateSettingData({...appSettings,WorkWeekData:[]})
-    // setItemsNextWeek(itemsNextWeek);
     if (!user?.email) {
       console.error("User email is not available");
       return;
@@ -514,7 +531,7 @@ const WeekTable = ({
       Default: selectedOption,
     };
 
-    const currentWorkWeekData = appSettings?.WorkWeekData || [];
+    const currentWorkWeekData = settingData?.WorkWeekData || [];
 
     const existingUserSettingsIndex = currentWorkWeekData.findIndex(
       (data) => data.email === user.email
@@ -527,13 +544,13 @@ const WeekTable = ({
           : data
       );
 
-      updateSettingData({ ...appSettings, WorkWeekData: updatedSettings });
-      setAppSettings({ ...appSettings, WorkWeekData: updatedSettings });
+      updateSettingJson(SETTING_LIST,{ ...settingData, WorkWeekData: updatedSettings });
+      setAppSettings({ ...settingData, WorkWeekData: updatedSettings });
     } else {
       const updatedSettings = [...currentWorkWeekData, updatedWorkWeekData];
 
-      updateSettingData({ ...appSettings, WorkWeekData: updatedSettings });
-      setAppSettings({ ...appSettings, WorkWeekData: updatedSettings });
+      updateSettingJson(SETTING_LIST, { ...settingData, WorkWeekData: updatedSettings });
+      setAppSettings({ ...settingData, WorkWeekData: updatedSettings });
     }
     SweetAlertWorkWeek("success", translation.SettingSaved);
   };

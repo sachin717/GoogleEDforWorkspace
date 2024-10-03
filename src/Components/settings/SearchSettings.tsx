@@ -19,8 +19,6 @@ const SearchSettings = ({
   openPanelSearchFltr,
   setIshowHideModuleOpen,
   OpenEmpInfoAlignModal,
-  OpenPanelBdayAnniImg,
-  OpenPanelClearAlphaFilter,
   openPanelDashboardFeaturePanel,
   openPanelDfltViews,
   openPanelWidthCustm,
@@ -35,20 +33,11 @@ const SearchSettings = ({
   openPanelUserPrtiesLV,
   openPanelUserPrtiesPCV,
   openModalViews,
-  OpenExcludeDomain,
-  openPanelExcldDept,
   openPanel2,
-  openPanelExcldJtitle,
-  openPanelExcldName,
-  OpenExcludeLoc,
-  openPanelExcldCSV,
-  OpenExcludeEmail,
-  OpenExcludeContains,
   OpenAutoLoad,
   openPanelCustomField,
   setTopBarModalVisible,
   setOpenExecutiveAssistantRelationship,
-  OpenFilterBirthAndAniv,
   openPronouns,
   openImportUsers,
   isOpenShowGrp,
@@ -65,7 +54,9 @@ const SearchSettings = ({
   setOpenCustomFunctionPanel,
   setOpenAdditionalManagerSetting,
   openExcludeUserListPanel,
-  setRestrictedPanel
+  setRestrictedPanel,
+  setHideManagerPanel,
+  setHideMobile
 }) => {
   const { translation } = useLanguage();
   const [search, setSearch] = useState("");
@@ -203,13 +194,13 @@ const SearchSettings = ({
       iconName: "Hide3",
       translateKey: "hidemanager",
       label: "Hide manager of specific users",
-      onClick: openPanelHideMngr,
+      onClick: ()=>setHideManagerPanel(true),
     },
     {
       iconName: "Hide3",
       translateKey: "Hidemobile",
       label: "Hide mobile numbers of specific users",
-      onClick: openPanelHideMobNo,
+      onClick: ()=>setHideMobile(true),
     },
     {
       iconName: "Contact",
@@ -368,12 +359,12 @@ const SearchSettings = ({
       translateKey: "importuserspronouns",
       onClick: openPronouns,
     },
-    // {
-    //   iconName: "Lock",
-    //   label: "Restricted access",
-    //   translateKey: "RestrictedAccess",
-    //   onClick: ()=>setRestrictedPanel(true),
-    // },
+    {
+      iconName: "Lock",
+      label: "Restricted access",
+      translateKey: "RestrictedAccess",
+      onClick: ()=>setRestrictedPanel(true),
+    },
     {
       iconName: "Import",
       label: "Import users",
@@ -408,7 +399,7 @@ const SearchSettings = ({
 
   const filterList = (list: any, searchTerm: string) => {
     return list.filter((item: any) =>
-      item.label.toLowerCase().includes(searchTerm.toLowerCase())
+      item.label.toLowerCase().includes(searchTerm.trim().toLowerCase())
     );
   };
 
@@ -430,7 +421,7 @@ const SearchSettings = ({
         }}
       >
         <SearchBox
-          placeholder="Search setting"
+          placeholder="Search settings..."
           iconProps={{ iconName: "Search" }}
           styles={{ root: { width: "45%" } }}
           value={search}
@@ -452,7 +443,8 @@ const SearchSettings = ({
             onClick={() => {
               setShowOrgChart(false);
               setShowHomePage(true);
-              filterByLetter("ALL");
+              document.getElementById(`letter-ALL`).click();
+              // filterByLetter('ALL');
             }}
           />
         </div>
@@ -461,7 +453,7 @@ const SearchSettings = ({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr 1fr",
+          gridTemplateColumns: "repeat(4, 1fr)",
           gap: "5px",
         }}
       >

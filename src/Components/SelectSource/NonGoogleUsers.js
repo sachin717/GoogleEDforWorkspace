@@ -9,6 +9,7 @@ import GridCard from "./GridCard";
 import "./Edp.scss";
 import { useFields } from "../../context/store";
 import { removeDuplicatesFromObject } from "../Helpers/HelperFunctions";
+import { MessageBar, MessageBarType } from "office-ui-fabric-react";
 const NewDocumentWrapper = styled.div`
   ${style}
 `;
@@ -34,6 +35,7 @@ const iconButtonStyles = {
 };
 let customListUnique = null;
 const NonGoogleUsers = (props) => {
+ 
   const { appSettings } = useSttings();
   const [optioncustomfields, setoptioncustomfields] = React.useState([]);
   const { setDepDropDown } = useFields();
@@ -54,7 +56,7 @@ const NonGoogleUsers = (props) => {
   const result = [];
 
   function convertToArrayOfObjects(UserArray) {
-    UserArray.forEach((item) => {
+    UserArray?.forEach((item) => {
       const arrayObject = [];
       for (const key in item) {
         if (item.hasOwnProperty(key)) {
@@ -67,10 +69,10 @@ const NonGoogleUsers = (props) => {
     });
   }
   convertToArrayOfObjects(props.employees);
-  userGridView.forEach((item) => {
+  userGridView?.forEach((item) => {
     if (!item.checkbox) {
-      result.forEach((arr) => {
-        arr.forEach((obj) => {
+      result?.forEach((arr) => {
+        arr?.forEach((obj) => {
           if (obj[item.name]) {
             delete obj[item.name];
           }
@@ -89,32 +91,50 @@ const NonGoogleUsers = (props) => {
         user={user}
         data={props.employees}
         settingData={props.settingData}
-        blobCall={props.blobCall}
         isModalOpenTrans={Openmodal}
       />
     )
     setIsModalOpen(true);
   };
-  React.useEffect(() => {
-    const ListData = async () => {
-      try {
-        const list = await getschemasfields();
-        const fieldNames = list.map((item) => ({
-          key: item.fieldName,
-          text: item.displayname,
-        }));
+  // React.useEffect(() => {
+  //   const ListData = async () => {
+  //     try {
+  //       const list = await getschemasfields();
+  //       const fieldNames = list?.map((item) => ({
+  //         key: item.fieldName,
+  //         text: item.displayname,
+  //       }));
 
-        setoptioncustomfields(fieldNames);
-      } catch (error) {
-        console.error("Error fetching list data:", error);
-      }
-    };
-    ListData();
-  }, []);
+  //       setoptioncustomfields(fieldNames);
+  //     } catch (error) {
+  //       console.error("Error fetching list data:", error);
+  //     }
+  //   };
+  //   ListData();
+  // }, []);
+  const messageBarInfoStyles = {
+    root: {
+      ".ms-MessageBar-icon": {
+        color: "#333",
+      },
+      backgroundColor: "rgb(243, 242, 241)",
+    },
+  };
 
   return (
     <>
       <NewDocumentWrapper>
+     { (props.employees?.length == 0) ? (
+            <MessageBar
+              messageBarType={MessageBarType.info}
+              isMultiline={false}
+              styles={messageBarInfoStyles}
+              dismissButtonAriaLabel={"Close"}
+              style={{ justifyContent: "center" }}
+            >
+              {"No Records Found"}
+            </MessageBar>
+          ):"" }
         <Modal
           isOpen={isModalOpen}
           onDismiss={hideModal}
@@ -148,7 +168,7 @@ const NonGoogleUsers = (props) => {
             flexWrap: "wrap",
           }}
         >
-          {props.employees.map((item, index) => {
+          {props?.employees?.map((item, index) => {
             var diffStyle = {
               backgroundImage: "url('" + item.image + "')",
               cursor: "pointer",
@@ -178,7 +198,7 @@ const NonGoogleUsers = (props) => {
                   ISStartLastname={variable}
                   openPanelForUser={openPanelForUser}
                 />
-                {userGridView.forEach((item) => {
+                {/* {userGridView.forEach((item) => {
                   if (item.nameAPI) {
                     const match = optioncustomfields.find(
                       (entry) => entry.key === item.nameAPI
@@ -188,7 +208,7 @@ const NonGoogleUsers = (props) => {
                       customListUnique = new Set(customList);
                     }
                   }
-                })}
+                })} */}
               </div>
             );
           })}

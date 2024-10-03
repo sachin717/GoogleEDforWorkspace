@@ -6,8 +6,6 @@ import DefaultImage from "../assets/images/DefaultImg1.png";
 import DirectoryImage from "../assets/images/directory-logo.png";
 import { style } from "./styles";
 import useStore, { useSttings } from "./store";
-import { BlobServiceClient } from "@azure/storage-blob";
-import { Buffer } from "buffer/";
 import SettingsPage from "../Pages/SettingsPage";
 import Home from "../Pages/Home";
 import styles from "../SCSS/Ed.module.scss";
@@ -23,7 +21,11 @@ import {
   removeDuplicatesFromObject,
   removeFavicon,
   customFunctionFilter,
-  updateSettingData,
+  getRestrictedAccess,
+  getCurrentUser,
+  applyRestrictions,
+  isUserAdminCheck,
+  encryptData,
 } from "../Helpers/HelperFunctions";
 
 import { usePDF } from "react-to-pdf";
@@ -34,9 +36,20 @@ import { LanguageProvider, useLanguage } from "../../Language/LanguageContext";
 import ExportToCsv from "../Pages/ExportToCsv";
 import BirthdayAndAnniversary from "../BithdayAndAnniversary";
 import Dashboard from "../Dashboard";
-import { useFields } from "../../context/store";
-import { employees } from "../SmapleEmployees";
-import ImportUsers from "./ImportUsers";
+import { useFields, useLists } from "../../context/store";
+import {
+  getSettingJson,
+  IMAGES_LIST,
+  SETTING_LIST,
+  updateSettingJson,
+  USER_LIST,
+} from "../../api/storage";
+import {
+  defaultImagesList,
+  defaultSettingList,
+  defaultUserList,
+} from "../../api/defaultSettings";
+import { ContextProvider } from "../../context/Context";
 
 const Container = styled.div`
   ${style}
@@ -44,18 +57,20 @@ const Container = styled.div`
 
 let _customgrps = ["Groups"];
 let resultgrpCf = [];
-// let resultgrpCf1=[];
-var _arraygrpcf = [],
-  _arraygrpcf1 = [];
-var CLIENT_ID =
-  "236717214097-jmdc31nh8d2h5mim0it1gbdvrja94cg2.apps.googleusercontent.com";
-var API_KEY = "AIzaSyARbVgWR0mkXN7Ntozoumstt2SNzLcCdqE";
+var _arraygrpcf1 = [];
+
+// var CLIENT_ID ="1029246985871-0t5lk1e8s1utemuuo57j3ic728mp1f1t.apps.googleusercontent.com";
+// var API_KEY = "AIzaSyAoolZJ_iRVEAVKwZ9UBGbtvfI1g7bRMkU";
+
+const CLIENT_ID = '92371512736-24kr56vp9qnp6tm920ln9lj0tgidecin.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyCKzyduaRJJdR2vhNUzoAI3rkm_aSeYHTg';
+
+ 
 const DISCOVERY_DOCS = [
-  "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
   "https://admin.googleapis.com/$discovery/rest?version=directory_v1",
 ];
 const scopes =
-  "https://www.googleapis.com/auth/admin.directory.group.readonly https://www.googleapis.com/auth/admin.directory.user https://www.googleapis.com/auth/admin.directory.group.member.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/admin.directory.user.readonly https://www.googleapis.com/auth/admin.directory.user.security";
+  "https://www.googleapis.com/auth/admin.directory.group.readonly https://www.googleapis.com/auth/admin.directory.user https://www.googleapis.com/auth/admin.directory.group.member.readonly https://www.googleapis.com/auth/admin.directory.user.readonly https://www.googleapis.com/auth/admin.directory.user.security https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/devstorage.full_control https://www.googleapis.com/auth/devstorage.read_write https://www.googleapis.com/auth/gmail.send";
 
 let allUsers = [];
 var allletter = "ALL";
@@ -71,12 +86,16 @@ var _excspecuser = [];
 var _excspecuserss = "";
 var arrmanager = [];
 var _excmgruserss = "";
-var DefaultView = "";
+let selectedView="";
+let NonMUsers=[];
 
 const GoogleEmployeeDirectory = () => {
+  
   // ---------------STATES----------------
   const [isBirthAndAnivModalOpen, setBirthAndAnivModalOpen] = useState(false);
   const [NonM365, setNonM365] = useState([]);
+  const [settingData, setSettingData] = useState({});
+  const [isClickClearFilter, setClickClearFilter] = useState(false);
   const [isGrid, setisGrid] = useState(false);
   const [isTile, setisTile] = useState(false);
   const [isImportedUser, setImpotedUser] = useState(false);
@@ -84,6 +103,7 @@ const GoogleEmployeeDirectory = () => {
   const [isList, setisList] = useState(false);
   const [recordsToload, setRecordsToload] = useState(25);
   const [UserArray, setUserArray] = useState([]);
+  const [currentUserAdmin, setCurrentUserAdmin] = useState(false);
   const [showDashboard, setshowDashboard] = useState(false);
   const [showProgress, setshowProgress] = useState(false);
   const [groupsOptions, setGroupsOptions] = useState([]);
@@ -101,14 +121,12 @@ const GoogleEmployeeDirectory = () => {
     changeUserArray,
     changeCheckboxesCheckedListView,
     checkboxesCheckedListView,
-    searchFilters,
     changeGridWidth,
     checkboxesChecked,
     changeCheckboxesChecked,
     changeUserGridView,
     userGridView,
     changeExcludeByDepartment,
-    changeSearchFilters,
     view,
     setView,
   } = useStore();
@@ -118,11 +136,12 @@ const GoogleEmployeeDirectory = () => {
     setJobTitles,
     setDepDropDown,
     setJobDropDown,
-    setLocationDropDown,
     setExcludeOptionsForDomain,
     setEmails,
+    setCommandBarItems,
   } = useFields();
   const { appSettings, setAppSettings } = useSttings();
+  const { usersList, setUsersList, setImagesList, setSettingList } = useLists();
 
   useEffect(() => {
     // Add event listener on mount
@@ -136,15 +155,14 @@ const GoogleEmployeeDirectory = () => {
         };
 
         setView(appSettings?.defaultMobileView);
-
-        // if (Object.keys(parsedData).length > 0) {
-        //   updateSettingData(temp);
-        // }
+      
       } else {
         setView(appSettings.DefaultView);
-        console.log("Not in mobile view. Function not called.");
+        selectedView=appSettings?.DefaultView
+        // console.log("Not in mobile view. Function not called.");
       }
     }
+ 
     // saveDefaultMobileView();mobile
 
     // Clean up event listener on unmount
@@ -158,14 +176,17 @@ const GoogleEmployeeDirectory = () => {
       setisGrid(true);
       setisList(false);
       setisTile(false);
+      setImpotedUser(false);
     } else if (view == "List") {
       setisGrid(false);
       setisList(true);
       setisTile(false);
+      setImpotedUser(false);
     } else if (view == "Tile") {
       setisGrid(false);
       setisList(false);
       setisTile(true);
+      setImpotedUser(false);
     } else if (view == "NonM365") {
       setisGrid(false);
       setisList(false);
@@ -185,9 +206,9 @@ const GoogleEmployeeDirectory = () => {
       .getAuthInstance()
       .signIn()
       .then(() => {
-        blobCall();
         setShowLoginScreen(false);
         setIsUserSignedIn(true);
+        blobCall();
       })
       .catch(() => {
         setShowLoginScreen(true);
@@ -204,7 +225,6 @@ const GoogleEmployeeDirectory = () => {
         setIsUserSignedIn(false);
       });
   };
-  
 
   const signInWithGoogle = () => {
     gapi.load("client:auth2", async () => {
@@ -252,10 +272,10 @@ const GoogleEmployeeDirectory = () => {
 
   // ---------------------FUNCTIONS---------------------
   const fetchUsersWithFilters = async (filters, sortby, pageToken) => {
-    console.log("Filters:", filters);
+    // console.log("Filters:", filters);
 
     if (!filters || filters?.length === 0) {
-      console.warn("No filters provided.");
+      // console.warn("No filters provided.");
       return;
     }
 
@@ -275,7 +295,7 @@ const GoogleEmployeeDirectory = () => {
     };
 
     const query = constructQuery(filters);
-    console.log("Query:", query);
+    // console.log("Query:", query);
 
     try {
       const response = await gapi.client.directory.users.list({
@@ -287,10 +307,10 @@ const GoogleEmployeeDirectory = () => {
         pageToken: pageToken,
       });
 
-      console.log("Users fetched:", response);
+      // console.log("Users fetched:", response);
       return response;
     } catch (error) {
-      console.error("Error fetching users:", error);
+      // console.error("Error fetching users:", error);
     }
   };
 
@@ -360,79 +380,88 @@ const GoogleEmployeeDirectory = () => {
     return res;
   }
   function executeOncePerDay(callback) {
-    
     const today = new Date().toDateString();
-  
-   
-    const lastExecutionDate = localStorage.getItem('lastExecutionDate');
-  
-  
+
+    const lastExecutionDate = localStorage.getItem("lastExecutionDate");
+
     if (lastExecutionDate !== today) {
-      
       callback();
-  
-   
-      localStorage.setItem('lastExecutionDate', today);
+
+      localStorage.setItem("lastExecutionDate", today);
     }
   }
-  
-
-
 
   async function blobCall() {
+    // updateSettingJson(SETTING_LIST, {});
+    // updateSettingJson(IMAGES_LIST, {});
+    // updateSettingJson(USER_LIST, {});
+    // return;
     setshowProgress(true);
-    var domain = gapi.auth2
-      .getAuthInstance()
-      .currentUser.le.wt.cu.split("@")[1];
-    var _domain = domain.replace(/\./g, "_");
-    var storagedetails =
-      '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-      _domain +
-      '.json"}]';
-    var mappedcustomcol = JSON.parse(storagedetails);
-    const sasToken =
-      "sv=2022-11-02&ss=b&srt=sco&sp=rwdlaciytfx&se=2028-02-28T12:24:45Z&st=2024-02-29T04:24:45Z&spr=https&sig=FrbdvHpW929m3xVikmm5HiBL6Q00lHjk0a5CPuw1H2U%3D";
-    const blobStorageClient = new BlobServiceClient(
-      // this is the blob endpoint of your storage acccount. Available from the portal
-      // they follow this format: <accountname>.blob.core.windows.net for Azure global
-      // the endpoints may be slightly different from national clouds like US Gov or Azure China
-      "https://" +
-        mappedcustomcol[0].storageaccount +
-        ".blob.core.windows.net?" +
-        sasToken,
-      null
-      //new InteractiveBrowserCredential(signInOptions)
-    );
-    var containerClient = blobStorageClient.getContainerClient(
-      mappedcustomcol[0].containername
-    );
-    const blobClient = containerClient.getBlobClient(
-      mappedcustomcol[0].blobfilename
-    );
-    const exists = await blobClient.exists();
-    // console.log(getCurrentUser(), "current user");
-    if (exists) {
-      const downloadBlockBlobResponse = await blobClient.download();
-      const downloaded = await blobToString(
-        await downloadBlockBlobResponse.blobBody
-      );
-      // console.log("Downloaded blob content", downloaded);
+    const settingJson = await getSettingJson(SETTING_LIST);
+    const imagesJson = await getSettingJson(IMAGES_LIST);
+    const usersJson = await getSettingJson(USER_LIST);
 
-      // const jsonData = downloadBlockBlobResponse.toString();
-      // Parse the JSON data
-      //const buf = new ArrayBuffer(downloaded.maxByteLength);
-      const decoder = new TextDecoder();
-      const str = decoder.decode(downloaded);
-      console.log("Setting List ->", JSON.parse(str));
-      setAppSettings(JSON.parse(str));
+    console.log("usersJson.........", usersJson)
 
-      parsedData = JSON.parse(str);
-      // console.log(decryptData(parsedData.Users, "decripted data"));
+    // console.log("settingJson", settingJson);
+    // console.log("imagesJson", imagesJson);
+    // console.log("usersJson", usersJson);
 
-      // updateSettingData(a)
-      // setAppSettings(parsedData);
-      setAdditionalManagers(JSON.parse(str).AdditionalManagerData);
-      setAssistant(JSON.parse(str).AssistantData);
+    // if (Object.keys(settingJson)?.length < 1) {
+    //   updateSettingJson(SETTING_LIST, defaultSettingList);
+    //   setAppSettings(defaultSettingList);
+    //   setSettingList(defaultSettingList)
+    // }
+    // if (Object.keys(imagesJson)?.length < 1) {
+    //   updateSettingJson(IMAGES_LIST, defaultImagesList);
+    //   return;
+    // }
+    // if (Object.keys(usersJson).length < 1) {
+    //   updateSettingJson(USER_LIST, defaultUserList);
+    //   return;
+    // }
+
+    if (Object.keys(imagesJson).length) {
+      setImagesList(imagesJson);
+    }else{
+      updateSettingJson(IMAGES_LIST, defaultImagesList);
+      setImagesList(defaultImagesList);
+    }
+
+    if (Object?.keys(usersJson)?.length) {
+      setUsersList(usersJson);
+
+    }else{
+      updateSettingJson(USER_LIST, encryptData(JSON.stringify(defaultUserList)));
+      setUsersList(defaultUserList)
+    }
+
+    if (Object.keys(settingJson).length) {
+     
+      setAppSettings(settingJson);
+      setSettingList(settingJson);
+      
+    }else{
+      updateSettingJson(SETTING_LIST, defaultSettingList);
+      setAppSettings(defaultSettingList)
+    }
+
+    if (Object.keys(settingJson)?.length) {
+      parsedData = settingJson;
+      setSettingData(settingJson);
+      let data= {ShowOrgChart:parsedData.ShowOrgChart,IsExportToCsv:parsedData.IsExportToCsv,showBirthAniv:parsedData.showBirthAniv, showDashboard:parsedData.showDashboard, AllowUserToPrintPDF:parsedData.AllowUserToPrintPDF};
+      setCommandBarItems(data)
+      setAdditionalManagers(settingJson.AdditionalManagerData);
+      setAssistant(settingJson.AssistantData);
+
+      const admins = settingJson.RolesAndPermisstions.map((x)=>x.email);
+      setAdmins(admins ?? []);
+
+      const hideManagerEmail = settingJson.UsersWithHiddenManager.map(x=>x.email);
+      const hidePhoneEmail = settingJson.UserWithHiddenMobileNumber.map(x=>x.email);
+
+      setUsersWithHiddenManager(hideManagerEmail);
+      setUsersWithHiddenPhoneNo(hidePhoneEmail);
 
       setRecordsToload(parsedData?.records_to_load);
       if (parsedData?.Favicon?.isFavIconShow) {
@@ -451,9 +480,7 @@ const GoogleEmployeeDirectory = () => {
         changeCheckboxesCheckedListView(updatedCheckboxes);
       } else {
         changeCheckboxesCheckedListView(checkboxesCheckedListView);
-        console.log(
-          "ListViewPrope property not found in the downloaded object"
-        );
+     
       }
       if (parsedData.ProfileViewPrope) {
         const updatedCheckboxesProfile = { ...checkboxesChecked };
@@ -465,7 +492,7 @@ const GoogleEmployeeDirectory = () => {
         changeCheckboxesChecked(updatedCheckboxesProfile);
       } else {
         changeCheckboxesChecked(checkboxesCheckedListView);
-        console.log("profile property not found in the downloaded object");
+        
       }
       if (parsedData.sortby) {
         sortby =
@@ -491,7 +518,7 @@ const GoogleEmployeeDirectory = () => {
 
         changeUserGridView(updatedPeople);
       } else {
-        console.log("Grid  property not found in the downloaded object");
+        
         changeUserGridView(userGridView);
       }
 
@@ -519,7 +546,7 @@ const GoogleEmployeeDirectory = () => {
         setisTile(false);
         setImpotedUser(true);
       }
-      let availableViews = filterTrueValues(parsedData?.hideShowViews);
+      let availableViews = filterTrueValues(parsedData?.hideShowViews ?? {});
       let selectingVisibleView = getFirstAvailableView(availableViews);
       // setshowDashboard(parsedData?.showDashboard)
       if (
@@ -529,6 +556,7 @@ const GoogleEmployeeDirectory = () => {
         )
       ) {
         setView(parsedData?.defaultMobileView ?? "Grid");
+        // selectedView=parsedData?.defaultMobileView;
       } else if (
         window.innerWidth < 768 &&
         parsedData?.defaultMobileView != selectingVisibleView
@@ -541,174 +569,127 @@ const GoogleEmployeeDirectory = () => {
       if (parsedData.sortby) {
         changeVariable(parsedData.sortby);
       }
-    } else {
-      const jsonData = {
-        sortby: "LastName",
-        DefaultView: "Grid",
-        gridWidth: "150",
-        IsAdmin:
-          gapi.auth2
-            .getAuthInstance()
-            .currentUser.le.wt.Ad.replace(/,/g, "#%#")
-            .replace(/-/g, "#%%#") +
-          "-" +
-          gapi.auth2.getAuthInstance().currentUser.le.wt.cu,
-        IsSpecificUser: "",
-        HideManager: "",
-        GridViewPrope: userGridView,
-        ProfileViewPrope: checkboxesChecked,
-        SearchFiltersPrope: searchFilters,
-        records_to_load: 25,
-        Favicon: { isFavIconShow: false, url: "" },
-        IsExportToCsv: false,
-        CustomHomePageUrl: {
-          homeCustomUrl: "",
-          homeCustomUrlIconName: "",
-          CustomHomePageLinkActive: false,
-        },
-        GroupsOn: "off",
-        profileIconName: "",
-        ExcludedByContains: [],
-        ExcludedByEmail: [],
-        ExcludeByName: [],
-        BrandLogo: "",
-      };
-      setisGrid(true);
-      setisList(false);
-      setisTile(false);
-      setImpotedUser(false);
-      setView("Grid");
-      changeCheckboxesChecked(checkboxesCheckedListView);
-      changeUserGridView(userGridView);
-      changeCheckboxesCheckedListView(checkboxesCheckedListView);
-      changeSearchFilters(searchFilters);
-      // const { buffer } = event.file;
-      parsedData = JSON.stringify(jsonData);
-      await containerClient
-        .getBlockBlobClient(mappedcustomcol[0].blobfilename)
-        .upload(parsedData, Buffer.byteLength(parsedData));
     }
-    DefaultView = parsedData.DefaultView;
-    sortby =
-      parsedData.sortby == "FirstName"
-        ? "givenName"
-        : parsedData.sortby == "familyName"
-        ? "familyName"
-        : "givenName";
-    _gridWidth = parsedData.gridWidth;
+    // sortby =
+    //   parsedData.sortby == "FirstName"
+    //     ? "givenName"
+    //     : parsedData.sortby == "familyName"
+    //     ? "familyName"
+    //     : "givenName";
+    // _gridWidth = parsedData.gridWidth;
     _grpsOn = parsedData.GroupsOn;
-    var empisadmin = parsedData.IsAdmin;
-    if (empisadmin != "" && empisadmin != undefined) {
-      if (empisadmin.indexOf(";") > -1) {
-        var _anthsplit = empisadmin.split(";");
-        for (var y = 0; y < _anthsplit.length; y++) {
-          var _frst = _anthsplit[y].split("-")[0];
+    // var empisadmin = parsedData.IsAdmin;
+    // if (empisadmin != "" && empisadmin != undefined) {
+    //   if (empisadmin.indexOf(";") > -1) {
+    //     var _anthsplit = empisadmin.split(";");
+    //     for (var y = 0; y < _anthsplit.length; y++) {
+    //       var _frst = _anthsplit[y].split("-")[0];
 
-          if (
-            _frst.replace("#%#", ",").replace("#%%#", "-") ==
-            gapi.auth2.getAuthInstance().currentUser.le.wt.Ad
-          ) {
-            isCurrentUserAdmin = true;
-          }
-        }
-      } else {
-        // if()
-        /*  IsAdmin:
-          gapi.auth2
-            .getAuthInstance()
-            .currentUser.le.wt.Ad.replace(/,/g, "#%#")
-            .replace(/-/g, "#%%#") +
-          "-" +
-          gapi.auth2.getAuthInstance().currentUser.le.wt.cu,
-        IsSpecificUser: "",
-        HideManager: "",
-        GroupsOn:"off" */
-        if (empisadmin.indexOf(",") > -1) {
-          // var usrdn=empisadmin.split(',');
+    //       if (
+    //         _frst.replace("#%#", ",").replace("#%%#", "-") ==
+    //         gapi.auth2.getAuthInstance().currentUser.le.wt.Ad
+    //       ) {
+    //         isCurrentUserAdmin = true;
+    //       }
+    //     }
+    //   } else {
+    //     // if()
+    //     /*  IsAdmin:
+    //       gapi.auth2
+    //         .getAuthInstance()
+    //         .currentUser.le.wt.Ad.replace(/,/g, "#%#")
+    //         .replace(/-/g, "#%%#") +
+    //       "-" +
+    //       gapi.auth2.getAuthInstance().currentUser.le.wt.cu,
+    //     IsSpecificUser: "",
+    //     HideManager: "",
+    //     GroupsOn:"off" */
+    //     if (empisadmin.indexOf(",") > -1) {
+    //       // var usrdn=empisadmin.split(',');
 
-          empisadmin = empisadmin.replace(/,/g, ";");
-          if (empisadmin.indexOf(";") > -1) {
-            var _anthsplit = empisadmin.split(";");
-            for (var y = 0; y < _anthsplit.length; y++) {
-              var _frst = _anthsplit[y].split("-")[0];
+    //       empisadmin = empisadmin.replace(/,/g, ";");
+    //       if (empisadmin.indexOf(";") > -1) {
+    //         var _anthsplit = empisadmin.split(";");
+    //         for (var y = 0; y < _anthsplit.length; y++) {
+    //           var _frst = _anthsplit[y].split("-")[0];
 
-              if (
-                _frst.replace("#%#", ",").replace("#%%#", "-") ==
-                gapi.auth2.getAuthInstance().currentUser.le.wt.Ad
-              ) {
-                isCurrentUserAdmin = true;
-              }
-            }
-          }
-        } else {
-          var _frst = empisadmin.split("-")[0];
+    //           if (
+    //             _frst.replace("#%#", ",").replace("#%%#", "-") ==
+    //             gapi.auth2.getAuthInstance().currentUser.le.wt.Ad
+    //           ) {
+    //             isCurrentUserAdmin = true;
+    //           }
+    //         }
+    //       }
+    //     } else {
+    //       var _frst = empisadmin.split("-")[0];
 
-          if (
-            _frst.replace("#%#", ",").replace("#%%#", "-") ==
-            gapi.auth2.getAuthInstance().currentUser.le.wt.Ad
-          ) {
-            isCurrentUserAdmin = true;
-          }
-        }
-      }
-    }
-    specifieduser = parsedData.IsSpecificUser;
-    if (specifieduser != "" && specifieduser != undefined) {
-      if (specifieduser.indexOf(";") > -1) {
-        specifieduser = specifieduser
-          .replace(/#%#/g, ",")
-          .replace(/#%%#/g, "-")
-          .replace(/[']/g, "%27%27");
-      } else {
-        if (specifieduser.indexOf(",") > -1) {
-          specifieduser = specifieduser.replace(/,/g, ";");
-        } else {
-          specifieduser = specifieduser
-            .replace(/#%#/g, ",")
-            .replace(/#%%#/g, "-")
-            .replace(/[']/g, "%27%27");
-        }
-      }
-      if (specifieduser != null) {
-        var excspecuser = specifieduser.replace(/<[^>]+>/g, "");
-        var _excspecusers = excspecuser.split(";");
-        for (var dropclmn = 0; dropclmn < _excspecusers.length; dropclmn++) {
-          if (dropclmn > 0 && dropclmn <= _excspecusers.length - 1) {
-            _excspecuserss += ";";
-          }
-          _excspecuserss += _excspecusers[dropclmn].split("!!")[0];
-        }
-        _excspecuser = _excspecuserss.split(";");
-      }
-    }
-    specifiedmanager = parsedData.HideManager;
-    if (specifiedmanager != "" && specifiedmanager != undefined) {
-      if (specifiedmanager.indexOf(";") > -1) {
-        specifiedmanager = specifiedmanager
-          .replace(/#%#/g, ",")
-          .replace(/#%%#/g, "-")
-          .replace(/[']/g, "%27%27");
-      } else {
-        if (specifiedmanager.indexOf(",") > -1) {
-          specifiedmanager = specifiedmanager.replace(/,/g, ";");
-        } else {
-          specifiedmanager = specifiedmanager
-            .replace(/#%#/g, ",")
-            .replace(/#%%#/g, "-")
-            .replace(/[']/g, "%27%27");
-        }
-      }
-      if (specifiedmanager != "") {
-        var _excmgrusers = specifiedmanager.split(";");
-        for (var dropclmn = 0; dropclmn < _excmgrusers.length; dropclmn++) {
-          if (dropclmn > 0 && dropclmn <= _excmgrusers.length - 1) {
-            _excmgruserss += ";";
-          }
-          _excmgruserss += _excmgrusers[dropclmn].split("!!")[1];
-        }
-        arrmanager = _excmgruserss.split(";");
-      }
-    }
+    //       if (
+    //         _frst.replace("#%#", ",").replace("#%%#", "-") ==
+    //         gapi.auth2.getAuthInstance().currentUser.le.wt.Ad
+    //       ) {
+    //         isCurrentUserAdmin = true;
+    //       }
+    //     }
+    //   }
+    // }
+    // specifieduser = parsedData.IsSpecificUser;
+    // if (specifieduser != "" && specifieduser != undefined) {
+    //   if (specifieduser.indexOf(";") > -1) {
+    //     specifieduser = specifieduser
+    //       .replace(/#%#/g, ",")
+    //       .replace(/#%%#/g, "-")
+    //       .replace(/[']/g, "%27%27");
+    //   } else {
+    //     if (specifieduser.indexOf(",") > -1) {
+    //       specifieduser = specifieduser.replace(/,/g, ";");
+    //     } else {
+    //       specifieduser = specifieduser
+    //         .replace(/#%#/g, ",")
+    //         .replace(/#%%#/g, "-")
+    //         .replace(/[']/g, "%27%27");
+    //     }
+    //   }
+    //   if (specifieduser != null) {
+    //     var excspecuser = specifieduser.replace(/<[^>]+>/g, "");
+    //     var _excspecusers = excspecuser.split(";");
+    //     for (var dropclmn = 0; dropclmn < _excspecusers.length; dropclmn++) {
+    //       if (dropclmn > 0 && dropclmn <= _excspecusers.length - 1) {
+    //         _excspecuserss += ";";
+    //       }
+    //       _excspecuserss += _excspecusers[dropclmn].split("!!")[0];
+    //     }
+    //     _excspecuser = _excspecuserss.split(";");
+    //   }
+    // }
+    // specifiedmanager = parsedData.HideManager;
+    // if (specifiedmanager != "" && specifiedmanager != undefined) {
+    //   if (specifiedmanager.indexOf(";") > -1) {
+    //     specifiedmanager = specifiedmanager
+    //       .replace(/#%#/g, ",")
+    //       .replace(/#%%#/g, "-")
+    //       .replace(/[']/g, "%27%27");
+    //   } else {
+    //     if (specifiedmanager.indexOf(",") > -1) {
+    //       specifiedmanager = specifiedmanager.replace(/,/g, ";");
+    //     } else {
+    //       specifiedmanager = specifiedmanager
+    //         .replace(/#%#/g, ",")
+    //         .replace(/#%%#/g, "-")
+    //         .replace(/[']/g, "%27%27");
+    //     }
+    //   }
+    //   if (specifiedmanager != "") {
+    //     var _excmgrusers = specifiedmanager.split(";");
+    //     for (var dropclmn = 0; dropclmn < _excmgrusers.length; dropclmn++) {
+    //       if (dropclmn > 0 && dropclmn <= _excmgrusers.length - 1) {
+    //         _excmgruserss += ";";
+    //       }
+    //       _excmgruserss += _excmgrusers[dropclmn].split("!!")[1];
+    //     }
+    //     arrmanager = _excmgruserss.split(";");
+    //   }
+    // }
     if (_grpsOn) {
       getAllUsersGrpInOrg().then((groups) => {
         //console.log(groups);
@@ -740,17 +721,6 @@ const GoogleEmployeeDirectory = () => {
     } while (pageToken);
 
     return staffList;
-  }
-
-  async function blobToString(blob) {
-    const fileReader = new FileReader();
-    return new Promise((resolve, reject) => {
-      fileReader.onloadend = (ev) => {
-        resolve(ev.target.result);
-      };
-      fileReader.onerror = reject;
-      fileReader.readAsArrayBuffer(blob);
-    });
   }
 
   const filterByLetter = (Letter) => {
@@ -868,13 +838,18 @@ const GoogleEmployeeDirectory = () => {
     }
   }
 
-  const listFiles = () => {
-    gapi.client.load("admin", "directory_v1", () => {});
+  const listFiles = async () => {
+    // gapi.client.load("admin", "directory_v1", () => {});
     let additionManagerData = [];
+    let allData = [];
     let AssistantData = [];
+    const usersJson = await getSettingJson(USER_LIST);
+    setUsersList(usersJson);
+    let customFunctionUser=[];
+    
     getAllUsersInOrg().then((data) => {
       setUnFormatedUserData(data);
-      console.log("getAllUsersInOrg...................", data);
+      // console.log("getAllUsersInOrg...................", data);
       changeUserData(data);
       var mappedfields =
         '[{"ExistingList":"About Me","ExternalList":"About_Me"},{"ExistingList":"School","ExternalList":"CF1"},{"ExistingList":"Date of Birth","ExternalList":"DOB"},{"ExistingList":"Date of Join","ExternalList":"DOJ"},{"ExistingList":"Skills","ExternalList":"Skills"},{"ExistingList":"Projects","ExternalList":"Projects"},{"ExistingList":"Hobbies","ExternalList":"Hobbies"}]';
@@ -998,18 +973,19 @@ const GoogleEmployeeDirectory = () => {
             mappedfields: mappedfields,
             AdditionalManager: additionManagerData,
             AssistantData: AssistantData,
-            isAdmin:user.isAdmin,
+            isAdmin: user.isAdmin,
           };
           additionManagerData = [];
           AssistantData = [];
 
           return xx;
         });
-      
-        const customFunctionUser = customFunctionFilter(
-          staffMember,
-          parsedData
-        );
+        let currentUser = getCurrentUser()?.cu;
+        let admin=isUserAdminCheck(staffMember,currentUser);
+        console.log("staffMember =>", staffMember);
+        setCurrentUserAdmin(admin);
+        setAppSettings({...parsedData,isCurrentUserAdmin:admin});
+        
 
         changeUserArray(staffMember);
         setAllUsers(staffMember);
@@ -1019,28 +995,52 @@ const GoogleEmployeeDirectory = () => {
           label: user.email.split("@")[1],
         }));
 
-        console.log("staffMember................", staffMember);
+        
 
         const userEmails = staffMember.map((user) => ({
           key: user.email,
           text: user.email,
         }));
 
-        const userDeps = staffMember.map((x)=>({value:x.department, label:x.department}));
-        let settingListDeps = parsedData.FilterAttribute.departments.filter((x)=>{
-          if(x.Active){
-            return x;
-          }
-        }).map((x)=>({label:x.Department, value:x.Department}));
+        const userDeps = staffMember.map((x) => ({
+          value: x.department,
+          label: x.department,
+        }));
+        let settingListDeps = parsedData?.FilterAttribute?.departments
+          ?.filter((x) => {
+            if (x.Active) {
+              return x;
+            }
+          })
+          .map((x) => ({ label: x.Department, value: x.Department }));
 
-        const userJobTitles = staffMember.map((x)=>({value:x.job, label:x.job}));
-        const settingListJobs = parsedData.FilterAttribute?.jobTitles.filter((x)=>x.Active == true).map((x)=>({value:x.JobTitle, label:x.JobTitle}));
+        const userJobTitles = staffMember.map((x) => ({
+          value: x.job,
+          label: x.job,
+        }));
+        const settingListJobs = parsedData?.FilterAttribute?.jobTitles
+          ?.filter((x) => x.Active == true)
+          .map((x) => ({ value: x.JobTitle, label: x.JobTitle }));
 
-        const uniqueJobs = removeDuplicatesFromObject([...userJobTitles, ...settingListJobs],"value");
-        const uniqueDep = removeDuplicatesFromObject([...userDeps, ...settingListDeps],"value");
+        const SLJ = settingListJobs ?? [];
+        const SLD = settingListDeps ?? [];
 
-        setJobDropDown(uniqueJobs)
-        setDepDropDown(uniqueDep);
+        const uniqueJobs = removeDuplicatesFromObject(
+          [...userJobTitles, ...SLJ],
+          "value"
+        );
+        const uniqueDep = removeDuplicatesFromObject(
+          [...userDeps, ...SLD],
+          "value"
+        );
+
+        setJobDropDown(uniqueJobs);
+        if(view=="NonM365"){
+
+        }else{
+
+          setDepDropDown(uniqueDep);
+        }
 
         const filterAttribute = parsedData?.FilterAttribute;
         const allFADepartments = filterAttribute?.departments;
@@ -1055,36 +1055,64 @@ const GoogleEmployeeDirectory = () => {
         setExcludeOptionsForDomain(
           removeDuplicatesFromObject(domainOptions, "value")
         );
-
         if (
-          parsedData?.Users &&
+          usersJson?.Users &&
           parsedData?.SyncUserInfoFrom == "Google & Imported User"
         ) {
+          customFunctionUser = customFunctionFilter(
+            staffMember,
+            parsedData
+          );
           let usersData = ExcludeExternalUsers(staffMember, parsedData);
+          allData = [...usersData];
           //     setUserArray(usersData);
           setUserArray(usersData);
-          let decryptedData = decryptData(parsedData.Users);
-          setNonM365(JSON.parse(decryptedData));
+          let decryptedData = usersJson?.Users;
+          NonMUsers=[...decryptedData]
+          setNonM365(decryptedData);
+          
           executeOncePerDay(() => {
+            // updateSettingJson(USER_LIST,{
+            //   ...usersList,
+            //   AllUsersData: {
+            //     GoogleUsers: usersData,
+            //     NonGoogleUser: JSON.parse(decryptedData),
+            //   },
+            // });
+            // setUsersList({
+            //   ...usersList,
+            //   AllUsersData: {
+            //     GoogleUsers: usersData,
+            //     NonGoogleUser: JSON.parse(decryptedData),
+            //   },
+            // });
+             let dataForCharts=usersJson?.AllUsersData?.GoogleUsers?.length?usersJson?.AllUsersData?.GoogleUsers:usersData;
             // this code is for when we update some fileds from dashboard settings of any user, so spreading that dashboard fields into data
-            let GoogleUsers= parsedData?.AllUsersData?.GoogleUsers.map((item)=>{
-               return usersData?.map((user)=>{
-                if(user?.email==item?.email){
-                  return {
-                    ...item,...user
+            let GoogleUsers = dataForCharts.map(
+              (item) => {
+                return usersData?.map((user) => {
+                  if (user?.email == item?.email) {
+                    return {
+                      ...user,
+                      ...item,
+                    
+                    };
                   }
-                }
-               })
-            })
-            GoogleUsers=GoogleUsers.flat().filter((item)=>{
-              return item!=null;
+                });
+              }
+            );
+            GoogleUsers = GoogleUsers?.flat()?.filter((item) => {
+              return item != null;
             });
-             console.log("qqqqqq",GoogleUsers);
-              let data={GoogleUsers:GoogleUsers,NonGoogleUser:JSON.parse(decryptedData)}
-              updateSettingData({...parsedData,AllUsersData:data});
-              setAppSettings({...parsedData,AllUsersData:data});
-              console.log("daliy call")
-          });
+            
+            let data = {
+              GoogleUsers: GoogleUsers??[],
+              NonGoogleUser: decryptedData??[],
+            };
+            updateSettingJson(USER_LIST,encryptData(JSON.stringify({ ...usersJson, AllUsersData: data })));
+            setUsersList({ ...usersJson, AllUsersData: data });
+          
+          });          
 
           // try {
           //   decryptedData = JSON.parse(decryptedData);
@@ -1106,31 +1134,68 @@ const GoogleEmployeeDirectory = () => {
           //   setUserArray(staffMember);
           // }
         } else if (
-          parsedData?.Users &&
+          usersJson?.Users &&
           parsedData?.SyncUserInfoFrom?.toLowerCase() == "importeduser"
         ) {
-          let decryptedData = decryptData(parsedData.Users);
-          console.log(decryptedData, "Decrypted Data");
+          // setImpotedUser(true);
+          let decryptedData = usersJson?.Users;
+          setImpotedUser(true);
+          customFunctionUser = customFunctionFilter(
+            decryptedData,
+            parsedData
+          );
+          
 
-          decryptedData = JSON.parse(decryptedData);
+          decryptedData = decryptedData;
 
           if (Array.isArray(decryptedData)) {
             let usersData = [...decryptedData];
             usersData = ExcludeExternalUsers(usersData, parsedData);
             setUserArray(usersData);
+            allData = [...usersData];
             executeOncePerDay(() => {
-              let data={...parsedData,NonGoogleUser:usersData}
-              updateSettingData(data);
-              setAppSettings(data);
-              console.log("daliy call")
-          });
+              let data = {
+                ...usersJson,
+                AllUsersData:{
+                GoogleUsers: usersJson.Users??[],
+                NonGoogleUser: decryptedData??[],
+                }
+              };
+         
+             
+              updateSettingJson(USER_LIST, encryptData(JSON.stringify({
+                ...usersJson,
+                AllUsersData:{
+                GoogleUsers: usersJson.Users??[],
+                NonGoogleUser: decryptedData??[],
+                }
+              })));
+              setUsersList(data);
+            
+            });
           }
         } else {
           setUserArray(staffMember);
-          let data={...parsedData,GoogleUsers:staffMember}
-          updateSettingData(data);
-          setAppSettings(data);
-          console.log("daliy call")
+          allData = [...staffMember];
+          let data = {
+            ...usersJson,
+            AllUsersData:{
+            GoogleUsers: staffMember,
+            NonGoogleUser: usersJson?.NonGoogleUser || [],
+            }
+          };
+        
+          
+
+          // let data = { ...usersList, GoogleUsers: staffMember };
+          updateSettingJson(USER_LIST,   encryptData(JSON.stringify({
+            ...usersJson,
+            AllUsersData:{
+            GoogleUsers: staffMember,
+            NonGoogleUser: usersJson?.NonGoogleUser || [],
+            }
+          })));
+          setUsersList(data);
         }
         setFormatedUserData(staffMember);
 
@@ -1147,313 +1212,205 @@ const GoogleEmployeeDirectory = () => {
         //     // setUserArray(staffMember?.slice(0, 25));
         //     setUserArray(employees?.slice(0, 25));
         //   }
-        setUserArray(customFunctionUser);
+
+        // setUserArray(customFunctionUser);
       }
+      if (parsedData?.RestrictedAccess?.length) {
+        const cu = getCurrentUser().cu;
+        const user = allData?.filter((x) => x.email === cu);
+
+        const currentUserData = {
+          department: user.department ?? "",
+          location: user.localStorage ?? "",
+          job: user.job ?? "",
+          email: user.email ?? "",
+        };
+        const restrictedData = getRestrictedAccess(
+          parsedData?.RestrictedAccess || [],
+          currentUserData
+        );
+       
+        const restrictedPropUsers = applyRestrictions(customFunctionUser, restrictedData);
+
+        setUserArray(restrictedPropUsers);
+      }
+      // setUserArray(customFunctionUser);
+
       if (parsedData?.GroupsOn) {
         showGroups();
       }
       // setloader(false);
       setshowProgress(false);
+ 
     });
   };
-
-  // const GetAccessTokenFromServiceAccount = (function () {
-  //   const _url = "https://www.googleapis.com/oauth2/v4/token";
-  //   const _grant_type = "urn:ietf:params:oauth:grant-type:jwt-bearer";
-
-  //   function _main(_obj) {
-  //     return new Promise((resolve, reject) => {
-  //       const { private_key, client_email, scopes } = _obj;
-  //       if (!private_key || !client_email || !scopes) {
-  //         throw new Error(
-  //           "No required values. Please set 'private_key', 'client_email' and 'scopes'"
-  //         );
-  //       }
-  //       const header = { alg: "RS256", typ: "JWT" };
-  //       const now = Math.floor(Date.now() / 1000);
-  //       const claim = {
-  //         iss: client_email,
-  //         scope: scopes.join(" "),
-  //         aud: _url,
-  //         exp: (now + 3600).toString(),
-  //         iat: now.toString(),
-  //       };
-  //       if (_obj.userEmail) {
-  //         claim.sub = _obj.userEmail;
-  //       }
-  //       const signature =
-  //         btoa(JSON.stringify(header)) + "." + btoa(JSON.stringify(claim));
-  //       const sign = new JSEncrypt();
-  //       sign.setPrivateKey(private_key);
-  //       const jwt =
-  //         signature + "." + sign.sign(signature, CryptoJS.SHA256, "sha256");
-  //       const params = {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           assertion: jwt,
-  //           grant_type: _grant_type,
-  //         }),
-  //       };
-  //       fetch(_url, params)
-  //         .then((res) => res.json())
-  //         .then((res) => {
-  //           console.log("USER LOGGED IN......", res);
-  //         })
-  //         .then((res) => resolve(res))
-  //         .catch((err) => {
-  //           console.log("USER NOT LOGGED IN......", err);
-  //           reject(err);
-  //         });
-  //     });
-  //   }
-
-  //   return { do: _main };
-  // })();
-  // const updateSigninStatus = (isSignedIn) => {
-  //   if (isSignedIn) {
-  //     // Set the signed in user
-  //     //setSignedInUser(gapi.auth2.getAuthInstance().currentUser.je.Qt);
-  //     // setSignedInUser(true);
-  //     // setIsLoadingGoogleDriveApi(false);
-  //     // list files if user is authenticated
-  //     // setisShowGrid("Grid");
-  //     // setisShowList("List");
-  //     // setisShowTile("Tile");
-  //     //console.log(gapi.auth2.getAuthInstance().currentUser.le.wt.Ad);
-
-  //     // console.log(gapi.auth2.getAuthInstance().currentUser.le.wt.cu);
-  //     blobCall();
-  //   } else {
-  //     // prompt user to sign in
-  //     handleAuthClick();
-  //   }
-  // };
-  // const handleAuthClick = (event) => {
-  //   gapi.auth2.getAuthInstance().signIn();
-  // };
-  // const initClient = async () => {
-  //   setIsLoadingGoogleDriveApi(true);
-  //   const object = {
-  //     private_key:
-  //       "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC59b/hiKv2x3iH\ni/0GVuTxU3pFw1BAizg6KEj/7lt5ffhzmQODtwS+ZCimzF2wT4/XGjy2U4tqpTJb\nClUZfJQpK+NuOa5Ymz10kGxoHyvb0dP1i0hH6omJrl30vJDbyFixGpSx2a1JUDR5\nIHUF3JhpGgDradZ75kL/8IoO9qzrr0ZRWm6zilzqMJf19moAzHU3mkaKaCL2fg5r\n8TgYkxvMILe/BI1cJ9y+bJ9p2WLl2JAly6IuJHQY2Qe086PGSzCgm4KJlNANPcVY\n0b13p05Elqed8vZfrtUw6QHCjQSkt5XSsBaugOaI2FkL3eJsnl79TYjkUhEQ7EXu\nW1pGB4X/AgMBAAECggEAGx7DLQCyLPY6q/Csu5PI+tr/o5Slq8Fst1VFuYbecgb+\n84OWzCBRFvU41S6hNpk73eqL0n63qpt3ZGigMEHcwm5jUkwjkvTnpGF7Cz+0ipqn\njLwTPrhuoOo8S04u2tF1VzWMXFhl2cx9LUcgWfT/M0t2uTPWcyZfPMACBRxQ7A7Z\nuQDxL6sqNd0KKuo26k4SEeGPlmLRPGqqTifUSWGpITNAdDCE1syIjdu7Rda2dWSO\nGhTQLw4ooZYswricuYImph2geGJvaohVWm+mtvXl8XKrtjmW3aJ+gYVs0VNX1ru1\nnkrU1aXMDwg+I9/JAIpKX1PtOFJJyTFmdlDAZWTrYQKBgQDdv3IMY1+W2HT409FU\ntVGyksCIxLDiA7IBP9FM/w6rQP4y9zGOX/1PoguUcf19twhkSnDe5yVsXgYxwODO\nji6cCjdlZhBjh5H8hZEAW9zrLPqOuYyU4ENrG+sby4NYAWT4P80S5JK3hUjeoDkZ\nNGAZ8umTf0sOeu8FS4iJi38InwKBgQDWryW4MIsTUsotlR6jHgSb8SD3UeF1QscW\nAKndE7BOvIqreNn0aPxBBiP0B682B0rkiRa7g24oZCHl8STjED33ohfH23BSus8T\na9WFgqA8US8d0+f3I+EHiscUYCBOoupKRkar3q4lUEoZBm6nXVKfpzjzW1qDBGXt\nBwkmjPSmoQKBgQCCBDBApzty3LOo+bkxK6cdRwJwrrLvsi76oIp91MarDs5834dE\n7W8+88pKXZO91EWtWCBZ8bl1kqObJHYrZh5aC3tzjqZpVSH5p+7fAP3FPngimxSc\nbenZsWLmxyrZvOeQzwfU3gRQamvRbKxN5PG8BTuC6g3+DYJ73k/OJeZ0DQKBgHMT\nFRvi4VltQjQmv3Jd78iK+sm3GSvarI5tsp9vI01BIO+C6wlokPZlzTXMPK2wQQO5\nO/ctHwoFimoP1V7k4OJw/2BAjre5rK/TWHOlLjDGr4PEh41grQl26PlSAV9FUmKX\nwt/zj9Muc1lwqjWJ/3TWlN9VM3IRFHV2FQCWA7mhAoGAPGTXEjFcftCfDJ+uI4u3\nPHM3Sf/ErPGVx2TqV4LkK654Bse/H57y0xobGnwvlylYBUnW9/9Ta4Q2xB93hw8Q\np8BxJVRF6R273L4iVKO9S5cnQkZ+6QGyOFCT9DWZ3DlHSrgPTbFEmYJaiHXCcbe9\ngpevDqpyEjZeBUS6HUED+uE=\n-----END PRIVATE KEY-----\n",
-  //     client_email: "parjinder@argon-magnet-408506.iam.gserviceaccount.com",
-  //     scopes: [
-  //       "https://www.googleapis.com/auth/admin.directory.group.readonly",
-  //       "https://www.googleapis.com/auth/admin.directory.user",
-  //       "https://www.googleapis.com/auth/admin.directory.group.member.readonly",
-  //       "https://www.googleapis.com/auth/calendar.readonly",
-  //       "https://www.googleapis.com/auth/admin.directory.user.readonly",
-  //       "https://www.googleapis.com/auth/admin.directory.user.security",
-  //     ],
-  //   };
-
-  //   // var token=await GetAccessTokenFromServiceAccount.do(object);
-  //   //  console.log(token);
-  //   //   await gapi.auth2.authorize({
-  //   //    'client_id':'101887144792089449398',
-  //   //    'scope': scopes,
-  //   //     'serverAuth': {
-  //   //         'access_token': token.access_token
-  //   //     }
-  //   // });
-
-  //   // gapi.client.request({ headers: {
-  //   //   'Authorization': 'Bearer ' + token.access_token
-  //   // }});
-
-  //   // try {
-  //   //   console.log(gapi.auth2.getAuthInstance());
-  //   // } catch (err) {
-  //   //   setSignedInUser(false);
-  //   // }
-
-  //   gapi.auth.setToken(await GetAccessTokenFromServiceAccount.do(object));
-
-  //   //  gapi.client
-  //   //   .init({
-  //   //    //apiKey: API_KEY,
-  //   //   //  clientId: CLIENT_ID,
-  //   //    discoveryDocs: DISCOVERY_DOCS,
-  //   //   // scope: scopes,
-  //   //   })
-  //   //   .then(()=>{
-
-  //   // gapi.client.load("admin", "directory_v1",async () => {
-  //   //  await gapi.client
-  //   // .request({
-  //   //   path: "https://content-admin.googleapis.com/admin/directory/v1/users?customer=my_customer&orderBy=givenName&projection=full",
-  //   //   // method: "GET",
-  //   //   // headers: {
-  //   //   //   "Content-Type":"application/json",
-  //   //   //   "Authorization": "Bearer " + gapi.client.getToken().access_token,
-  //   //   // },
-  //   // })
-  //   // .then(
-  //   //   (response) => {
-  //   //     console.log(response);
-  //   //   },
-  //   //   function (err) {
-  //   //     console.log(err);
-
-  //   //   }
-  //   // );
-
-  //   // });
-
-  //   // })
-  //   // var url = 'https://content-admin.googleapis.com/admin/directory/v1/users?customer=my_customer&orderBy=givenName&projection=full';
-  //   // var response = await UrlFetchApp.fetch(url, {
-  //   //   headers: {
-  //   //     Authorization: 'Bearer ' + gapi.auth.getToken().access_token,
-  //   //   },
-  //   // });
-  //   // console.log(response);
-  //   // await gapi.client.directory.users.list({
-
-  //   //   headers: {
-  //   //       'Authorization': 'Bearer ' + gapi.auth.getToken().access_token
-  //   //     },
-  //   //   customer: "my_customer",
-  //   //   projection: "full",
-  //   //   orderBy: "givenName"
-
-  //   // })
-  //   // .headers: {
-  //   //       'Authorization': 'Bearer ' + gapi.auth.getToken().access_token
-  //   //     }
-
-  //   // await gapi.client.directory.users.list({
-
-  //   //   customer: "my_customer",
-  //   //   projection: "full",
-  //   //   orderBy: "givenName",
-
-  //   // });
-
-  //   //gapi.client.setToken(await GetAccessTokenFromServiceAccount.do(object))
-  //   //gapi.auth2.authorize
-
-  //   gapi.client
-  //     .init({
-  //       apiKey: API_KEY,
-  //       clientId: CLIENT_ID,
-  //       discoveryDocs: DISCOVERY_DOCS,
-  //       scope: scopes,
-  //     })
-  //     .then(
-  //       function () {
-  //         // GoogleUser.getAuthResponse().access_token;
-  //         // GoogleUser.reloadAuthResponse();
-  //         // Listen for sign-in state changes.
-  //         gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-  //         // console.log(gapi.auth2.getAuthInstance(), "sign");
-  //         // Handle the initial sign-in state.
-
-  //         updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-
-  //         // gapi.auth2
-  //         //   .getAuthInstance()
-  //         //   .signIn()
-  //         //   .then(async () => {
-  //         //     gapi.client.load("admin", "directory_v1", () => {
-  //         //       // now we can use:
-  //         //       // gapi.client.admin
-  //         //       // gapi.client.directory
-  //         //     });
-  //         //     const res1 = await gapi.client.directory.groups.list({
-  //         //       customer: "my_customer",
-  //         //     });
-  //         //     console.log(res1.result.groups);
-
-  //         //     const res1x = await gapi.client.directory.users.list({
-  //         //       customer: "my_customer",
-  //         //       //viewType:'domain_public',
-  //         //       //query: "orgUnitPath='/'",
-  //         //       // query:'orgTitle=Developer',
-  //         //       //query:'MyCustomField.CF2=parjinder',
-  //         //       //query: "MyCustomField.CF4>1987-08-05",
-
-  //         //       projection: "full",
-  //         //       orderBy: "givenName",
-  //         //       sortOrder: "descending",
-  //         //     });
-  //         //     // console.log(res1x);
-  //         //     const connections1 = res1x.result.users;
-  //         //     if (!connections1 || connections1.length === 0) {
-  //         //       console.log("No connections found.");
-  //         //       return;
-  //         //     }
-  //         //     connections1.forEach((person) => {
-  //         //       console.log(person);
-  //         //     });
-  //         //   });
-  //       },
-  //       function (error) {
-  //         console.log(error);
-  //       }
-  //     );
-  // };
-
-  // const showGrid = (name) => {
-  //   if ((name = "Grid")) {
-  //     setisShowGrid(name);
-  //     setisGrid(true);
-  //     setisList(false);
-  //     setisTile(false);
-  //   } else {
-  //     setisShowTile("");
-  //     setisShowList("");
-  //   }
-  // };
-
-  // const showList = (name) => {
-  //   if ((name = "List")) {
-  //     setisShowList(name);
-  //     setisGrid(false);
-  //     setisList(true);
-  //     setisTile(false);
-  //   } else {
-  //     setisShowGrid("");
-  //     setisShowTile("");
-  //   }
-  // };
-
-  // const showTile = (name) => {
-  //   if ((name = "Tile")) {
-  //     setisShowTile(name);
-  //     setisGrid(false);
-  //     setisList(false);
-  //     setisTile(true);
-  //   } else {
-  //     setisShowGrid("");
-  //     setisShowList("");
-  //   }
-  // };
-  // const handleClientLoad = () => {
-  //   gapi.load("client:auth2", initClient);
-  // };
 
   const {
     setAdditionalManagers,
     setAssistant,
     setUnFormatedUserData,
     setFormatedUserData,
-    setAllUsers
+    setAllUsers,
+    setRestrictedFields,
+    setUsersWithHiddenManager,
+    setUsersWithHiddenPhoneNo,
+    setAdmins
   } = useFields();
 
   const clearFilters = () => {
     listFiles();
   };
 
-  const optimization = (value, mode) => {
+  const optimization = async(value, mode) => {
     // setloader(true);
-// alert(isImportedUser)
+    // alert(isImportedUser)
+    if(parsedData?.SyncUserInfoFrom?.toLowerCase() == "importeduser"){
+      setshowProgress(true);
+      let d=await getSettingJson(USER_LIST);
+      let nongoogleUsers =d?.Users;
+     
+     
+        if (value == "") {
+          setUserArray(nongoogleUsers);
+        } else {
+          if (mode == "free search") {
+            if (value == "") {
+              setUserArray(nongoogleUsers);
+            } else {
+              let data = nongoogleUsers;
+              let results = [];
+  
+              results = data?.filter((user) =>
+                [
+                  "name",
+                  "firstName",
+                  "lastName",
+                  "workphone",
+                  "job",
+                  "location",
+                  "department",
+                  "email",
+                  "CF1",
+                ].some((key) => {
+                  
+                  
+                   let res= typeof user[key] === "string" && user[key].toLowerCase().includes(value.toLowerCase());
+                   return res;
+                  
+                })
+              );
+  
+            
+              setUserArray(results);
+        
+            }
+          } else if (mode == "departments") {
+            // alert("dept")
+            let result = nongoogleUsers?.filter((item) => {
+              
+              return item?.department
+                ?.toLowerCase()
+                .includes(value?.toLowerCase());
+            });
+           
+            setUserArray(result);
+          } else if (mode == "title" || mode == "titles") {
+            // alert("titles")
+            let res = nongoogleUsers.filter((item) => {
+              return item?.job?.toLowerCase()?.includes(value?.toLowerCase());
+            });
+            setUserArray(res);
+          } else if (mode == "name") {
+            
+            let res = nongoogleUsers.filter((item) => {
+              console.log("ittem", item);
+              return item?.name?.toLowerCase()?.includes(value?.toLowerCase());
+            });
+           
+            setUserArray(res);
+          }
+        }
+      
+      setshowProgress(false);
+    }
+    else if(parsedData?.SyncUserInfoFrom== "Google & Imported User" && isImportedUser){
+      setshowProgress(true);
+      let d=await getSettingJson(USER_LIST);
+      let nongoogleUsers =d?.Users;
+      
+ 
+        if (value == "") {
+          setNonM365(nongoogleUsers);
+        } else {
+          if (mode == "free search") {
+            if (value == "") {
+              setNonM365(nongoogleUsers);
+            } else {
+              let data = nongoogleUsers;
+              let results = [];
+  
+              results = data?.filter((user) =>
+                [
+                  "name",
+                  "firstName",
+                  "lastName",
+                  "workphone",
+                  "job",
+                  "location",
+                  "department",
+                  "email",
+                  "CF1",
+                ].some((key) => {
+                  
+                  
+                   let res= typeof user[key] === "string" && user[key].toLowerCase().includes(value.toLowerCase());
+                   return res;
+                  
+                })
+              );
+  
+              
+              setNonM365(results);
+        
+            }
+          } else if (mode == "departments") {
+            // alert("dept")
+            let result = nongoogleUsers.filter((item) => {
+              
+              return item?.department
+                ?.toLowerCase()
+                .includes(value?.toLowerCase());
+            });
+         
+            setNonM365(result);
+          } else if (mode == "title" || mode == "titles") {
+            // alert("titles")
+            let res = nongoogleUsers.filter((item) => {
+              return item?.job?.toLowerCase()?.includes(value?.toLowerCase());
+            });
+            setNonM365(res);
+          } else if (mode == "name") {
+          
+            let res = nongoogleUsers.filter((item) => {
+              
+              return item?.name?.toLowerCase()?.includes(value?.toLowerCase());
+            });
+           
+            setNonM365(res);
+          }
+        }
+      
+      setshowProgress(false);
+    }
+    
+    else{
+
+    
     setshowProgress(true);
     gapi.client.load("admin", "directory_v1", () => {});
 
     getAllUsersInOrg1(value, mode).then((data) => {
-      console.log(data, "SDfsadfasdfASD");
+    
       var mappedfields =
         '[{"ExistingList":"About Me","ExternalList":"About_Me"},{"ExistingList":"School","ExternalList":"CF1"},{"ExistingList":"Date of Birth","ExternalList":"DOB"},{"ExistingList":"Date of Join","ExternalList":"DOJ"},{"ExistingList":"Skills","ExternalList":"Skills"},{"ExistingList":"Projects","ExternalList":"Projects"},{"ExistingList":"Hobbies","ExternalList":"Hobbies"}]';
 
@@ -1468,7 +1425,7 @@ const GoogleEmployeeDirectory = () => {
             (person) => person.primaryEmail == mgremail
           );
           if (dataofmang.length > 0) {
-            console.log(dataofmang);
+          
             man = {
               firstName: dataofmang[0].name?.givenName,
               lastName: dataofmang[0].name?.familyName,
@@ -1589,8 +1546,8 @@ const GoogleEmployeeDirectory = () => {
             managerprofilecard: man,
           };
         });
-        console.log(staffMember);
-     
+        
+
         if (mode == "free search") {
           if (value == "") {
             setUserArray(staffMember);
@@ -1619,75 +1576,12 @@ const GoogleEmployeeDirectory = () => {
         } else {
           setUserArray(staffMember);
         }
-      
-
-
-
       }
 
       // setloader(false);
       setshowProgress(false);
     });
-    let nongoogleUsers=JSON.parse(decryptData(parsedData.Users));
-    console.log("isimported user",isImportedUser)
-   if(isImportedUser){
-    if(value==""){
-    setNonM365(nongoogleUsers)
-    }else{
-     if (mode == "free search") {
-       if (value == "") {
-         setNonM365(nongoogleUsers);
-       } else {
-         let data = nongoogleUsers;
-         let results = [];
-
-         results = data?.filter((user) =>
-           [
-             "name",
-             "workphone",
-             "job",
-             "location",
-             "department",
-             "email",
-             "CF1",
-           ].some((key) =>{
-                 console.log("user[key].toLowerCase()",user,user[key].toLowerCase(),value,typeof user[key] === "string" && user[key].toLowerCase().includes(value.toLowerCase()))
-               return typeof user[key] === "string" && user[key].toLowerCase().includes(value.toLowerCase())
-           }
-           )
-         );
-
-         setNonM365(results);
-         console.log(results,NonM365,"res90")
-       }
-     } else if(mode=="departments"){
-      // alert("dept")
-       let result=nongoogleUsers.filter((item)=>{
-        console.log("inner->" ,item?.department.toLowerCase(),value?.toLowerCase())
-         return item?.department?.toLowerCase().includes(value?.toLowerCase());
-       })
-       console.log("mode=>",mode,result,nongoogleUsers,value?.toLowerCase())
-       setNonM365(result);
-     }else if(mode=="title"||mode=="titles"){
-      // alert("titles")
-       let res=nongoogleUsers.filter((item)=>{
-         return item?.job?.toLowerCase()?.includes(value?.toLowerCase());
-       })
-       setNonM365(res);
-     }else if(mode=="name"){
-       console.log("mode=>",mode)
-       let res=nongoogleUsers.filter((item)=>{
-       console.log("ittem",item)
-         return item?.name?.toLowerCase()?.includes(value?.toLowerCase());
-       })
-       console.log("mode=>",mode,res,nongoogleUsers,value?.toLowerCase())
-       setNonM365(res);
-     }
-    
-    }
-
-
-   }
+  }
   };
   async function getUserInfo(userEmail) {
     let page = "";
@@ -1702,7 +1596,7 @@ const GoogleEmployeeDirectory = () => {
   }
 
   const filterByTaxonomySearchMultiGrp = (item) => {
-    console.log("group options", item);
+    
     if (item == null) {
       item = [];
     } else {
@@ -1720,7 +1614,7 @@ const GoogleEmployeeDirectory = () => {
       let arrayofgroup = [];
       var uniquegrp = item?.length > 1 ? item?.slice(1) : item;
       getAllUsersGrpMInOrg(uniquegrp[0]?.key).then((data1) => {
-        console.log("data1", data1);
+    
 
         var mappedfields =
           '[{"ExistingList":"About Me","ExternalList":"About_Me"},{"ExistingList":"School","ExternalList":"CF1"},{"ExistingList":"Date of Birth","ExternalList":"DOB"},{"ExistingList":"Date of Join","ExternalList":"DOJ"},{"ExistingList":"Skills","ExternalList":"Skills"},{"ExistingList":"Projects","ExternalList":"Projects"},{"ExistingList":"Hobbies","ExternalList":"Hobbies"}]';
@@ -1979,7 +1873,6 @@ const GoogleEmployeeDirectory = () => {
     isList,
     _gridWidth,
     parsedData,
-    blobCall,
     allUsers,
     setUserArray,
   };
@@ -1988,8 +1881,10 @@ const GoogleEmployeeDirectory = () => {
     setBirthAndAnivModalOpen,
     filterByLetter,
     setSettings,
+    appSettings:parsedData,
+
     setshowDashboard,
-    isUserAdmin: isCurrentUserAdmin,
+    isUserAdmin: currentUserAdmin,
     setShowOrgChart,
     setShowHomePage,
     parsedData,
@@ -2016,8 +1911,12 @@ const GoogleEmployeeDirectory = () => {
   };
 
   const SearchFiltersProps = {
-    parsedData,
+    settingData,
     optimization,
+    setselectedGrp,
+    setClickClearFilter,
+    isClickClearFilter,
+    filterByLetter,
     groupsOptions,
     selectedGrp,
     filterByTaxonomySearchMultiGrp,
@@ -2037,15 +1936,16 @@ const GoogleEmployeeDirectory = () => {
   }
 
   return (
-    <LanguageProvider>
-      <Container>
+    <Container>
         {isUserSignedIn && (
+        <LanguageProvider>
+          <ContextProvider>
           <div className="edp" id="mainDiv">
             <div className="container">
               <div className="row" style={{ position: "relative" }}>
                 <div className="filterDiv">
-                  {parsedData && appSettings.TopBarFilterView !== "Hide" && (
-                    <TopBarFilter optimization={optimization} />
+                  {parsedData && parsedData.TopBarFilterView !== "Hide" && (
+                    <TopBarFilter optimization={optimization} SyncUserInfoFrom={parsedData?.SyncUserInfoFrom} isImportedUser={isImportedUser} UserArray={UserArray}  isClickClearFilter={isClickClearFilter} />
                   )}
                   <CommandBar {...CommandBarProps} />
                 </div>
@@ -2078,9 +1978,7 @@ const GoogleEmployeeDirectory = () => {
                     />
                   )}
 
-                  {Setting && (
-                    <SettingsPage {...settingsPageProps} />
-                  )}
+                  {Setting && <SettingsPage {...settingsPageProps} />}
 
                   {showHomePage && (
                     <div>
@@ -2098,25 +1996,49 @@ const GoogleEmployeeDirectory = () => {
               </div>
             </div>
           </div>
+          </ContextProvider>
+        </LanguageProvider>
         )}
       </Container>
-    </LanguageProvider>
   );
 };
 
-const TopBarFilter = ({ optimization }) => {
-  const { departmentFields,FormatedUserData } = useFields();
+const TopBarFilter = ({ optimization,isClickClearFilter,UserArray,isImportedUser ,SyncUserInfoFrom}) => {
+  const {
+  
+    view,
+  
+  } = useStore();
+  // console.log(UserArray)
+  const { departmentFields, FormatedUserData } = useFields();
   const [selectedTab, setSelectedTab] = useState("");
+  const [data,setData]=useState(FormatedUserData);
+//   console.log(view,"views selected")
+// //   useEffect(()=>{
+// // setData(FormatedUserData)
+// //   },[])
+// console.log(isClickClearFilter,departmentFields,view)
+useEffect(()=>{
+
+    if(view=="NonM365"){
+      setData(NonMUsers)
+     }else{
+      setData(FormatedUserData)
+     }
+  
+ 
+},[view,FormatedUserData?.length,isClickClearFilter])
 
   return (
     <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+      
       {departmentFields.map((x) => {
         let count = 0;
-        for(let i = 0; i <FormatedUserData.length; i++){
-          if(FormatedUserData[i].department === x.value){
+        for (let i = 0; i < data?.length; i++) {
+          if (data[i]?.department === x.value) {
             count++;
           }
-        }; 
+        }
 
         return (
           <div
@@ -2134,9 +2056,9 @@ const TopBarFilter = ({ optimization }) => {
               userSelect: "none",
               boxSizing: "border-box",
               height: "35px",
-              columnGap:"5px",
-              minWidth:"100px",
-              fontWeight:"400"
+              columnGap: "5px",
+              minWidth: "100px",
+              fontWeight: "400",
             }}
             className={`${styles.topbarfilter} topbarFilter ${
               selectedTab === x.value ? "topbarfilterBorderBottom" : ""
@@ -2147,9 +2069,9 @@ const TopBarFilter = ({ optimization }) => {
             }}
           >
             <p>{x.label}</p>
-            <p style={{fontWeight:"600", fontSize:"18px"}}>{count}</p>
+            <p style={{ fontWeight: "600", fontSize: "18px" }}>{count}</p>
           </div>
-        )
+        );
       })}
     </div>
   );

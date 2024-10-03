@@ -1,39 +1,61 @@
-import React, { useState, useRef, useEffect } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import React, { useState, useRef, useEffect } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import "../Edp.scss";
 import EdStyles from "../../SCSS/Ed.module.scss";
 import { Icon, Label } from "@fluentui/react";
-import { PrimaryButton } from '@fluentui/react';
-import { BirthTemplate } from '../../Helpers/EmailTemplates';
-import { convertToBase64, updateSettingData } from '../../Helpers/HelperFunctions';
-import { useSttings } from '../store';
-import { useLanguage } from '../../../Language/LanguageContext';
+import { PrimaryButton } from "@fluentui/react";
+import { BirthTemplate } from "../../Helpers/EmailTemplates";
+import { convertToBase64 } from "../../Helpers/HelperFunctions";
+import { useSttings } from "../store";
+import { useLanguage } from "../../../Language/LanguageContext";
+import {
+  getSettingJson,
+  IMAGES_LIST,
+  SETTING_LIST,
+  updateSettingJson,
+} from "../../../api/storage";
+import { useLists } from "../../../context/store";
 
-
-const BirthdayTemplate = ({setAppSettings,appSettings,SweetAlertEmailTemp}) => {
-const {translation}=useLanguage();
+const BirthdayTemplate = ({
+  setAppSettings,
+  appSettings,
+  SweetAlertEmailTemp,
+}) => {
+  const { translation } = useLanguage();
   const [editorValue, setEditorValue] = useState(BirthTemplate);
-  const [imagePreview, setImagePreview] = useState<any>('');
+  const [imagePreview, setImagePreview] = useState<any>("");
+
+  const { imagesList, setImagesList } = useLists();
 
   const quillRef = useRef(null);
   const fileInputRef = useRef(null);
-  useEffect(()=>{
 
-       if(appSettings?.BirthdayEmailTemplate){
-          setEditorValue(appSettings?.BirthdayEmailTemplate);
-       }else{
+  useEffect(() => {
+    const getSettingData = async () => {
+      const data = await getSettingJson(SETTING_LIST);
+      const image = await getSettingJson(IMAGES_LIST);
+
+      if (data?.BirthdayEmailTemplate) {
+        setEditorValue(data?.BirthdayEmailTemplate);
+      } else {
         setEditorValue(BirthTemplate);
-       }
-       if(appSettings?.BirthTempImage){
+      }
+      setImagePreview(image.BirthTempImage);
+    };
+    getSettingData();
 
-         setImagePreview(appSettings?.BirthTempImage)
-       }
-  },[])
+    // if (appSettings?.BirthdayEmailTemplate) {
+    //   setEditorValue(appSettings?.BirthdayEmailTemplate);
+    // } else {
+    //   setEditorValue(BirthTemplate);
+    // }
+    // setImagePreview(imagesList.BirthTempImage);
+  }, []);
 
   const handleChange = (value) => {
     setEditorValue(value);
-    console.log(editorValue)
+    console.log(editorValue);
   };
 
   const insertPlaceholder = (placeholder) => {
@@ -54,56 +76,80 @@ const {translation}=useLanguage();
       reader.readAsDataURL(file);
     }
   };
-  async function handleSaveBirth(){
-       
-        if(Object.keys(appSettings)?.length ){
-          const response = await fetch(imagePreview);
-          const imgBlob = await response.blob();
-    
-          const base64Image = await convertToBase64(imgBlob);
-            updateSettingData({...appSettings,BirthdayEmailTemplate:editorValue,BirthTempImage:base64Image})
-            setAppSettings({...appSettings,BirthdayEmailTemplate:editorValue,BirthTempImage:base64Image})
-            SweetAlertEmailTemp("success",translation.SettingSaved)
+  async function handleSaveBirth() {
+    if (Object.keys(appSettings)?.length) {
+      const response = await fetch(imagePreview);
+      const imgBlob = await response.blob();
+      const base64Image = await convertToBase64(imgBlob);
 
-        }
-  
-   
+      updateSettingJson(SETTING_LIST, {
+        ...appSettings,
+        BirthdayEmailTemplate: editorValue,
+      });
+      updateSettingJson(IMAGES_LIST, {
+        ...imagesList,
+        BirthTempImage: base64Image,
+      });
+
+      setImagesList({ ...imagesList, BirthTempImage: base64Image });
+      setAppSettings({ ...appSettings, BirthdayEmailTemplate: editorValue });
+
+      SweetAlertEmailTemp("success", translation.SettingSaved);
+    }
   }
-
 
   return (
     <div id="emailTemplate">
-       <Icon
-            iconName="save"
-            onClick={handleSaveBirth}
-            style={{
-              position: "fixed",
-              right: "60px",
-              top: "16px",
-              color: "white",
-              cursor: "pointer",
-            }}
-          />
+      <Icon
+        iconName="save"
+        onClick={handleSaveBirth}
+        style={{
+          position: "fixed",
+          right: "60px",
+          top: "16px",
+          color: "white",
+          cursor: "pointer",
+        }}
+      />
       {imagePreview && (
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ textAlign: "center", marginBottom: "20px" }}>
           <img
             src={imagePreview}
             alt="Uploaded Preview"
-            style={{ maxWidth: '180', maxHeight: '100px', display: 'block', margin: '0 auto' }}
+            style={{
+              maxWidth: "180",
+              maxHeight: "100px",
+              display: "block",
+              margin: "0 auto",
+            }}
           />
         </div>
       )}
-      <div style={{ margin: '15px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          margin: "15px 0",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Label>Upload Image</Label>
         <input
           type="file"
           accept="image/*"
           ref={fileInputRef}
           onChange={handleImageUpload}
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
         />
-        <PrimaryButton text='Upload Image' onClick={() => fileInputRef.current.click()} style={{background:"#fff", color:"#000",border:"1px solid #000"}} />
-       
+        <PrimaryButton
+          text="Upload Image"
+          onClick={() => fileInputRef.current.click()}
+          style={{
+            background: "#fff",
+            color: "#000",
+            border: "1px solid #000",
+          }}
+        />
       </div>
       <ReactQuill
         ref={quillRef}
@@ -111,17 +157,46 @@ const {translation}=useLanguage();
         onChange={handleChange}
         modules={editorModules}
         formats={editorFormats}
-      
       />
-      <div style={{ marginTop: '20px' }}>
+      <div style={{ marginTop: "20px" }}>
         <Label>Placeholders</Label>
         <div className={EdStyles.Qillplaceholdes}>
-          <button className={EdStyles.QuillPlaceholderBtn} onClick={() => insertPlaceholder('[FirstName]')}>First Name</button>
-          <button className={EdStyles.QuillPlaceholderBtn} onClick={() => insertPlaceholder('[DOB]')}>DOB</button>
-          <button className={EdStyles.QuillPlaceholderBtn} onClick={() => insertPlaceholder('[DOJ]')}>DOJ</button>
-          <button className={EdStyles.QuillPlaceholderBtn} onClick={() => insertPlaceholder('[Department]')}>Department</button>
-          <button className={EdStyles.QuillPlaceholderBtn} onClick={() => insertPlaceholder('[JobTitle]')}>Job Title</button>
-          <button className={EdStyles.QuillPlaceholderBtn} onClick={() => insertPlaceholder('[DisplayName]')}>Display Name</button>
+          <button
+            className={EdStyles.QuillPlaceholderBtn}
+            onClick={() => insertPlaceholder("[FirstName]")}
+          >
+            First Name
+          </button>
+          <button
+            className={EdStyles.QuillPlaceholderBtn}
+            onClick={() => insertPlaceholder("[DOB]")}
+          >
+            DOB
+          </button>
+          <button
+            className={EdStyles.QuillPlaceholderBtn}
+            onClick={() => insertPlaceholder("[DOJ]")}
+          >
+            DOJ
+          </button>
+          <button
+            className={EdStyles.QuillPlaceholderBtn}
+            onClick={() => insertPlaceholder("[Department]")}
+          >
+            Department
+          </button>
+          <button
+            className={EdStyles.QuillPlaceholderBtn}
+            onClick={() => insertPlaceholder("[JobTitle]")}
+          >
+            Job Title
+          </button>
+          <button
+            className={EdStyles.QuillPlaceholderBtn}
+            onClick={() => insertPlaceholder("[DisplayName]")}
+          >
+            Display Name
+          </button>
         </div>
       </div>
     </div>
@@ -130,19 +205,28 @@ const {translation}=useLanguage();
 
 const editorModules = {
   toolbar: [
-    [{ 'header': '1' }, { 'header': '2' }, { 'font':[] }],
+    [{ header: "1" }, { header: "2" }, { font: [] }],
 
-
-    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-    ['bold', 'italic', 'underline'],
-    ['link', 'image'],
-    [{ 'align': [] }],
-    ['clean'],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["bold", "italic", "underline"],
+    ["link", "image"],
+    [{ align: [] }],
+    ["clean"],
   ],
 };
 
 const editorFormats = [
-  'header', 'font', 'list', 'bullet', 'bold', 'italic', 'underline', 'link', 'image', 'align', 'clean'
+  "header",
+  "font",
+  "list",
+  "bullet",
+  "bold",
+  "italic",
+  "underline",
+  "link",
+  "image",
+  "align",
+  "clean",
 ];
 
 export default BirthdayTemplate;

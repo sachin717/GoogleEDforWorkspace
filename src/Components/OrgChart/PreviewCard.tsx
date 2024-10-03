@@ -1,16 +1,6 @@
 import { Label } from "@fluentui/react";
-import styled from "styled-components";
 import { useLanguage } from "../../Language/LanguageContext";
-import defaultimage from "../assets/images/DefaultImg1.png";
 import { useEffect, useState } from "react";
-
-const Container = styled.div`
-  width: 250px;
-  height: 140px;
-  margin: 10px auto;
-  border: 1px solid #aaa;
-  transform: scale(0.8);
-`;
 
 const PreviewCard = ({
   position,
@@ -39,7 +29,7 @@ const PreviewCard = ({
   return (
     <div>
       <Label>{translation.Preview}</Label>
-      <Container>
+      <div style={{width:"250px", height:"140px", margin:"10px auto", border:"1px solid #aaa", transform:"scale(0.8)"}}>
         <div style={{ height: "12px", backgroundColor: "rgb(0, 112, 220)" }}>
           <div style={{ height: "100%", width: "100%" }}>
             <div
@@ -109,7 +99,7 @@ const PreviewCard = ({
             </div>
           </div>
         </div>
-      </Container>
+      </div>
     </div>
   );
 };

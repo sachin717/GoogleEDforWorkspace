@@ -13,6 +13,7 @@ import gmailLogo from ".././Components/assets/images/gmail.png";
 import gchat from ".././Components/assets/images/googleChatIcon.png";
 import { decryptData, formatDatesInArray } from "./Helpers/HelperFunctions";
 import styles from "./SCSS/Ed.module.scss";
+import { useLists } from "../context/store";
 
 let users: any = [
   {
@@ -168,10 +169,11 @@ function BirthdayAndAnniversary({
   showHomePage,
 }) {
   const { appSettings } = useSttings();
-  // users=appSettings?.SelectedUpcomingBirthAndAniv=="importedUser"? JSON?.parse(decryptData(appSettings?.Users)):users;
+
+  const {usersList,imagesList} = useLists();
+  users=appSettings?.SelectedUpcomingBirthAndAniv=="importedUser"? usersList?.Users:Users;
   // console.log("users==",users)
   users = formatDatesInArray(users);
-  // console.log("users->", users);
   const { translation } = useLanguage();
   const birthAndAnivFilter = appSettings?.BirthAndAnivFilter || {};
   const selectedFilter = Object.keys(birthAndAnivFilter).find(
@@ -210,7 +212,8 @@ function BirthdayAndAnniversary({
       setAnniversaries(getUpcomingAnniversaries(users, false));
       setBirthdays(getUpcomingMonthBirthdays(users));
     } else if (filter == "currentMonthAndNextMonth") {
-      getBirthdaysForCurrentAndNextMonth(users);
+      setBirthdays(getBirthdaysForCurrentAndNextMonth(users));
+      setAnniversaries(getAnniversaryForCurrentAndNextMonth(users));
     }
   }, [filter]);
   function getBirthdaysForNextWeek(users) {
@@ -687,6 +690,56 @@ function BirthdayAndAnniversary({
         );
       });
   }
+  function getAnniversaryForCurrentAndNextMonth(users) {
+    const today: any = new Date();
+
+    function getMonthRange(monthOffset) {
+      const startOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + monthOffset,
+        1
+      );
+      const endOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth() + monthOffset + 1,
+        0
+      );
+      return { startOfMonth, endOfMonth };
+    }
+
+    const { startOfMonth: startOfCurrentMonth, endOfMonth: endOfCurrentMonth } =
+      getMonthRange(0);
+    const { startOfMonth: startOfNextMonth, endOfMonth: endOfNextMonth } =
+      getMonthRange(1);
+
+    return users
+      .map((user) => {
+        const doj = new Date(user.DOJ);
+        const nextBirthday: any = new Date(doj);
+        nextBirthday.setFullYear(today.getFullYear());
+
+        if (nextBirthday < today) {
+          nextBirthday.setFullYear(today.getFullYear() + 1);
+        }
+
+        return {
+          ...user,
+          upcomingBirthday: nextBirthday,
+          daysUntilBirthday: Math.ceil(
+            (nextBirthday - today) / (1000 * 60 * 60 * 24)
+          ),
+        };
+      })
+      .filter((user) => {
+        const { upcomingBirthday } = user;
+        return (
+          (upcomingBirthday >= startOfCurrentMonth &&
+            upcomingBirthday <= endOfCurrentMonth) ||
+          (upcomingBirthday >= startOfNextMonth &&
+            upcomingBirthday <= endOfNextMonth)
+        );
+      });
+  }
 
   const filterOptions = [
     { key: "currentDay", text: "Current Day" },
@@ -735,11 +788,11 @@ function BirthdayAndAnniversary({
               ? translation.UpcomingBirthdays
               : "Upcoming Birthdays and Anniversaries"}
           </h1>
-          {appSettings?.BirthdayAndAnniversaryImage && (
+          {imagesList.BirthdayAndAnniversaryImage && (
             <img
               width={"auto"}
               height={120}
-              src={appSettings?.BirthdayAndAnniversaryImage}
+              src={imagesList.BirthdayAndAnniversaryImage}
               alt=""
             />
           )}

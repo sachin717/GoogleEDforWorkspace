@@ -2,9 +2,10 @@ import "../SelectSource/Edp.scss";
 import "./Styles.scss";
 import styles from "../SCSS/Ed.module.scss";
 import "sweetalert2/dist/sweetalert2.css";
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import BulkUpload from "./BulkUpload";
+import { useConst } from "@fluentui/react-hooks";
 import EDStyles from "../SCSS/Ed.module.scss";
 import { gapi } from "gapi-script";
 import { TooltipHost, ITooltipHostStyles } from "@fluentui/react/lib/Tooltip";
@@ -14,14 +15,16 @@ import MiniModals from "./MiniModals";
 import { UserPropsGridView } from "./UserPropsGridView";
 import useStore, { useSttings } from "./store";
 import { SearchFilter } from "./SearchFilter";
-import { BlobServiceClient } from "@azure/storage-blob";
-import { Buffer } from "buffer";
 import { useBoolean } from "@fluentui/react-hooks";
 import {
-  ActionButton,
   Checkbox,
+  DatePicker,
+  DefaultButton,
+  DetailsList,
   Dropdown,
-  FontIcon,
+  IContextualMenuItem,
+  IContextualMenuProps,
+  IDatePickerStrings,
   IDropdownOption,
   Icon,
   IconButton,
@@ -32,21 +35,14 @@ import {
   Persona,
   PersonaSize,
   PrimaryButton,
-  Separator,
+  SelectionMode,
   Shimmer,
-  Spinner,
-  SpinnerSize,
   Stack,
   TextField,
   Toggle,
-  mergeStyleSets,
   mergeStyles,
 } from "office-ui-fabric-react";
 import { IPivotStyles, Pivot, PivotItem } from "@fluentui/react";
-import Mobile1 from "./Mobile";
-import MobileDelete from "./MobileDelete";
-import HideManager from "./HideManager";
-import HideManagerDelete from "./HideManagerDelete";
 import CustomAdd from "./CustomAdd";
 import Department from "./Department";
 import JTitle from "./JTitle";
@@ -56,18 +52,18 @@ import Users from "./Users";
 import ImageTag from "./ImageTag";
 import ImageCropper from "./Utils/ImageCropper";
 import {
-  changeFavicon,
   convertToBase64,
+  convertToISO,
   decryptData,
   encryptData,
+  generateUniqueId,
+  isUserAdminCheck,
   removeDuplicatesFromObject,
   removeFavicon,
-  updateSettingData,
 } from "../Helpers/HelperFunctions";
 import { LangOptions } from "../../Language/LanguageOptions";
 import { Language } from "../../Language/Languages";
 import { useLanguage } from "../../Language/LanguageContext";
-import CustomPeoplePicker from "../Utils/CustomPeoplePicker";
 import ExcludedDomain from "./ExcludedDomain";
 import ExcludedName from "./ExcludedName";
 import ExcludedLocation from "./ExcludedLocation";
@@ -80,7 +76,7 @@ import AnniversaryTemplate from "./Utils/AnniversayTemplate";
 import ImportPronouns from "./ImportPronouns";
 import ImportUsers from "./ImportUsers";
 import FilterAttributes from "../settings/FilterAttributes";
-import { useFields } from "../../context/store";
+import { useFields, useLists } from "../../context/store";
 import RolesAndPermisstions from "../settings/RolesAndPermisstions";
 import ExecutiveAssistantRelationship from "../settings/ExecutiveAssistantRelationship";
 import SearchSettings from "../settings/SearchSettings";
@@ -93,12 +89,20 @@ import GeneralShowHideModule from "../settings/GeneralShowHideModule";
 import { useCustomStyles } from "./Utils/useCustomstyle";
 import OrgChart from "../settings/OrgChart";
 import RestrictedAccess from "../settings/RestrictedAccess";
+import {
+  getSettingJson,
+  IMAGES_LIST,
+  SETTING_LIST,
+  updateSettingJson,
+  USER_LIST,
+} from "../../api/storage";
+import HideManager from "../settings/HideManager";
+import HideMobileNumber from "../settings/HideMobileNumber";
+
 
 let departmentList: { label: any; value: any }[] = [];
 let jobTitleList: { label: any; value: any }[] = [];
-let lightdarkmode: any;
 var parsedData: any = "";
-var containerClient: any;
 var dynamicwidth: any;
 let finalDataNonM365: any = [];
 let optionList: any = [];
@@ -110,13 +114,12 @@ var managerEmail = "";
 //   { key: "currentMonth", text: "Current Month" },
 //   { key: "upcomingMonth", text: "Upcoming Month" },
 // ];
-const BirthAndAnivfilterOptions =  [
+const BirthAndAnivfilterOptions = [
   { key: "currentDay", text: "Current Day" },
   { key: "currentWeek", text: "Current Week" },
   { key: "currentWeekAndNextWeek", text: "Current & Next week " },
   { key: "currentMonth", text: "Current Month" },
   { key: "currentMonthAndNextMonth", text: "Current & Next Month" },
-
 ];
 
 const PivotStyles: IPivotStyles = {
@@ -154,39 +157,55 @@ const profileCardProperties = [
 let previewBrandLogoImage: any = "";
 
 const AdvanceSetting = (props: any) => {
+
+  
   // const { setShowOrgChart, setShowHomePage, filterByLetter } = props;
-  const { departmentFields, jobTitleFields, excludeOptionsForDomain } =useFields();
+  const { departmentFields, jobTitleFields, excludeOptionsForDomain ,setCommandBarItems ,CommandBarItems,} =
+    useFields();
   const {
     languagePartUpdate,
     setLanguagePartUpdate,
     translation,
     setLanguage,
   } = useLanguage();
+  const { appSettings, setAppSettings } = useSttings();
+  const {usersList, setUsersList, imagesList, setImagesList} = useLists();
 
   const { SweetAlert: SweetAlertGridView } = SweetAlerts("#UserPrtiesGV", true);
   const { SweetAlert: SweetAlertDashboardPanel } = SweetAlerts(
     "#dashboardpanel",
     true
   );
-  const { SweetAlert: SweetAlertDomain } = SweetAlerts("#domain",true);
-  const { SweetAlert: SweetAlertCustomFields , SweetPrompt: SweetPromptCustomFieldsDelete} = SweetAlerts("#customFields",true);
-  const { SweetAlert: SweetAlertJobTitle } = SweetAlerts("#jobTitle",true);
-  const { SweetAlert: SweetAlertCsvPanel } = SweetAlerts("#csvpanel",true);
+  const { SweetAlert : ExportSweetAlert ,SweetPrompt: SweetAlertImportUserDelete } =
+    SweetAlerts("#ImportUserDelete");
+  const { SweetAlert: SweetAlertDomain } = SweetAlerts("#domain", true);
+  const {
+    SweetAlert: SweetAlertCustomFields,
+    SweetPrompt: SweetPromptCustomFieldsDelete,
+  } = SweetAlerts("#customFields", true);
+  const { SweetAlert: SweetAlertJobTitle } = SweetAlerts("#jobTitle", true);
+  const { SweetAlert: SweetAlertCsvPanel } = SweetAlerts("#csvpanel", true);
 
   const { SweetAlert: SweetAlertIncludeduserlist } =
-    SweetAlerts("#Includeduserlist");
+    SweetAlerts("#Includeduserlist",true);
   const {
     SweetAlert: SweetAlertCustomfunc,
     SweetPrompt: SweetPromptCustomFunc,
   } = SweetAlerts("#customfunc", true);
-  const { SweetAlert: SweetAlertBirthAndAnnivSetting } = SweetAlerts("#birthAndAnnivSetting", true);
+  const { SweetAlert: SweetAlertBirthAndAnnivSetting } = SweetAlerts(
+    "#birthAndAnnivSetting",
+    true
+  );
   const { SweetAlert: SweetAlertPrononus } = SweetAlerts("#pronouns", true);
   const { SweetAlert: SweetAlertImportUser } = SweetAlerts("#importuser", true);
   const { SweetAlert: SweetAlertShowHideForView } = SweetAlerts(
     "#ShowHideForView",
     true
   );
-  const { SweetAlert: SweetAlertEmailTemp } = SweetAlerts("#emailTemplate",true);
+  const { SweetAlert: SweetAlertEmailTemp } = SweetAlerts(
+    "#emailTemplate",
+    true
+  );
   const { SweetAlert: SweetAlertShowHideAdvanced } = SweetAlerts(
     "#AdvanceShowHide",
     true
@@ -197,6 +216,10 @@ const AdvanceSetting = (props: any) => {
   );
   const { SweetAlert: SweetAlertHideManager } = SweetAlerts(
     "#HideManager",
+    true
+  );
+  const { SweetAlert: SweetAlertSingleUserUpload } = SweetAlerts(
+    "#singleUserUpload",
     true
   );
   const { SweetAlert: SweetAlertGeneralHideShow } = SweetAlerts(
@@ -214,24 +237,128 @@ const AdvanceSetting = (props: any) => {
   const { SweetAlert: SweetAlertOutSidePanel } = SweetAlerts(
     "#excludeoutsidepanel"
   );
-  const { SweetAlert: SweetAlertContains } = SweetAlerts("#excludedContains",true);
-  const { SweetAlert: SweetAlertLocation } = SweetAlerts("#excludedLocation",true);
-  const { SweetAlert: SweetAlertEmail } = SweetAlerts("#excludedEmail",true);
-  const { SweetAlert: SweetAlertExcludeCsv } = SweetAlerts("#excludedCsv",true);
-  const { SweetAlert: SweetAlertExcludeName } = SweetAlerts("#excludeName",true);
-  const { SweetAlert: SweetAlertExcludeDept } = SweetAlerts("#excludeDept",true);
+  const { SweetAlert: SweetAlertContains } = SweetAlerts(
+    "#excludedContains",
+    true
+  );
+  const { SweetAlert: SweetAlertLocation } = SweetAlerts(
+    "#excludedLocation",
+    true
+  );
+  const { SweetAlert: SweetAlertEmail } = SweetAlerts("#excludedEmail", true);
+  const { SweetAlert: SweetAlertExcludeCsv } = SweetAlerts(
+    "#excludedCsv",
+    true
+  );
+  const { SweetAlert: SweetAlertExcludeName } = SweetAlerts(
+    "#excludeName",
+    true
+  );
+  const { SweetAlert: SweetAlertExcludeDept } = SweetAlerts(
+    "#excludeDept",
+    true
+  );
   const { SweetAlert: SweetAlertExecutiveAssistant } = SweetAlerts(
     "#ExecutiveAssistant",
     true
   );
+
+  const handleMenuItemClick = (item: IContextualMenuItem) => {
+    switch (item.key) {
+      case "Add":
+        // console.log("Add clicked");
+        setEditImportUserPanel(false);
+        setOpenImportUsersPanel(true);
+
+        break;
+      case "AddBulk":
+      
+        setOpenBulkUploadPanel(true);
+
+        break;
+      case "Export":
+     
+        const date = new Date();
+     
+        if(usersList?.Users === undefined || usersList?.Users === null){
+          ExportSweetAlert("error", "No Users found to export");
+        }else{
+          downloadTemplate(usersList?.Users || [], `NonGoogleUsers ${date.toDateString()}`, "A");
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const menuProps: IContextualMenuProps = useConst({
+    shouldFocusOnMount: true,
+    items: [
+      {
+        key: "Add",
+        iconProps: { iconName: "Add" },
+        text: "Add",
+        onClick: (ev, item) => handleMenuItemClick(item),
+      },
+      {
+        key: "AddBulk",
+        iconProps: { iconName: "BulkUpload" },
+        text: "Add Bulk",
+        onClick: (ev, item) => handleMenuItemClick(item),
+      },
+      {
+        key: "Export",
+        iconProps: { iconName: "download" },
+        text: "Export",
+        onClick: (ev, item) => handleMenuItemClick(item),
+      },
+    ],
+  });
   // const { SweetAlert: SweetAlertExcludeJob } = SweetAlerts("#excludeJob");
-  const { appSettings, setAppSettings } = useSttings();
 
   const [hideShowViews, setHideShowViews] = useState({
     grid: false,
     list: false,
     tile: false,
   });
+  const ListStyles = {
+    headerWrapper: {
+      flex: "0 0 auto",
+      selectors: {
+        "& [role=presentation]": {
+          selectors: {
+            "& [role=row]": {
+              background: "rgb(0, 120, 212, .4)",
+              padding: "4px 0px",
+              color: "inherit",
+
+              selectors: {
+                ".ms-DetailsHeader-cellTitle": {
+                  color: "rgb(0, 120, 212)",
+                },
+                ".ms-DetailsHeader-cell:hover": {
+                  color: "#fff",
+                  background: "rgb(0, 120, 212,0)",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
+    contentWrapper: {
+      flex: "1 1 auto",
+      ".ms-DetailsRow-fields": {
+        alignItems: "center",
+        borderBottom: ".5px solid black",
+      },
+
+      "& .ms-DetailsRow-cell": {
+        fontSize: "13px !important",
+      },
+    },
+  };
 
   let usersnameOptions = props.UserArray?.map((item) => {
     return { value: item.name, label: item.name };
@@ -248,16 +375,23 @@ const AdvanceSetting = (props: any) => {
     setOpenExecutiveAssistantRelationship,
   ] = useState(false);
 
-  const [upcomingBirthAndAnivAdv, setUpcomingBirthAndAnivAdv] =
-    React.useState("Google & Imported User");
-  const [syncUserInfo, setSyncUserInfo] = React.useState("Google & Imported User");
+  const [upcomingBirthAndAnivAdv, setUpcomingBirthAndAnivAdv] = React.useState(
+    "Google & Imported User"
+  );
+  const [syncUserInfo, setSyncUserInfo] = React.useState(
+    "Google & Imported User"
+  );
   const [dashboardUsers, setDashboardUsers] = React.useState([]);
   const [GroupsChecked, setGroupsChecked] = React.useState(false);
+  const [isEditImportUserPanel, setEditImportUserPanel] = React.useState(false);
   const [bLogo, setBlogo] = React.useState<any>("");
   const [selectedBithFilter, setSelectedBithFilter] = useState("");
   const [HideShowPronouns, setHideShowPronouns] = useState<any>(false);
   const [filterBirthdayData, setfilterBirthdayData] = useState<any>([]);
   const [autoLoad, setAutoLoad] = React.useState(false);
+  const [NonGoogleUsersData, setNonGoogleUsersData] = React.useState([]);
+  const [isUserImportedByCsv, setUserImportedByCsv] = React.useState(false);
+  const [isOpenBulkUploadPanel, setOpenBulkUploadPanel] = React.useState(false);
   const [excludeByNameOptions, setExcludeByNameOptions] =
     React.useState(usersnameOptions);
 
@@ -331,6 +465,7 @@ const AdvanceSetting = (props: any) => {
     useState(false);
 
   const [LabelModal, setLabelModal] = useState(false);
+  const [isOpenImportUsersPanel, setOpenImportUsersPanel] = useState(false);
   const [executive, setExecutive] = useState("");
   const [aboutMe, setAboutMe] = useState("");
 
@@ -343,6 +478,201 @@ const AdvanceSetting = (props: any) => {
 
   // Collaboration Setting States
   const [showCollaborationPanel, setShowCollaborationPanel] = useState(false);
+  const [formState, setFormState] = useState({
+    name: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    manager: "",
+    department: "",
+    job: "",
+    workphone: "",
+    mobile: "",
+    skills: "",
+    projects: "",
+    hobbies: "",
+    school: "",
+    About_Me: "",
+    DOB: null,
+    DOJ: null,
+    id: null,
+  });
+  let NonGoogleColumns = [
+    {
+      key: "Name",
+      name: "Name",
+      fieldName: "name",
+      minWidth: 120,
+      maxWidth: 180,
+    },
+    {
+      key: "firstName",
+      name: "First Name",
+      fieldName: "firstName",
+      minWidth: 120,
+      maxWidth: 180,
+    },
+    {
+      key: "mail",
+      name: "Email",
+      fieldName: "email",
+      minWidth: 120,
+      maxWidth: 180,
+    },
+
+    {
+      key: "manager",
+      name: "Manager",
+      fieldName: "manager",
+      minWidth: 120,
+      maxWidth: 180,
+    },
+    {
+      key: "DOB",
+      name: "DOB",
+      fieldName: "DOB",
+      minWidth: 120,
+      maxWidth: 180,
+    },
+    {
+      key: "DOJ",
+      name: "DOJ",
+      fieldName: "DOJ",
+      minWidth: 120,
+      maxWidth: 180,
+    },
+    {
+      key: "Action",
+      name: "Action",
+      fieldName: "Action",
+      minWidth: 120,
+      maxWidth: 180,
+      onRender: (item: any) => {
+        return (
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Icon
+              style={{ color: "rgb(0, 120, 212)", cursor: "pointer" }}
+              iconName="Edit"
+              onClick={() => handleEditImportUser(item)}
+            />
+            <Icon
+              style={{ color: "rgb(0, 120, 212)", cursor: "pointer" }}
+              iconName="delete"
+              onClick={() => handleDeleteImportUser(item)}
+            />
+          </div>
+        );
+      },
+    },
+  ];
+  function handleEditImportUser(item) {
+
+    setEditImportUserPanel(true);
+    setOpenImportUsersPanel(true);
+    let existingDOB=new Date(item.DOB)=="Invalid Date" as any?null:new Date(item.DOB);
+    let existingDOJ=new Date(item.DOJ)=="Invalid Date" as any?null:new Date(item.DOJ);
+    setFormState({ ...item, DOB: existingDOB, DOJ:existingDOJ });
+  }
+  function handleDeleteImportUser(item) {
+    SweetAlertImportUserDelete(
+      "warning",
+      "Are you sure you want to delete this?"
+    ).then((res) => {
+   
+      if (res.isConfirmed) {
+        let result = NonGoogleUsersData?.filter((data) => {
+          return data.id != item.id;
+        });
+        setNonGoogleUsersData(result);
+        setUsersList({
+          ...usersList,
+          Users: result,
+        });
+        updateSettingJson(USER_LIST,encryptData(JSON.stringify({
+          ...usersList,
+          Users: result,
+        })));
+      }
+    });
+  }
+
+  // Handle text field changes
+  const handleChange = (event, newValue) => {
+    const id = event.target.id;
+    setFormState((prevState) => ({
+      ...prevState,
+      [id]: newValue,
+    }));
+  };
+
+  // Handle date picker changes
+  const handleDateChange = (date, id) => {
+    setFormState((prevState) => ({
+      ...prevState,
+      [id]: date ? date : null,
+    }));
+  };
+
+  // Handle text area changes
+  const handleTextAreaChange = (event, newValue) => {
+    const id = event.target.id;
+    setFormState((prevState) => ({
+      ...prevState,
+      [id]: newValue,
+    }));
+  };
+  // console.log(formState, "formstate");
+  // DatePicker strings
+  const datePickerStrings: IDatePickerStrings = {
+    months: [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ],
+    shortMonths: [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ],
+    days: [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ],
+    shortDays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    goToToday: "Go to today",
+    prevMonthAriaLabel: "Previous month",
+    nextMonthAriaLabel: "Next month",
+    prevYearAriaLabel: "Previous year",
+    nextYearAriaLabel: "Next year",
+    closeButtonAriaLabel: "Close",
+    monthPickerHeaderAriaLabel: "Select month",
+    yearPickerHeaderAriaLabel: "Select year",
+    isRequiredErrorMessage: "Date is required.",
+    invalidInputErrorMessage: "Invalid date format.",
+  };
 
   const DropDownoptions: IDropdownOption[] = [
     { key: "FullOrgCharts", text: "Full Org Chart" },
@@ -650,21 +980,27 @@ const AdvanceSetting = (props: any) => {
   React.useEffect(() => {
     GetSettingData();
   }, []);
+  React.useEffect(() => {
+    if (isOpenImportUsers) {
+     
+       setNonGoogleUsersData(usersList?.Users);
+    }
+  }, [isOpenImportUsers,isUserImportedByCsv]);
 
   useEffect(() => {
     window.addEventListener("resize", changeView);
     function changeView() {
       if (window.innerWidth < 768) {
-        let temp = { ...parsedData, defaultMobileView: selectedMobileView };
+        let temp = { ...appSettings, defaultMobileView: selectedMobileView };
 
         setView(selectedMobileView);
 
-        if (Object.keys(parsedData).length > 0) {
-          updateSettingData(temp);
+        if (Object.keys(appSettings).length > 0) {
+          updateSettingJson(SETTING_LIST, temp);
         }
       } else {
         setView(appSettings.DefaultView);
-        console.log("Not in mobile view. Function not called.");
+        
       }
     }
 
@@ -672,30 +1008,32 @@ const AdvanceSetting = (props: any) => {
       window.removeEventListener("resize", changeView);
     };
   }, [window.innerWidth]);
-  const mystyle =useCustomStyles();
+  const mystyle = useCustomStyles();
   function onChangeDashboard(e: any, checked: any) {
     setShowDashboard(checked);
-    updateSetting({ ...parsedData, showDashboard: checked });
+    updateSettingJson(SETTING_LIST, { ...parsedData, showDashboard: checked });
     setAppSettings({ ...parsedData, showDashboard: checked });
-    SweetAlertGeneralHideShow("success", translation.SettingSaved);
+    SweetAlertShowHideAdvanced("success", translation.SettingSaved);
   }
 
   async function onLanguageChange(event: any, item: any) {
     setSelectedLang(item);
-    console.log("language ", item);
-    console.log(Language);
-    let lang = item?.key as string;
-    console.log("pp", lang);
 
-    await setLanguage(lang);
-    setLanguagePartUpdate(!languagePartUpdate);
-    let temp = await {
+  
+    let lang = item?.key as string;
+   
+
+    setLanguage(lang);
+    let temp = {
       ...parsedData,
       SelectedLanguage: item,
-      LaguageData: translation,
+      LanguageData: translation,
       BrowserLanguageActive: browserLangDetectToggle,
     };
-    await updateSetting(temp);
+    
+    await updateSettingJson(SETTING_LIST, temp);
+    setAppSettings(temp)
+    setLanguagePartUpdate((prev)=>!prev);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
 
@@ -704,7 +1042,7 @@ const AdvanceSetting = (props: any) => {
   function onChangeClearAlphaFilter(e: any, checked: any) {
     setClearAlphaFilter(checked);
     const setting = { ...appSettings, clearAlphaFilter: checked };
-    updateSetting(setting);
+    updateSettingJson(SETTING_LIST,setting);
     setAppSettings(setting);
     SweetAlertClearAlphaFilter("success", translation.SettingSaved);
   }
@@ -721,17 +1059,19 @@ const AdvanceSetting = (props: any) => {
       lang = selectLang;
       setLanguage(lang);
     }
-    setLanguagePartUpdate(!languagePartUpdate);
-    let temp = await {
+    let temp = {
       ...parsedData,
       SelectedLanguage: selectLang,
-      LaguageData: translation,
+      LanguageData: translation,
       BrowserLanguageActive: checked,
       BrowserLanguage: window.navigator.language,
     };
-    updateSetting(temp);
+    
+    await updateSettingJson(SETTING_LIST, temp);
+    setAppSettings(temp);
+    setLanguagePartUpdate(!languagePartUpdate);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
-    console.log(window.navigator.language, "lang");
+   
   }
 
   const onChangeInfoAlign = (alignment) => {
@@ -739,12 +1079,13 @@ const AdvanceSetting = (props: any) => {
   };
 
   function handleChangeAlignMent() {
-    updateSetting({
-      ...parsedData,
+    updateSettingJson(SETTING_LIST, {
+      ...appSettings,
       EmpInfoAlignment: selectedEmpInfoAlignment,
     });
+
     setAppSettings({
-      ...parsedData,
+      ...appSettings,
       EmpInfoAlignment: selectedEmpInfoAlignment,
     });
     SweetAlertOutSidePanel("success", translation.SettingSaved);
@@ -760,13 +1101,14 @@ const AdvanceSetting = (props: any) => {
         CustomHomePageLinkActive: checked,
       },
     };
-    updateSetting(temp);
+ 
+    updateSettingJson(SETTING_LIST, temp);
   }
 
   function handleChangeMemeberOf(e: any, checked: any) {
     setShowMemeberOf(checked);
     let temp = { ...parsedData, ShowMemeberOf: checked };
-    updateSetting(temp);
+    updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
     SweetAlertShowHideAdvanced("success", translation.SettingSaved);
   }
@@ -774,14 +1116,15 @@ const AdvanceSetting = (props: any) => {
   function handleChangeOrgChart(e: any, checked: any) {
     setShowOrgChart(checked);
     let temp = { ...parsedData, ShowOrgChart: checked };
-    updateSetting(temp);
+    updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
+    setCommandBarItems({ShowOrgChart: checked})
     SweetAlertShowHideAdvanced("success", translation.SettingSaved);
   }
 
   const _onGRPChange = React.useCallback((e, checked?: boolean): void => {
     setGroupsChecked(checked);
-    updateSettingData({ ...parsedData, GroupsOn: checked });
+    updateSettingJson(SETTING_LIST, { ...parsedData, GroupsOn: checked });
     setAppSettings({ ...parsedData, GroupsOn: checked });
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }, []);
@@ -789,7 +1132,7 @@ const AdvanceSetting = (props: any) => {
   function handleChangeWFH(e: any, checked: any) {
     setShowWFH(checked);
     let temp = { ...parsedData, ShowWFH: checked };
-    updateSetting(temp);
+    updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
     SweetAlertShowHideAdvanced("success", translation.SettingSaved);
   }
@@ -797,7 +1140,7 @@ const AdvanceSetting = (props: any) => {
   function handleWeeklyWorkStatus(e: any, checked: any) {
     setWeekWorkStatus(checked);
     let temp = { ...parsedData, ShowWeekWorkStatus: checked };
-    updateSetting(temp);
+    updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
     SweetAlertShowHideAdvanced("success", translation.SettingSaved);
   }
@@ -808,21 +1151,18 @@ const AdvanceSetting = (props: any) => {
       const imgBlob = await response.blob();
 
       const base64Image = await convertToBase64(imgBlob);
-      const setting = {
-        ...appSettings,
-        BirthdayAndAnniversaryImage: base64Image,
-      };
+      const setting = {...imagesList,BirthdayAndAnniversaryImage: base64Image};
 
-      updateSetting(setting);
-      setAppSettings(setting);
+      updateSettingJson(IMAGES_LIST, setting);
+      setImagesList(setting);
       SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
     } catch (error) {
-      console.error("Error processing image:", error);
+
       SweetAlertBirthAndAnnivSetting("success", "Something went wrong");
     }
   }
   function handleRemoveBithImg() {
-    updateSetting({ ...appSettings, BirthdayAndAnniversaryImage: "" });
+    updateSettingJson(SETTING_LIST,{ ...appSettings, BirthdayAndAnniversaryImage: "" });
     setImageToCrop("");
     setShowBirthAnivImg("");
     SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
@@ -837,14 +1177,15 @@ const AdvanceSetting = (props: any) => {
         homeCustomUrlIconName: homeCustomUrlIconName,
       },
     };
-    updateSetting(temp);
+
+    updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
 
   function handleOrgName() {
     let temp = { ...parsedData, OrgName: OrgName };
-    updateSetting(temp);
+    updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
@@ -852,7 +1193,7 @@ const AdvanceSetting = (props: any) => {
   function handleChnageHideShowPronouns(e: any, checked: any) {
     setHideShowPronouns(checked);
     let temp = { ...appSettings, HideShowPronouns: checked };
-    updateSetting(temp);
+    updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
     SweetAlertShowHideAdvanced("success", translation.SettingSaved);
   }
@@ -860,31 +1201,26 @@ const AdvanceSetting = (props: any) => {
   async function handleSaveBrandLogo() {
     if (bLogo) {
       try {
-        // previewBrandLogoImage = await convertToBase64(bLogo);
         const response = await fetch(bLogo);
         const imgBlob = await response.blob();
 
         const base64Image = await convertToBase64(imgBlob);
-        let temp = { ...appSettings, BrandLogo: base64Image };
-        console.log(temp, "temp");
-        updateSetting(temp);
-        setAppSettings(temp);
-        // GetSettingData();
+        let temp = { ...imagesList, BrandLogo: base64Image };
+        updateSettingJson(IMAGES_LIST, temp);
+        setImagesList(temp);
         SweetAlertOutSidePanel("success", translation.SettingSaved);
       } catch (error) {
-        console.error("Error converting image to Base64:", error);
+     
       }
     }
   }
 
   function handleRemoveBrandLogo() {
-    let temp = { ...appSettings, BrandLogo: null };
-    console.log(temp, "temp");
-    updateSetting(temp);
-    setAppSettings(temp);
+    let temp = { ...imagesList, BrandLogo: "" };
+    updateSettingJson(IMAGES_LIST, temp);
+    setImagesList(temp);
     setCroppedImage("");
     setBlogo("");
-    // GetSettingData();
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
 
@@ -924,7 +1260,7 @@ const AdvanceSetting = (props: any) => {
 
   function handleSaveProfileIcon() {
     let temp = { ...parsedData, profileIconName: profileIconName };
-    updateSetting(temp);
+    updateSettingJson(SETTING_LIST, temp);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
 
@@ -934,62 +1270,27 @@ const AdvanceSetting = (props: any) => {
   };
 
   const handleSaveSortBy = (selectedOption: any) => {
-    // parsedData["sortby"] = selectedOption.toString();
     const setting = { ...appSettings, sortby: selectedOption };
-    // setSaved(true);
     if (Object.keys(setting).length > 0) {
-      updateSetting(setting);
+      updateSettingJson(SETTING_LIST, setting);
+      setAppSettings(setting);
       SweetAlertOutSidePanel("success", translation.SettingSaved);
     }
   };
 
   async function GetSettingData() {
-    var domain = gapi.auth2
-      .getAuthInstance()
-      .currentUser.le.wt.cu.split("@")[1];
-    //console.log(domain);
-    var _domain = domain.replace(/\./g, "_");
-    var storagedetails =
-      '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-      _domain +
-      '.json"}]';
-    var mappedcustomcol = JSON.parse(storagedetails);
-    const sasToken =
-      "sv=2022-11-02&ss=b&srt=sco&sp=rwdlaciytfx&se=2028-02-28T12:24:45Z&st=2024-02-29T04:24:45Z&spr=https&sig=FrbdvHpW929m3xVikmm5HiBL6Q00lHjk0a5CPuw1H2U%3D";
-    const blobStorageClient = new BlobServiceClient(
-      // this is the blob endpoint of your storage acccount. Available from the portal
-      // they follow this format: <accountname>.blob.core.windows.net for Azure global
-      // the endpoints may be slightly different from national clouds like US Gov or Azure China
-      "https://" +
-        mappedcustomcol[0].storageaccount +
-        ".blob.core.windows.net?" +
-        sasToken
-      //   ,
-      // null
-      //new InteractiveBrowserCredential(signInOptions)
-    );
-    containerClient = blobStorageClient.getContainerClient(
-      mappedcustomcol[0].containername
-    );
-    const blobClient = containerClient.getBlobClient(
-      mappedcustomcol[0].blobfilename
-    );
-    const exists = await blobClient.exists();
+    const settingJson = await getSettingJson(SETTING_LIST);
+    const usersJson = await getSettingJson(USER_LIST);
+    console.log("settingData",settingJson)
+   
 
-    if (exists) {
-      const downloadBlockBlobResponse = await blobClient.download();
-      const downloaded: any = await blobToString(
-        await downloadBlockBlobResponse.blobBody
-      );
-      //console.log("Downloaded blob content11", downloaded,'2');
-      // const jsonData = downloadBlockBlobResponse.toString();
-      // Parse the JSON data
-      //const buf = new ArrayBuffer(downloaded.maxByteLength);
-      const decoder = new TextDecoder();
-      const str = decoder.decode(downloaded);
-      //_parsedData=str;
-      parsedData = JSON.parse(str);
-      setAppSettings(JSON.parse(str));
+    if (Object.keys(usersJson)?.length) {
+      setUsersList(usersJson);
+    }
+
+    if (Object.keys(settingJson)?.length) {
+      parsedData = settingJson;
+      setAppSettings(settingJson);
       previewBrandLogoImage = parsedData.BrandLogo;
 
       setSelectedExcludedDomian(parsedData?.ExcludeByDomain);
@@ -997,23 +1298,29 @@ const AdvanceSetting = (props: any) => {
       setExecutive(parsedData?.Labels?.executive);
       setAboutMe(parsedData?.Labels?.aboutMe);
       let grpon = parsedData?.GroupsOn;
-      //console.log(parsedData);
       if (grpon) {
         setGroupsChecked(grpon);
       } else {
         setGroupsChecked(false);
       }
 
+      setfilterBirthdayData(appSettings.BirthAndAnivFilter);
+
+      setProfileIconName(appSettings.profileIconName);
+
       setTopBarView(parsedData?.TopBarFilterView);
 
       if (parsedData?.EmpInfoAlignment) {
         setSelectedEmpInfoAlignment(parsedData?.EmpInfoAlignment);
       }
-      if (parsedData?.BrandLogo) {
-        setBlogo(parsedData?.BrandLogo);
-      }
+      // if (parsedData?.BrandLogo) {
+        setBlogo(imagesList.BrandLogo);
+      // }
       if (parsedData?.SyncUserInfoFrom) {
         setSyncUserInfo(parsedData?.SyncUserInfoFrom);
+      }
+      if (parsedData?.sortby) {
+        setSelectedOption(parsedData?.sortby);
       }
       if (parsedData?.SelectedUpcomingBirthAndAniv) {
         setUpcomingBirthAndAnivAdv(parsedData?.SelectedUpcomingBirthAndAniv);
@@ -1041,8 +1348,8 @@ const AdvanceSetting = (props: any) => {
           )
         );
       }
-      if (parsedData?.AutoLoad) {
-        setAutoLoad(parsedData?.AutoLoad);
+      if (settingJson?.AutoLoad) {
+        setAutoLoad(settingJson?.AutoLoad);
       }
       if (parsedData?.dashboardFeature) {
         setDashboardFeature(parsedData?.dashboardFeature);
@@ -1052,12 +1359,12 @@ const AdvanceSetting = (props: any) => {
       //   setDashboardIncludedUser(parsedData?.dashboardAccessUsers);
       //   setDashboardIncludedUserTableShowData(parsedData?.dashboardAccessUsers);
       // }
-      if (parsedData?.DashboardSpecificUsers) {
+      if (usersJson?.DashboardSpecificUsers) {
         setDashboardUsers(
-          JSON.parse(decryptData(parsedData?.DashboardSpecificUsers))
+          usersJson.DashboardSpecificUsers
         );
         setDashboardIncludedUserTableShowData(
-          JSON.parse(decryptData(parsedData?.DashboardSpecificUsers))
+          usersJson?.DashboardSpecificUsers
         );
       }
       if (parsedData?.showDashboard) {
@@ -1080,7 +1387,9 @@ const AdvanceSetting = (props: any) => {
         setSelectedView(appSettings?.DefaultView);
         // setView()
       }
-
+      if (parsedData?.defaultMobileView) {
+        setSelectedMobileView(parsedData.defaultMobileView);
+      }
       setBrowserLangDetectedLang(window.navigator.language);
 
       if (parsedData?.BrowserLanguageActive) {
@@ -1117,11 +1426,11 @@ const AdvanceSetting = (props: any) => {
       }
 
       if (
-        parsedData?.CustomHomePageUrl?.homeCustomUrlIconName !== undefined &&
-        parsedData?.CustomHomePageUrl?.homeCustomUrlIconName?.trim() !== ""
+        settingJson?.CustomHomePageUrl?.homeCustomUrlIconName !== undefined &&
+        settingJson?.CustomHomePageUrl?.homeCustomUrlIconName?.trim() !== ""
       ) {
         setHomeCustomUrlIconName(
-          parsedData?.CustomHomePageUrl?.homeCustomUrlIconName
+          settingJson?.CustomHomePageUrl?.homeCustomUrlIconName
         );
       }
       setDataLoaded(true);
@@ -1139,9 +1448,7 @@ const AdvanceSetting = (props: any) => {
         // changeCheckboxesChecked(updatedCheckboxesProfile);
       } else {
         setCheckboxesChecked(checkboxesChecked);
-        console.log(
-          "ListViewPrope property not found in the downloaded object"
-        );
+      
       }
       if (parsedData.ListViewPrope) {
         const updatedCheckboxes = { ...checkboxesCheckedListView };
@@ -1158,8 +1465,7 @@ const AdvanceSetting = (props: any) => {
         setSelectedOrgchart(parsedData.orgChartType);
       }
       if (parsedData.records_to_load) {
-        // console.log(parsedData);
-        // console.log(parsedData.records_to_load.toString());
+      
         setCheckedValueRecord(parsedData.records_to_load.toString());
       }
       if (parsedData.orgChartHead) {
@@ -1170,7 +1476,7 @@ const AdvanceSetting = (props: any) => {
       }
 
       dynamicwidth = parsedData.gridWidth;
-      //console.log(parsedData);
+   
       setdivwidth(dynamicwidth);
       if (parsedData.sortby) {
         setSelectedOption(parsedData.sortby);
@@ -1196,25 +1502,18 @@ const AdvanceSetting = (props: any) => {
   };
 
   function handleUpcomingBirthAndAnivAdv() {
-    updateSettingData({
+    const setting = {
       ...appSettings,
       SelectedUpcomingBirthAndAniv: upcomingBirthAndAnivAdv,
-    });
-    setAppSettings({
-      ...appSettings,
-      SelectedUpcomingBirthAndAniv: upcomingBirthAndAnivAdv,
-    });
+    };
+    updateSettingJson(SETTING_LIST, setting);
+    setAppSettings(setting);
     SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
   }
   function handleSyncUserInfo() {
-    updateSettingData({
-      ...parsedData,
-      SyncUserInfoFrom: syncUserInfo,
-    });
-    setAppSettings({
-      ...parsedData,
-      SyncUserInfoFrom: syncUserInfo,
-    });
+    const setting = { ...parsedData, SyncUserInfoFrom: syncUserInfo };
+    updateSettingJson(SETTING_LIST, setting);
+    setAppSettings(setting);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
 
@@ -1224,12 +1523,11 @@ const AdvanceSetting = (props: any) => {
       [view]: !prevState[view],
     }));
   };
-  function handleSaveFiltersBirthAndAnniv(){
-    if (Object.keys(appSettings)?.length) {
-      updateSettingData({ ...appSettings, BirthAndAnivFilter: filterBirthdayData });
-      SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
-      setAppSettings({ ...appSettings, BirthAndAnivFilter: filterBirthdayData });
-    }
+  function handleSaveFiltersBirthAndAnniv() {
+    const setting = { ...appSettings, BirthAndAnivFilter: filterBirthdayData };
+    updateSettingJson(SETTING_LIST, setting);
+    setAppSettings(setting);
+    SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
   }
 
   const handleBithAndAnivChange = (event: any, val: any) => {
@@ -1239,41 +1537,53 @@ const AdvanceSetting = (props: any) => {
     if (event.target.name == "currentDay") {
       data = {
         currentDay: val,
+        currentWeekAndNextWeek: false,
         currentWeek: false,
         currentMonth: false,
-        upcomingMonth: false,
+        currentMonthAndNextMonth: false,
       };
     } else if (event.target.name == "currentWeek") {
       data = {
         currentDay: false,
+        currentWeekAndNextWeek: false,
         currentWeek: val,
         currentMonth: false,
-        upcomingMonth: false,
+        currentMonthAndNextMonth: false,
+      };
+    } else if (event.target.name == "currentWeekAndNextWeek") {
+      data = {
+        currentDay: false,
+        currentWeekAndNextWeek: val,
+        currentWeek: false,
+        currentMonth: false,
+        currentMonthAndNextMonth: false,
       };
     } else if (event.target.name == "currentMonth") {
       data = {
         currentDay: false,
+        currentWeekAndNextWeek: false,
         currentWeek: false,
         currentMonth: val,
-        upcomingMonth: false,
+        currentMonthAndNextMonth: false,
       };
-    } else if (event.target.name == "upcomingMonth") {
+    } else if (event.target.name == "currentMonthAndNextMonth") {
       data = {
         currentDay: false,
+        currentWeekAndNextWeek: false,
         currentWeek: false,
         currentMonth: false,
-        upcomingMonth: val,
+        currentMonthAndNextMonth: val,
       };
     } else {
       data = {
         currentDay: true,
+        currentWeekAndNextWeek: false,
         currentWeek: false,
         currentMonth: false,
-        upcomingMonth: false,
+        currentMonthAndNextMonth: false,
       };
     }
     setfilterBirthdayData(data);
-  
   };
 
   function getFirstAvailableView(views) {
@@ -1297,12 +1607,13 @@ const AdvanceSetting = (props: any) => {
       filteredHideShowViews[currentDefaultView.toLowerCase()] === true;
     if (availableView && isDefaultViewAvailable) {
       return {
-        ...appSettings,
+       ...appSettings,
         DefaultView: availableView,
         hideShowViews: hideShowViews,
       };
     } else {
       return {
+      
         ...appSettings,
         DefaultView: getFirstAvailableView(filteredHideShowViews),
         hideShowViews: hideShowViews,
@@ -1310,44 +1621,362 @@ const AdvanceSetting = (props: any) => {
     }
   }
 
-  function handleShowHideViews() {
-    let updateData = updateDefaultViewIfNeeded(appSettings, hideShowViews);
-    setView(updateData.DefaultView);
-    updateSetting(updateData);
-    setAppSettings(updateData);
-    SweetAlertOutSidePanel("success", translation.SettingSaved);
+  function isValidEmail(email) {
+    // Simple regex for email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   }
 
+  // async function handleSaveImportSingleUser() {
+  //   const newUserData = [formState];
+  //   if(isEditImportUserPanel){
 
-  function handleExcludeContains() {
-    if (selectedExcludedContains?.length) {
-      let containsData = [];
-      containsData = [selectedExcludedContains];
-      if (appSettings?.ExcludedByContains) {
-        containsData = [
-          ...appSettings?.ExcludedByContains,
-          selectedExcludedContains,
-        ];
-      } else {
-        containsData = [selectedExcludedContains];
-      }
+  //   }else{
 
-      if (Object.keys(parsedData)?.length > 0) {
-        let data = { ...parsedData, ExcludedByContains: containsData };
-        updateSetting(data);
-        setAppSettings(data);
-        SweetAlertOutSidePanel("success", translation.SettingSaved);
-      }
+  //   let existingUserData;
+  //   try {
+  //       existingUserData = JSON.parse(decryptData(appSettings?.Users));
+  //   } catch (error) {
+  //       console.error('Error parsing existing user data:', error);
+  //       existingUserData = [];
+  //   }
+
+  //   if (!Array.isArray(existingUserData)) {
+  //       existingUserData = [];
+  //   }
+
+  //   const existingUsers = [];
+  //   const newUsersToImport = [];
+
+  //   for (const newUser of newUserData) {
+
+  //       if (!newUser.email || !isValidEmail(newUser.email)) {
+  //         SweetAlertSingleUserUpload("info", 'Please enter a valid email');
+  //         return;
+  //       }
+
+  //       if (!newUser.DOB || !newUser.DOJ) {
+  //         SweetAlertSingleUserUpload("info", 'Please fill all user details');
+  //         return;
+  //       }
+
+  //       const userExists = existingUserData.some(existingUser => existingUser.email === newUser.email);
+
+  //       if (userExists) {
+  //           existingUsers.push(newUser);
+  //       } else {
+  //           try {
+  //               const id = await generateUniqueId(newUser.email);
+  //               const userWithId = {
+  //                   ...newUser,
+  //                   id,
+  //                   DOB: newUser.DOB ? convertToISO(newUser.DOB.toLocaleDateString()) : undefined,
+  //                   DOJ: newUser.DOJ ? convertToISO(newUser.DOJ.toLocaleDateString()) : undefined
+  //               };
+  //               newUsersToImport.push(userWithId);
+  //           } catch (error) {
+  //               console.log('Error generating unique ID:', error);
+  //           }
+  //       }
+
+  //   }
+
+  //   if (existingUsers.length > 0) {
+  //       SweetAlertSingleUserUpload("info", 'User already exists');
+  //       return
+  //   }
+
+  //   if (newUsersToImport.length > 0) {
+  //       const updatedUserData = existingUserData.concat(newUsersToImport);
+
+  //       try {
+  //           saveUpdatedUsers(updatedUserData);
+  //           SweetAlertSingleUserUpload('success', 'Users added successfully');
+  //       } catch (error) {
+  //           console.log('Error saving updated user data:', error);
+  //       }
+  //   } else if (existingUsers.length === 0 && newUserData.length === 0) {
+  //       SweetAlertSingleUserUpload('info', 'No user details provided');
+  //   }
+  // }
+  // }
+
+  async function handleSaveImportSingleUser() {
+    let newUserData :any= formState;
+    
+
+    if (isEditImportUserPanel) {
+       if(newUserData.DOB=="Invalid Date"){
+        newUserData.DOB=null;
+       }
+       if(newUserData.DOJ=="Invalid Date"){
+        newUserData.DOJ=null;
+       }
+      let updatedUsers=[];
+
+      // let existingData=usersList?.Users??[];
+      let existingData=usersList?.Users==""||usersList?.Users===undefined||usersList?.Users==null?[]:usersList?.Users;
+      const userIndex = existingData.findIndex(
+            (existingUser) => existingUser.id === newUserData.id
+          );
+         
+          if (userIndex > -1) {
+              
+                let existingDOB=existingData[userIndex].DOB==""?null:existingData[userIndex].DOB
+                let existingDOJ=existingData[userIndex].DOJ==""?null:existingData[userIndex].DOJ
+                  const updatedUser = {
+                    ...existingData[userIndex],
+                    ...newUserData,
+                    
+      
+                    DOB: newUserData.DOB
+                      ? convertToISO(newUserData.DOB.toLocaleDateString())
+                      : existingDOB,
+                    DOJ: newUserData.DOJ
+                      ? convertToISO(newUserData.DOJ.toLocaleDateString())
+                      : existingDOJ,
+                  };
+                  updatedUsers.push(updatedUser);
+                  let updatedUserData = existingData.map(
+                        (user) =>
+                          updatedUsers.find(
+                            (updatedUser) => updatedUser.id === user.id
+                          ) || user
+                      );
+                  
+                   SweetAlertSingleUserUpload("success", "User updated successfully");
+                   setTimeout(()=>{
+
+                     setOpenImportUsersPanel(false)
+                   },2000)
+                   saveUpdatedUsers(updatedUserData)
+                }
+
+
+      // // Editing functionality
+      // let existingUserData;
+      // try {
+      //   existingUserData = JSON.parse(decryptData(usersList?.Users));
+      // } catch (error) {
+      //   console.error("Error parsing existing user data:", error);
+      //   existingUserData = [];
+      // }
+
+      // if (!Array.isArray(existingUserData)) {
+      //   existingUserData = [];
+      // }
+
+      // const updatedUsers = [];
+      // let userFound = false;
+
+      // for (const newUser of newUserData) {
+      //   if (!newUser.email || !isValidEmail(newUser.email)) {
+      //     SweetAlertSingleUserUpload("info", "Please enter a valid email");
+      //     return;
+      //   }
+
+      //   // if (!newUser.DOB || !newUser.DOJ) {
+      //   //   SweetAlertSingleUserUpload("info", "Please fill all user details");
+      //   //   return;
+      //   // }
+
+      //   const userIndex = existingUserData.findIndex(
+      //     (existingUser) => existingUser.id === newUser.id
+      //   );
+
+      //   if (userIndex > -1) {
+      //     userFound = true;
+      //     try {
+      //       const updatedUser = {
+      //         ...existingUserData[userIndex],
+      //         ...newUser,
+              
+
+      //         DOB: newUser.DOB
+      //           ? convertToISO(newUser.DOB.toLocaleDateString())
+      //           : existingUserData[userIndex].DOB,
+      //         DOJ: newUser.DOJ
+      //           ? convertToISO(newUser.DOJ.toLocaleDateString())
+      //           : existingUserData[userIndex].DOJ,
+      //       };
+      //       updatedUsers.push(updatedUser);
+      //     } catch (error) {
+      //       console.log("Error updating user data:", error);
+      //     }
+      //   } else {
+      //     SweetAlertSingleUserUpload("info", "User not found for editing");
+      //     return;
+      //   }
+      // }
+
+      // if (updatedUsers.length > 0) {
+      //   const updatedUserData = existingUserData.map(
+      //     (user) =>
+      //       updatedUsers.find(
+      //         (updatedUser) => updatedUser.email === user.email
+      //       ) || user
+      //   );
+
+      //   try {
+      //     saveUpdatedUsers(updatedUserData);
+      //     SweetAlertSingleUserUpload("success", "User updated successfully");
+      //   } catch (error) {
+      //     console.log("Error saving updated user data:", error);
+      //   }
+      // }
     } else {
-      SweetAlertOutSidePanel("info", "Please specify user");
+
+      let existingData=usersList?.Users==""||usersList?.Users===undefined||usersList?.Users==null?[]:usersList?.Users;
+          if (!newUserData.email || !isValidEmail(newUserData.email)) {
+                SweetAlertSingleUserUpload("info", "Please enter a valid email");
+                return;
+              }
+              const id = await generateUniqueId(newUserData.email);
+                    const userWithId = {
+                      ...newUserData,
+                      id,
+                      DOB: newUserData.DOB
+                        ? convertToISO(newUserData.DOB.toLocaleDateString())
+                        : "",
+                      DOJ: newUserData.DOJ
+                        ? convertToISO(newUserData.DOJ.toLocaleDateString())
+                        : "",
+                        IsExternalUser:true,
+                    };
+                    existingData.push(userWithId)
+                    if(existingData?.length){
+                      saveUpdatedUsers(existingData)
+                      
+                      SweetAlertSingleUserUpload("success", "Users added successfully");
+                    }
+
+              
+            
+      // Adding new users functionality
+      // let existingUserData;
+      // try {
+      //   existingUserData = usersList?.Users;
+      // } catch (error) {
+      //   console.log("Error parsing existing user data:", error);
+      //   existingUserData = [];
+      // }
+
+      // if (!Array.isArray(existingUserData)) {
+      //   existingUserData = [];
+      // }
+
+      // const existingUsers = [];
+      // const newUsersToImport = [];
+
+      // for (const newUser of newUserData) {
+      //   if (!newUser.email || !isValidEmail(newUser.email)) {
+      //     SweetAlertSingleUserUpload("info", "Please enter a valid email");
+      //     return;
+      //   }
+
+      //   // if (!newUser.DOB || !newUser.DOJ) {
+      //   //   SweetAlertSingleUserUpload("info", "Please fill all user details");
+      //   //   return;
+      //   // }
+
+      //   const userExists = existingUserData.some(
+      //     (existingUser) => existingUser.email === newUser.email
+      //   );
+
+      //   if (userExists) {
+      //     existingUsers.push(newUser);
+      //   } else {
+      //     try {
+      //       const id = await generateUniqueId(newUser.email);
+      //       const userWithId = {
+      //         ...newUser,
+      //         id,
+      //         DOB: newUser.DOB
+      //           ? convertToISO(newUser.DOB.toLocaleDateString())
+      //           : "",
+      //         DOJ: newUser.DOJ
+      //           ? convertToISO(newUser.DOJ.toLocaleDateString())
+      //           : "",
+      //       };
+      //       newUsersToImport.push(userWithId);
+      //     } catch (error) {
+      //       console.log("Error generating unique ID:", error);
+      //     }
+      //   }
+      // }
+
+      // if (existingUsers.length > 0) {
+      //   SweetAlertSingleUserUpload("info", "User already exists");
+      //   return;
+      // }
+
+      // if (newUsersToImport.length > 0) {
+      //   const updatedUserData = existingUserData.concat(newUsersToImport);
+
+      //   try {
+      //     saveUpdatedUsers(updatedUserData);
+      //     SweetAlertSingleUserUpload("success", "Users added successfully");
+      //   } catch (error) {
+      //     console.log("Error saving updated user data:", error);
+      //   }
+      // } else if (existingUsers.length === 0 && newUserData.length === 0) {
+      //   SweetAlertSingleUserUpload("info", "No user details provided");
+      // }
     }
   }
 
+  function saveUpdatedUsers(users) {
+    users = removeDuplicatesFromObject(users, "email");
+    
+    setNonGoogleUsersData(users);
+  
+  
+
+    updateSettingJson(USER_LIST,encryptData(JSON.stringify({
+      ...usersList,
+      Users:users,
+    })));
+    setUsersList({
+      ...usersList,
+      Users: users,
+    });
+    setFormState({
+      name: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      manager: "",
+      department: "",
+      job: "",
+      workphone: "",
+      mobile: "",
+      skills: "",
+      projects: "",
+      hobbies: "",
+      school: "",
+      About_Me: "",
+      DOB: null,
+      DOJ: null,
+      id: null,
+    })
+  
+  }
+
+ async function handleShowHideViews() {
+    let updateData = updateDefaultViewIfNeeded(appSettings, hideShowViews);
+    setView(updateData.DefaultView);
+   await updateSettingJson(SETTING_LIST, updateData);
+    setAppSettings(updateData);
+  
+    SweetAlertOutSidePanel("success", translation.SettingSaved);
+  }
+
+ 
   // function handleExcludeLoc() {
   //   if (selectedExcludedLoc?.length) {
   //     if (Object.keys(parsedData)?.length > 0) {
   //       let data = { ...parsedData, ExcludeByLocation: selectedExcludedLoc };
-  //       updateSetting(data);
+  //     
   //       setAppSettings(data);
   //       SweetAlertOutSidePanel("success", translation.SettingSaved);
   //     }
@@ -1359,8 +1988,8 @@ const AdvanceSetting = (props: any) => {
   function handleExcludeEmail() {
     if (selectedExcludedEmail?.length) {
       if (Object.keys(parsedData)?.length > 0) {
-        let data = { ...parsedData, ExcludedByEmail: selectedExcludedEmail };
-        updateSetting(data);
+        let data = { ...appSettings, ExcludedByEmail: selectedExcludedEmail };
+        updateSettingJson(SETTING_LIST,data);
         setAppSettings(data);
         SweetAlertOutSidePanel("success", translation.SettingSaved);
       }
@@ -1369,19 +1998,7 @@ const AdvanceSetting = (props: any) => {
     }
   }
 
-  function handleExcludeUserName() {
-    if (selectedKeysForExcludeName?.length) {
-      if (Object.keys(parsedData)?.length > 0) {
-        let data = { ...parsedData, ExcludeByName: selectedKeysForExcludeName };
-        updateSetting(data);
-        setAppSettings(data);
-        SweetAlertOutSidePanel("success", translation.SettingSaved);
-      }
-    } else {
-      SweetAlertOutSidePanel("info", "Please selet name(s)");
-    }
-  }
-
+ 
   async function blobToString(blob: any) {
     const fileReader = new FileReader();
     return new Promise((resolve, reject) => {
@@ -1394,36 +2011,34 @@ const AdvanceSetting = (props: any) => {
   }
 
   async function updateSetting(uparsedData) {
-    console.log(uparsedData, "on update settings");
-    var _parsedData = JSON.stringify(uparsedData);
-    var domain = gapi.auth2
-      .getAuthInstance()
-      .currentUser.le.wt.cu.split("@")[1];
-    //console.log(domain);
-    var _domain = domain.replace(/\./g, "_");
-    var storagedetails =
-      '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-      _domain +
-      '.json"}]';
-    var mappedcustomcol = JSON.parse(storagedetails);
-    console.log(mappedcustomcol, "mapped");
-    await containerClient
-      .getBlockBlobClient(mappedcustomcol[0].blobfilename)
-      .upload(_parsedData, Buffer.byteLength(_parsedData))
-      .then(() => {
-        setTimeout(() => {
-          dismissPanelUserPrtiesLV();
-          dismissPanelUserPrtiesPCV();
-          dismissPanelDfltViews();
-          dismissPanelWidthCustm();
-
-          dismissPanelExcldDept();
-          dismissPanelExcldJtitle();
-
-          dismissPanelOrgChartType();
-          dismissPanelRecordLoad();
-        }, 3000);
-      });
+    // console.log(uparsedData, "on update settings");
+    // var _parsedData = JSON.stringify(uparsedData);
+    // var domain = gapi.auth2
+    //   .getAuthInstance()
+    //   .currentUser.le.wt.cu.split("@")[1];
+    // //console.log(domain);
+    // var _domain = domain.replace(/\./g, "_");
+    // var storagedetails =
+    //   '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
+    //   _domain +
+    //   '.json"}]';
+    // var mappedcustomcol = JSON.parse(storagedetails);
+    // console.log(mappedcustomcol, "mapped");
+    // await containerClient
+    //   .getBlockBlobClient(mappedcustomcol[0].blobfilename)
+    //   .upload(_parsedData, Buffer.byteLength(_parsedData))
+    //   .then(() => {
+    //     setTimeout(() => {
+    //       dismissPanelUserPrtiesLV();
+    //       dismissPanelUserPrtiesPCV();
+    //       dismissPanelDfltViews();
+    //       dismissPanelWidthCustm();
+    //       dismissPanelExcldDept();
+    //       dismissPanelExcldJtitle();
+    //       dismissPanelOrgChartType();
+    //       dismissPanelRecordLoad();
+    //     }, 3000);
+    //   });
   }
 
   const handleFileUploadDashboardUser = (e: any) => {
@@ -1441,7 +2056,7 @@ const AdvanceSetting = (props: any) => {
       const jsonData = XLSX.utils.sheet_to_json(sheet);
       setExcelDataDashboardUser(jsonData);
 
-      console.log("json", jsonData);
+
     };
 
     reader.readAsArrayBuffer(file);
@@ -1454,16 +2069,17 @@ const AdvanceSetting = (props: any) => {
       // setDashboardIncludedUserTable(excelDataDashboardUser);
       // setDashboardIncludedUser(excelDataDashboardUser);
       const res = excelDataDashboardUser.map((item) => {
-        return { email: item.email };
+        return { email: item.email, name: item?.name };
       });
-      if (Object.keys(parsedData)?.length > 0) {
-        updateSettingData({
-          ...parsedData,
-          DashboardSpecificUsers: encryptData(JSON.stringify(res)),
-        });
-        setAppSettings({
-          ...parsedData,
-          DashboardSpecificUsers: encryptData(JSON.stringify(res)),
+      if (Object.keys(usersList)?.length > 0) {
+        updateSettingJson(USER_LIST, encryptData(JSON.stringify({
+          ...usersList,
+          DashboardSpecificUsers: res,
+        })));
+
+        setUsersList({
+          ...usersList,
+          DashboardSpecificUsers: res,
         });
         SweetAlertDashboardPanel("success", translation.SettingSaved);
       }
@@ -1483,7 +2099,7 @@ const AdvanceSetting = (props: any) => {
 
   function resetDefault() {
     const setting = { ...appSettings, gridWidth: 150 };
-    updateSetting(setting);
+    updateSettingJson(SETTING_LIST, setting);
     setAppSettings(setting);
     setGridWidth("150");
     SweetAlertOutSidePanel("success", translation.SettingSaved);
@@ -1491,7 +2107,7 @@ const AdvanceSetting = (props: any) => {
 
   const saveGridWidth = () => {
     const setting = { ...appSettings, gridWidth: gridWidth };
-    updateSetting(setting);
+    updateSettingJson(SETTING_LIST, setting);
     setAppSettings(setting);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   };
@@ -1511,10 +2127,13 @@ const AdvanceSetting = (props: any) => {
   };
 
   const handleSaveListView = () => {
-    const updatedParsedData = { ...parsedData, [KEY_NAME]: checkboxesListView };
-    console.log(updatedParsedData, "listview settings");
-    if (Object.keys(parsedData).length > 0) {
-      updateSetting(updatedParsedData);
+    const updatedParsedData = {
+      ...appSettings,
+      [KEY_NAME]: checkboxesListView,
+    };
+ 
+    if (Object.keys(appSettings).length > 0) {
+      updateSettingJson(SETTING_LIST, updatedParsedData);
       SweetAlertListView("success", translation.SettingSaved);
     }
   };
@@ -1526,20 +2145,21 @@ const AdvanceSetting = (props: any) => {
     });
     if (Object.keys(parsedData).length > 0) {
       const updatedParsedDataProfile = {
-        ...parsedData,
+        ...appSettings,
         [KEY_NAME2]: propertiesObj,
       };
-      console.log(updatedParsedDataProfile);
-      updateSetting(updatedParsedDataProfile);
+    
+      updateSettingJson(SETTING_LIST, updatedParsedDataProfile);
+      setAppSettings(updatedParsedDataProfile);
       SweetAlertProfileView("success", translation.SettingSaved);
     } else {
       SweetAlertProfileView("error", "Something went wrong");
-      console.log("Error , parsed data not found.", parsedData);
+  
     }
   };
 
   const onDragEnd = (result) => {
-    console.log(result, "dragresult");
+ 
     if (!result.destination) return;
 
     const newOrder = Array.from(profileCardPropertiesData);
@@ -1560,22 +2180,22 @@ const AdvanceSetting = (props: any) => {
   const { SweetAlert: SweetAlertDefaultMobileView } =
     SweetAlerts("#mobiledefaultview");
   const saveDefaultMobileView = () => {
-    let temp = { ...parsedData, defaultMobileView: selectedMobileView };
+    let temp = { ...appSettings, defaultMobileView: selectedMobileView };
     if (window.innerWidth < 768) {
       setView(selectedMobileView);
     }
-    if (Object.keys(parsedData).length > 0) {
-      updateSetting(temp);
+    if (Object.keys(appSettings).length > 0) {
+      updateSettingJson(SETTING_LIST, temp);
     }
     setAppSettings(temp);
     SweetAlertDefaultMobileView("success", translation.SettingSaved);
   };
 
   const saveDefaultView = () => {
-    let temp = { ...parsedData, DefaultView: selectedView };
+    let temp = { ...appSettings, DefaultView: selectedView };
     setView(selectedView);
     if (Object.keys(temp).length > 0) {
-      updateSettingData(temp);
+      updateSettingJson(SETTING_LIST, temp);
       setAppSettings(temp);
       SweetAlertOutSidePanel("success", translation.SettingSaved);
     }
@@ -1597,8 +2217,9 @@ const AdvanceSetting = (props: any) => {
   }
 
   function handleDashboardFeatureSave() {
-    let setting = { ...parsedData, dashboardFeature: dashboardFeature };
-    updateSetting(setting);
+    let setting = { ...appSettings, dashboardFeature: dashboardFeature };
+    updateSettingJson(SETTING_LIST, setting);
+
     setAppSettings(setting);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
@@ -1609,15 +2230,14 @@ const AdvanceSetting = (props: any) => {
 
   const saveCountSettings = () => {
     changerecordtoLoadValue(parseInt(checkedValueRecord));
-    const updatedParsedDataRecords = {
+    const setting = {
       ...parsedData,
       ["records_to_load"]: checkedValueRecord,
     };
-    if (Object.keys(parsedData).length > 0) {
-      updateSetting(updatedParsedDataRecords);
-      SweetAlertOutSidePanel("success", translation.SettingSaved);
-      setAppSettings(updatedParsedDataRecords);
-    }
+   
+    updateSettingJson(SETTING_LIST, setting);
+    setAppSettings(setting);
+    SweetAlertOutSidePanel("success", translation.SettingSaved);
   };
 
   async function getAllUsersInOrg(value: any) {
@@ -1680,35 +2300,43 @@ const AdvanceSetting = (props: any) => {
     let data = [...dashboardUsers];
     data = removeDuplicatesFromObject(data, "email");
     setDashboardIncludedUserTableShowData(data);
-    updateSettingData({
-      ...appSettings,
-      DashboardSpecificUsers: encryptData(JSON.stringify(data)),
-    });
-    setAppSettings({
-      ...appSettings,
-      DashboardSpecificUsers: encryptData(JSON.stringify(data)),
+    updateSettingJson(USER_LIST, encryptData(JSON.stringify({
+      ...usersList,
+      DashboardSpecificUsers: data,
+    })));
+
+    setUsersList({
+      ...usersList,
+      DashboardSpecificUsers: data,
     });
     SweetAlertIncludeduserlist("success", translation.SettingSaved);
   }
 
   function deleteIncludedUserInDashboard(email) {
+    if(isUserAdminCheck(dashboardUsers,email)){
+      SweetAlertIncludeduserlist("info", 'Admin cannot remove itself');
+    }else{
     // let data = dashboardIncludedUserTable.filter(
     //   (item) => item.email !== email
     // );
     let data = dashboardUsers.filter((item) => item.email !== email);
-    console.log(dashboardUsers);
+
     setDashboardUsers(data);
     // setDashboardIncludedUserTable(data);
     // setDashboardIncludedUser(data);
     setDashboardIncludedUserTableShowData(data);
-    updateSettingData({
-      ...appSettings,
-      DashboardSpecificUsers: encryptData(JSON.stringify(data)),
+    updateSettingJson(USER_LIST, encryptData(JSON.stringify({
+      ...usersList,
+      DashboardSpecificUsers: data,
+
+    })));
+
+    setUsersList({
+      ...usersList,
+      DashboardSpecificUsers: data,
     });
-    setAppSettings({
-      ...appSettings,
-      DashboardSpecificUsers: encryptData(JSON.stringify(data)),
-    });
+    SweetAlertIncludeduserlist("success",translation.SettingSaved)
+  }
   }
 
   function handleDashboardUserSearch(e) {
@@ -1724,36 +2352,6 @@ const AdvanceSetting = (props: any) => {
     }
   }
 
-  const excdept = () => {
-    if (selectedKeydept?.length) {
-      changeExcludeByDepartment(selectedKeydept);
-      const updatedParsedData = { ...parsedData, [KEY_NAME3]: selectedKeydept };
-      if (Object.keys(parsedData).length > 0) {
-        updateSetting(updatedParsedData);
-        SweetAlertOutSidePanel("success", translation.SettingSaved);
-      }
-
-      console.log("sucesss", selectedKeydept);
-    } else {
-      SweetAlertExcludeDept("info", "Please Select domain(s)");
-    }
-  };
-
-  const excjtitle = () => {
-    if (selectedKeysjtitle?.length) {
-      const updatedParsedData = {
-        ...parsedData,
-        [KEY_NAME4]: selectedKeysjtitle,
-      };
-      if (Object.keys(parsedData).length > 0) {
-        console.log(updatedParsedData);
-        updateSetting(updatedParsedData);
-      }
-      changeExcludeByJobTitle(selectedKeysjtitle);
-    } else {
-      SweetAlertOutSidePanel("info", "Please select job title");
-    }
-  };
 
   const onUploadFile = (event) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -1983,7 +2581,7 @@ const AdvanceSetting = (props: any) => {
       };
 
       if (Object.keys(parsedData).length > 0) {
-        updateSetting(updatedData);
+        updateSettingJson(SETTING_LIST,updatedData);
       }
     } else if (selectedOrgchart === "StanderdOrgCharts") {
       const updatedParsedData = {
@@ -1991,7 +2589,7 @@ const AdvanceSetting = (props: any) => {
         [KEY_NAME5]: selectedOrgchart,
       };
       if (Object.keys(parsedData).length > 0) {
-        updateSetting(updatedParsedData);
+        updateSettingJson(SETTING_LIST,updatedParsedData);
       }
       SweetAlertOutSidePanel("success", translation.SettingSaved);
     } else {
@@ -2001,20 +2599,24 @@ const AdvanceSetting = (props: any) => {
 
   function handleAutoLoad(e: any, checked: any) {
     setAutoLoad(checked);
-    if (Object.keys(parsedData)?.length > 0) {
-      updateSetting({ ...parsedData, AutoLoad: checked });
-      setAppSettings({ ...parsedData, AutoLoad: checked });
-      SweetAlertOutSidePanel("success", translation.SettingSaved);
-    }
+    // if (Object.keys(parsedData)?.length > 0) {
+   
+    updateSettingJson(SETTING_LIST, { ...parsedData, AutoLoad: checked });
+    setAppSettings({ ...parsedData, AutoLoad: checked });
+    SweetAlertOutSidePanel("success", translation.SettingSaved);
+    // }
   }
 
   async function handleSelect(item) {
-    setDashboardUsers((prev) => [...prev, item]);
-    console.log(item);
+    setDashboardUsers([...dashboardUsers, item]);
+
   }
 
   const handleLabelSave = () => {
-    updateSetting({ ...appSettings, Labels: { aboutMe, executive } });
+    updateSettingJson(SETTING_LIST, {
+      ...appSettings,
+      Labels: { aboutMe, executive },
+    });
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   };
 
@@ -2024,12 +2626,13 @@ const AdvanceSetting = (props: any) => {
   };
 
   const handleSaveTopBarView = () => {
-    const updatedTopBarSetting = {
+    const setting = {
       ...appSettings,
       TopBarFilterView: topBarView,
     };
-    updateSetting(updatedTopBarSetting);
-    setAppSettings(updatedTopBarSetting);
+   
+    updateSettingJson(SETTING_LIST, setting);
+    setAppSettings(setting);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   };
 
@@ -2037,6 +2640,41 @@ const AdvanceSetting = (props: any) => {
     useState(false);
 
   const [restrictedPanel, setRestrictedPanel] = useState(false);
+  const [hideManagerPanel, setHideManagerPanel] = useState(false);
+  const [hideMobile, setHideMobile] = useState(false);
+
+  useEffect(() => {
+    GetSettingData();
+  }, []);
+  
+  useEffect(() => {
+    if (isOpenImportUsers) {
+ 
+      setNonGoogleUsersData(usersList?.Users);
+    }
+  }, [isOpenImportUsers]);
+
+  useEffect(() => {
+    window.addEventListener("resize", changeView);
+    function changeView() {
+      if (window.innerWidth < 768) {
+        let temp = { ...appSettings, defaultMobileView: selectedMobileView };
+
+        setView(selectedMobileView);
+
+        if (Object.keys(appSettings).length > 0) {
+          updateSettingJson(SETTING_LIST, temp);
+        }
+      } else {
+        setView(appSettings.DefaultView);
+      
+      }
+    }
+
+    return () => {
+      window.removeEventListener("resize", changeView);
+    };
+  }, [window.innerWidth]);
 
   const generalSettingProps = {
     openBdayAnniTemplt,
@@ -2072,6 +2710,8 @@ const AdvanceSetting = (props: any) => {
     openPanelUserPrtiesLV,
     openPanelUserPrtiesPCV,
     openModalViews,
+    setHideManagerPanel,
+    setHideMobile
   };
 
   const excludeOptionsSettingProps = {
@@ -2108,7 +2748,7 @@ const AdvanceSetting = (props: any) => {
     openCustomFunctionPanel,
     setOpenCustomFunctionPanel,
     setOpenAdditionalManagerSetting,
-    setRestrictedPanel
+    setRestrictedPanel,
   };
 
   const pagesProps = {
@@ -2125,9 +2765,13 @@ const AdvanceSetting = (props: any) => {
     ...pagesProps,
   };
 
+
   return (
     <div>
-      <OrgChart isOpenOrgChartType={isOpenOrgChartType} dismissPanelOrgChartType={dismissPanelOrgChartType} />
+      <OrgChart
+        isOpenOrgChartType={isOpenOrgChartType}
+        dismissPanelOrgChartType={dismissPanelOrgChartType}
+      />
       <SearchSettings {...SettingsComponent} />
 
       <ExecutiveAssistantRelationship
@@ -2160,225 +2804,174 @@ const AdvanceSetting = (props: any) => {
         onDismiss={setViewsSHMPanel}
       />
 
-      <GeneralShowHideModule
+   <GeneralShowHideModule
         isOpen={isShowHideModuleOpen}
         onDismiss={setIshowHideModuleOpen}
       />
+     
 
       <RolesAndPermisstions
         isOpen={isOpenRolePermission}
         onDismiss={dismissPanelRolePermission}
       />
 
-      <RestrictedAccess isOpen={restrictedPanel} onDismiss={setRestrictedPanel}/>
+      <RestrictedAccess
+        isOpen={restrictedPanel}
+        onDismiss={setRestrictedPanel}
+      />
+
+      <HideManager isOpen={hideManagerPanel} onDismiss={setHideManagerPanel}/>
+      <HideMobileNumber isOpen={hideMobile} onDismiss={setHideMobile}/>
 
       <Panel
         type={PanelType.custom}
         customWidth="650px"
         headerText={
-          translation.hidemanager
-            ? translation.hidemanager
-            : "Hide manager of specific users"
+          translation?.BirthdaysAndAnniv ?? "Birthdays and Work anniversaries"
         }
-        isOpen={isOpenHideMngr}
-        onDismiss={dismissPanelHideMngr}
+        isOpen={isOpenUpcomingBithAndAnivAdv}
+        onDismiss={dismissUpcomingBithAndAnivAdv}
         closeButtonAriaLabel={"Close"}
       >
-        <div>
-          <div id="HideManager">
-            <Pivot
-              className="viewsPanelPivot"
-              style={{ paddingTop: "15px" }}
-              //styles={PivotStyles}
-              aria-label="Large Link Size Pivot Example"
-              linkSize="large"
+        <div id="birthAndAnnivSetting">
+          <div style={{ borderBottom: "1px solid #ddd" }}>
+            <Label>
+              {translation?.UpcomingBirthdays ?? "Upcoming Birthdays and Work Anniversaries"}
+            </Label>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "20px",
+                padding: "10px",
+              }}
             >
-              <PivotItem headerText={translation.add ? translation.add : "Add"}>
-                <HideManager SweetAlertHideManager={SweetAlertHideManager} />
-              </PivotItem>
-              <PivotItem
-                headerText={translation.delete ? translation.delete : "Delete"}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2  , 1fr)",
+                  gap: "10px",
+                }}
               >
-                <HideManagerDelete
-                  SweetAlertHideManager={SweetAlertHideManager}
+                <Checkbox
+                  label="Google & Non-GUser"
+                  style={{ whiteSpace: "nowrap" }}
+                  checked={upcomingBirthAndAnivAdv === "Google & Imported User"}
+                  onChange={onCheckboxChangeUpcomingBirthAndAniv(
+                    "Google & Imported User"
+                  )}
                 />
-              </PivotItem>
-            </Pivot>
-          </div>
-        </div>
-      </Panel>
-      
-      <Panel
-  type={PanelType.custom}
-  customWidth="650px"
-  headerText={
-    translation?.BirthdaysAndAnniv??
-    "Birthdays and Work anniversaries"
-  }
-  isOpen={isOpenUpcomingBithAndAnivAdv}
-  onDismiss={dismissUpcomingBithAndAnivAdv}
-  closeButtonAriaLabel={"Close"}
->
-  <div id="birthAndAnnivSetting">
- 
-    <div style={{ borderBottom: "1px solid #ddd"}}>
-      <Label>{translation?.UpcomingBirthdays??"Upcoming Birthdays and Work Anniversaries"}</Label>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "20px",
-          padding: "10px",
-      
-        }}
-      >
-        
-          <div style={{  display: "grid",
-            gridTemplateColumns: "repeat(2  , 1fr)",
-            gap: "10px"
-             }}>
-            <Checkbox
-              label="Google & Non-GUser"
-              style={{ whiteSpace: "nowrap" }}
-              checked={upcomingBirthAndAnivAdv === "Google & Imported User"}
-              onChange={onCheckboxChangeUpcomingBirthAndAniv("Google & Imported User")}
-            />
-            <Checkbox
-              label="Imported User"
-              style={{ whiteSpace: "nowrap" }}
-              checked={upcomingBirthAndAnivAdv === "importedUser"}
-              onChange={onCheckboxChangeUpcomingBirthAndAniv("importedUser")}
-            />
-          </div>
+                <Checkbox
+                  label="Imported User"
+                  style={{ whiteSpace: "nowrap" }}
+                  checked={upcomingBirthAndAnivAdv === "importedUser"}
+                  onChange={onCheckboxChangeUpcomingBirthAndAniv(
+                    "importedUser"
+                  )}
+                />
+              </div>
 
-          <PrimaryButton
-            onClick={handleUpcomingBirthAndAnivAdv}
-            text={translation.save}
-          />
-        
-      </div>
-    </div>
-
-   
-    <div style={{ borderBottom: "1px solid #ddd"}}>
-      <Label>Filter Options</Label>
-      <div style={{display:"flex",justifyContent:"space-between"}}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "10px",
-            padding: "10px",
-          }}
-        >
-          {BirthAndAnivfilterOptions?.map((option,index) => (
-            <Checkbox
-              key={option.key}
-              label={option.text}
-              name={option.key}
-              value={option.key}
-              checked={selectedBithFilter === option.key}
-              onChange={(e, val) => handleBithAndAnivChange(e, val)}
-              className={`filter-checkbox ${index==1?'checkboxItem':''}`}
-              style={{ whiteSpace: "nowrap" ,marginLeft:"34px"}}
-            />
-          ))}
-        </div>
-        <div style={{ textAlign: "right", padding: "10px" }}>
-          <PrimaryButton
-            onClick={handleSaveFiltersBirthAndAnniv}
-            text={translation.save}
-          />
-        </div>
-      </div>
-    </div>
-
-    <div>
-
-            <Label>{translation?.BdayAnniTempText??"Birthdays and Work anniversaries image"}</Label>
-            <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
-            <p>{translation?.BithandAnnivUploadNote??"Note: Please upload the logo if it is 338 x 120 px in size, maintaining the same aspect ratio. Use a transparent background or a background color for a better viewing experience."}</p>
-          
-            <input
-              id="fileUploadforBith"
-              type="file"
-              accept="image/*"
-              style={{ display: "none" }}
-              onChange={onUploadFile}
-            />
-            <div style={{ display: "flex", gap: "10px" }}>
               <PrimaryButton
+                onClick={handleUpcomingBirthAndAnivAdv}
                 text={translation.save}
-                // style={{ margin: "auto" }}
-                onClick={handleUploadBithImg}
               />
-              <PrimaryButton
-                text={translation.Upload}
-                // style={{ margin: "auto" }}
-                onClick={() =>
-                  document.getElementById("fileUploadforBith").click()
-                }
-              />
-              <PrimaryButton
-                text={translation.Remove}
-                // style={{ margin: "auto" }}
-                onClick={handleRemoveBithImg}
-              />
-
             </div>
-            {imageToCrop?.length || showBirthAnivImg?.length ? (
-              <img
-                width={338}
-                height={120}
-                style={{ objectFit: "contain" }}
-                src={imageToCrop ?? showBirthAnivImg}
-              />
-            ) : (
-              ""
-            )}
           </div>
+
+          <div style={{ borderBottom: "1px solid #ddd" }}>
+            <Label>Display birthdays and work anniversaries by</Label>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 1fr)",
+                  gap: "10px",
+                  padding: "10px",
+                }}
+              >
+                {BirthAndAnivfilterOptions?.map((option, index) => (
+                  <Checkbox
+                    key={option.key}
+                    label={option.text}
+                    name={option.key}
+                    value={option.key}
+                    checked={selectedBithFilter === option.key}
+                    onChange={(e, val) => handleBithAndAnivChange(e, val)}
+                    className={`filter-checkbox ${
+                      index == 1 ? "checkboxItem" : ""
+                    }`}
+                    style={{ whiteSpace: "nowrap", marginLeft: "34px" }}
+                  />
+                ))}
+              </div>
+              <div style={{ textAlign: "right", padding: "10px" }}>
+                <PrimaryButton
+                  onClick={handleSaveFiltersBirthAndAnniv}
+                  text={translation.save}
+                />
+              </div>
+            </div>
           </div>
-  </div>
-</Panel>
 
-
-      <Panel
-        type={PanelType.custom}
-        customWidth="650px"
-        headerText={
-          translation.Hidemobile
-            ? translation.Hidemobile
-            : "Hide mobile numbers of specific users"
-        }
-        isOpen={isOpenHideMobNo}
-        onDismiss={dismissPanelHideMobNo}
-        closeButtonAriaLabel={"Close"}
-      >
-        <div style={{ padding: "5px" }}>
-          <Pivot
-            className="viewsPanelPivot"
-            style={{ paddingTop: "15px" }}
-            aria-label="Large Link Size Pivot Example"
-            linkSize="large"
-          >
-            <PivotItem headerText={translation.add ? translation.add : "Add"}>
-              <Mobile1 />
-            </PivotItem>
-            <PivotItem
-              headerText={translation.delete ? translation.delete : "Delete"}
+          <div>
+            <Label>
+              {translation?.BdayAnniTempText ??
+                "Birthdays and Work anniversaries image"}
+            </Label>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
-              <MobileDelete />
-            </PivotItem>
-          </Pivot>
+              <p>
+                {translation?.BithandAnnivUploadNote ??
+                  "Note: Please upload the logo if it is 338 x 120 px in size, maintaining the same aspect ratio. Use a transparent background or a background color for a better viewing experience."}
+              </p>
+
+              <input
+                id="fileUploadforBith"
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={onUploadFile}
+              />
+              <div style={{ display: "flex", gap: "10px" }}>
+                <PrimaryButton
+                  text={translation.save}
+                  // style={{ margin: "auto" }}
+                  onClick={handleUploadBithImg}
+                />
+                <PrimaryButton
+                  text={translation.Upload}
+                  // style={{ margin: "auto" }}
+                  onClick={() =>
+                    document.getElementById("fileUploadforBith").click()
+                  }
+                />
+                <PrimaryButton
+                  text={translation.Remove}
+                  // style={{ margin: "auto" }}
+                  onClick={handleRemoveBithImg}
+                />
+              </div>
+              {imageToCrop?.length || showBirthAnivImg?.length ? (
+                <img
+                  width={338}
+                  height={120}
+                  style={{ objectFit: "contain" }}
+                  src={imageToCrop ?? showBirthAnivImg}
+                />
+              ) : (
+                ""
+              )}
+            </div>
+          </div>
         </div>
       </Panel>
+
 
       <Panel
         type={PanelType.custom}
         customWidth="880px"
-        headerText={
-          translation.Customfields ? translation.Customfields : "Custom fields"
-        }
+        headerText={translation.Customfields ?? "Custom fields"}
         isOpen={isOpenCustomField}
         onDismiss={dismissPanelCustomField}
         closeButtonAriaLabel={"Close"}
@@ -2418,9 +3011,11 @@ const AdvanceSetting = (props: any) => {
                   }
                 >
                   <CustomDelete
-                     SweetAlertCustomFields={SweetAlertCustomFields}
-                     SweetPromptCustomFieldsDelete={SweetPromptCustomFieldsDelete}
-                    dismiss={dismissPanelCustomField}
+                    SweetAlertCustomFields={SweetAlertCustomFields}
+                    SweetPromptCustomFieldsDelete={
+                      SweetPromptCustomFieldsDelete
+                    }
+                    // dismiss={dismissPanelCustomField}
                   />
                 </PivotItem>
               </Pivot>
@@ -2449,7 +3044,9 @@ const AdvanceSetting = (props: any) => {
               <Checkbox
                 label="Google & Imported User"
                 checked={syncUserInfo === "Google & Imported User"}
-                onChange={onCheckboxChangeSyncUserInfo("Google & Imported User")}
+                onChange={onCheckboxChangeSyncUserInfo(
+                  "Google & Imported User"
+                )}
               />
               <Checkbox
                 label="Imported User"
@@ -2470,7 +3067,7 @@ const AdvanceSetting = (props: any) => {
           </div>
         </MiniModals>
       )}
-{/* 
+      {/* 
       {isOpenUpcomingBithAndAnivAdv && (
         <MiniModals
           isPanel={false}
@@ -2611,27 +3208,27 @@ const AdvanceSetting = (props: any) => {
           </div>
         </MiniModals>
       )}
-          <Panel
-                type={PanelType.custom}
-                customWidth="650px"
-                headerText={
-                  translation.ExcludeUserByLocation
-                    ? translation.ExcludeUserByLocation
-                    : "Exclude user by location"
-                }
-                isOpen={isOpenExcludeUserLocListPanel}
-                onDismiss={dismissExcludeLocUserListPanel}
-                closeButtonAriaLabel={"Close"}
-              >
-                <div id="excludedLocation">
-                  <ExcludedLocation
-                    locationOptions={locationOptions}
-                    appSettings={appSettings}
-                    setAppSettings={setAppSettings}
-                    SweetAlertLocation={SweetAlertLocation}
-                  />
-                </div>
-              </Panel>
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={
+          translation.ExcludeUserByLocation
+            ? translation.ExcludeUserByLocation
+            : "Exclude user by location"
+        }
+        isOpen={isOpenExcludeUserLocListPanel}
+        onDismiss={dismissExcludeLocUserListPanel}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div id="excludedLocation">
+          <ExcludedLocation
+            locationOptions={locationOptions}
+            appSettings={appSettings}
+            setAppSettings={setAppSettings}
+            SweetAlertLocation={SweetAlertLocation}
+          />
+        </div>
+      </Panel>
 
       {/* {isOpenExcludeLoc && (
         <MiniModals
@@ -2681,49 +3278,44 @@ const AdvanceSetting = (props: any) => {
         </MiniModals>
       )} */}
 
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={"Exclude user contains"}
+        isOpen={isOpenExcludeUserContainsListPanel}
+        onDismiss={dismissExcludeContainsUserListPanel}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div>
+          <ExcludedContains
+            appSettings={appSettings}
+            setAppSettings={setAppSettings}
+            SweetAlertContains={SweetAlertContains}
+          />
+        </div>
+      </Panel>
 
-            <Panel
-                type={PanelType.custom}
-                customWidth="650px"
-                headerText={
-                  "Exclude user contains"
-                }
-                isOpen={isOpenExcludeUserContainsListPanel}
-                onDismiss={dismissExcludeContainsUserListPanel}
-                closeButtonAriaLabel={"Close"}
-              >
-                <div >
-                  <ExcludedContains
-                    
-                    appSettings={appSettings}
-                    setAppSettings={setAppSettings}
-                    SweetAlertContains={SweetAlertContains}
-                  />
-                </div>
-              </Panel>
-
-
-<Panel
-                type={PanelType.custom}
-                customWidth="650px"
-                headerText={
-                  translation.Excludeduserlist
-                    ? translation.Excludeduserlist
-                    : "Excluded user list"
-                }
-                isOpen={isOpenExcludeUserEmailListPanel}
-                onDismiss={dismissExcludeEmilUserListPanel}
-                closeButtonAriaLabel={"Close"}
-              >
-                <div id="excludedEmail">
-                  <ExcludedEmail
-                   EmailOptions={EmailOptions}
-                    appSettings={appSettings}
-                    setAppSettings={setAppSettings}
-                    SweetAlertEmail={SweetAlertEmail}
-                  />
-                </div>
-              </Panel>
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={
+          translation.Excludeduserlist
+            ? translation.Excludeduserlist
+            : "Excluded user list"
+        }
+        isOpen={isOpenExcludeUserEmailListPanel}
+        onDismiss={dismissExcludeEmilUserListPanel}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div id="excludedEmail">
+          <ExcludedEmail
+            EmailOptions={EmailOptions}
+            appSettings={appSettings}
+            setAppSettings={setAppSettings}
+            SweetAlertEmail={SweetAlertEmail}
+          />
+        </div>
+      </Panel>
 
       {isOpenExcludeEmail && (
         <MiniModals
@@ -2763,9 +3355,9 @@ const AdvanceSetting = (props: any) => {
                 onDismiss={dismissExcludeEmilUserListPanel}
                 closeButtonAriaLabel={"Close"}
               >
-                <div >
+                <div>
                   <ExcludedEmail
-                   EmailOptions={EmailOptions}
+                    EmailOptions={EmailOptions}
                     appSettings={appSettings}
                     setAppSettings={setAppSettings}
                     SweetAlertEmail={SweetAlertEmail}
@@ -2777,7 +3369,7 @@ const AdvanceSetting = (props: any) => {
                 options={EmailOptions}
                 onChange={(excluded: any) => setSelectedExcludedEmail(excluded)}
                 value={selectedExcludedEmail}
-                  menuShouldScrollIntoView
+                menuShouldScrollIntoView
                 menuPosition="fixed"
                 maxMenuHeight={150}
               />
@@ -2809,13 +3401,10 @@ const AdvanceSetting = (props: any) => {
               setSelectedExcludedDomian={setSelectedExcludedDomian}
               selectedExcludedDomian={selectedExcludedDomian}
               excludeOptionsForDomain={excludeOptionsForDomain}
-             
             />
           </div>
         </div>
       </Panel>
-
-  
 
       {topBarModalVisible && (
         <MiniModals
@@ -2914,10 +3503,6 @@ const AdvanceSetting = (props: any) => {
             <div
               onClick={() => {
                 OpenIncludeDashboardUserPanel();
-                // if(appSettings?.DashboardSpecificUsers){
-                // setDashboardIncludedUserTableShowData(JSON.parse(decryptData(appSettings?.DashboardSpecificUsers)));
-
-                // }
               }}
             >
               <Label className={EDStyles.underLineOnHover}>Include User</Label>
@@ -3294,25 +3879,17 @@ const AdvanceSetting = (props: any) => {
           isPanel={false}
           crossButton={true}
           maxHeight={200}
-          heading={
-            translation.OrganizationNameLabel
-              ? translation.OrganizationNameLabel
-              : "Organization name"
-          }
+          heading={translation.OrganizationNameLabel ?? "Organization name"}
           closeAction={dismissPanelOrgName}
         >
           <div>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <Label>
-                {translation.OrganizationNameLabel
-                  ? translation.OrganizationNameLabel
-                  : "Organization name"}
+                {translation.OrganizationNameLabel ?? "Organization name"}
               </Label>
               <TextField
                 placeholder={
-                  translation.OrganizationNameLabel
-                    ? translation.OrganizationNameLabel
-                    : "Organization name"
+                  translation.OrganizationNameLabel ?? "Organization name"
                 }
                 onChange={(e: any) => setOrgName(e.target.value)}
                 value={OrgName}
@@ -3332,10 +3909,10 @@ const AdvanceSetting = (props: any) => {
           isPanel={false}
           crossButton={true}
           maxHeight={200}
-          heading={translation.brandlogo ? translation.brandlogo : "Brand Logo"}
+          heading={translation.brandlogo ?? "Brand Logo"}
           closeAction={dismissPanelUpldLogo}
         >
-          {!isDataLoaded ? (
+          {!isDataLoaded && false ? (
             <div className={wrapperClass}>
               <Shimmer />
               <Shimmer width="75%" />
@@ -3351,7 +3928,7 @@ const AdvanceSetting = (props: any) => {
                 gap: "10px",
               }}
             >
-              {bLogo?.length > 0 && (
+              {/* {bLogo?.length > 0 && ( */}
                 <img
                   src={bLogo}
                   style={{
@@ -3361,7 +3938,7 @@ const AdvanceSetting = (props: any) => {
                     width: "200px",
                   }}
                 />
-              )}
+              {/* )} */}
 
               <input
                 id="fileUpload"
@@ -3475,18 +4052,15 @@ const AdvanceSetting = (props: any) => {
           crossButton={true}
           maxHeight={500}
           heading={
-            translation.profilecardcustomicon
-              ? translation.profilecardcustomicon
-              : "Profile card custom url icon"
+            translation.profilecardcustomicon ?? "Profile card custom url icon"
           }
           closeAction={dismissPanelProfileCustomUrlIcon}
         >
           <div>
             <div>
               <Label>
-                {translation.profilecardcustomicon
-                  ? translation.profilecardcustomicon
-                  : "Profile card custom url icon"}
+                {translation.profilecardcustomicon ??
+                  "Profile card custom url icon"}
               </Label>
 
               <TextField
@@ -3512,28 +4086,25 @@ const AdvanceSetting = (props: any) => {
         </MiniModals>
       )}
 
-
-                   <Panel
-                        type={PanelType.custom}
-                        customWidth="650px"
-                        headerText={
-                          translation.Excludeduserlist
-                            ? translation.Excludeduserlist
-                            : "Excluded user list"
-                        }
-                        isOpen={isOpen0}
-                        onDismiss={dismissPanel0}
-                        closeButtonAriaLabel={"Close"}
-                      >
-                        <ExcludedName
-                          excludeByNameOptions={excludeByNameOptions}
-                          appSettings={appSettings}
-                          setAppSettings={setAppSettings}
-                          SweetAlertExcludeName={SweetAlertExcludeName}
-                        />
-                      </Panel>
-
-  
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={
+          translation.Excludeduserlist
+            ? translation.Excludeduserlist
+            : "Excluded user list"
+        }
+        isOpen={isOpen0}
+        onDismiss={dismissPanel0}
+        closeButtonAriaLabel={"Close"}
+      >
+        <ExcludedName
+          excludeByNameOptions={excludeByNameOptions}
+          appSettings={appSettings}
+          setAppSettings={setAppSettings}
+          SweetAlertExcludeName={SweetAlertExcludeName}
+        />
+      </Panel>
 
       {isOpenOrgChartType && false && (
         <MiniModals
@@ -3728,25 +4299,23 @@ const AdvanceSetting = (props: any) => {
         </MiniModals>
       )}
 
-       <Panel
-                        type={PanelType.custom}
-                        customWidth="650px"
-                        headerText={
-                          translation.Exclude2||"Exclude user(s) by department"
-                        }
-                        isOpen={isOpen2}
-                        onDismiss={dismissPanel2}
-                        closeButtonAriaLabel={"Close"}
-                      >
-                        <div id="excludeDept">
-                          <Department
-                            appSettings={appSettings}
-                            setAppSettings={setAppSettings}
-                            departmentFields={departmentFields}
-                            SweetAlertExcludeDept={SweetAlertExcludeDept}
-                          />
-                        </div>
-                      </Panel>
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={translation.Exclude2 || "Exclude user(s) by department"}
+        isOpen={isOpen2}
+        onDismiss={dismissPanel2}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div id="excludeDept">
+          <Department
+            appSettings={appSettings}
+            setAppSettings={setAppSettings}
+            departmentFields={departmentFields}
+            SweetAlertExcludeDept={SweetAlertExcludeDept}
+          />
+        </div>
+      </Panel>
 
       {/* {isOpenExcldDept && (
         <MiniModals
@@ -3838,31 +4407,29 @@ const AdvanceSetting = (props: any) => {
           </div>
         </MiniModals>
       )} */}
-        <Panel
-                        type={PanelType.custom}
-                        customWidth="650px"
-                        headerText={
-                          translation.ExcludeUserByJobTitle
-                            ? translation.ExcludeUserByJobTitle
-                            : "Exclude user by job title"
-                        }
-                        isOpen={isOpen3}
-                        onDismiss={dismissPanel3}
-                        // You MUST provide this prop! Otherwise screen readers will just say "button" with no label.
-                        closeButtonAriaLabel={"Close"}
-                      >
-                        <JTitle
-                        setAppSettings={setAppSettings}
-                          appSettings={appSettings}
-                          jobTitleFields={jobTitleFields}
-                          dismiss={dismissPanelExcldJtitle}
-                          SweetAlertJobTitle={SweetAlertJobTitle}
-                          //refreshOptions={refreshOptions}
-                          //langcode={props.langcode}
-                        />
-                      </Panel>
-
- 
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={
+          translation.ExcludeUserByJobTitle
+            ? translation.ExcludeUserByJobTitle
+            : "Exclude user by job title"
+        }
+        isOpen={isOpen3}
+        onDismiss={dismissPanel3}
+        // You MUST provide this prop! Otherwise screen readers will just say "button" with no label.
+        closeButtonAriaLabel={"Close"}
+      >
+        <JTitle
+          setAppSettings={setAppSettings}
+          appSettings={appSettings}
+          jobTitleFields={jobTitleFields}
+          dismiss={dismissPanelExcldJtitle}
+          SweetAlertJobTitle={SweetAlertJobTitle}
+          //refreshOptions={refreshOptions}
+          //langcode={props.langcode}
+        />
+      </Panel>
 
       {isOpenDfltViews && (
         <MiniModals
@@ -4065,52 +4632,47 @@ const AdvanceSetting = (props: any) => {
         </MiniModals>
       )}
 
-<Panel
-                        type={PanelType.custom}
-                        customWidth="650px"
-                         onOuterClick={()=>{}}
-                        headerText={
-                         "Exclude user using csv file"
-                        }
-                        isOpen={isOpen5}
-                        onDismiss={dismissPanel5}
-                        closeButtonAriaLabel={"Close"}
-                      >
-                        <div id="excludedCsv">
-                          <Users
-                            openPanelCustomA={openPanelCustomA}
-                           
-                            dismiss={dismissPanel5}
-                            appSettings={appSettings}
-                            setAppSettings={setAppSettings}
-                            dismissModel={dismissPanelExcldCSV}
-                            SweetAlertExcludeCsv={SweetAlertExcludeCsv}
-                            /* refreshOptions={refreshOptions}
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        onOuterClick={() => {}}
+        headerText={"Exclude user using csv file"}
+        isOpen={isOpen5}
+        onDismiss={dismissPanel5}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div id="excludedCsv">
+          <Users
+            openPanelCustomA={openPanelCustomA}
+            dismiss={dismissPanel5}
+            appSettings={appSettings}
+            setAppSettings={setAppSettings}
+            dismissModel={dismissPanelExcldCSV}
+            SweetAlertExcludeCsv={SweetAlertExcludeCsv}
+            /* refreshOptions={refreshOptions}
                           langcode={props.langcode} */
-                          />
-                        </div>
-                      </Panel>
-                      <Panel
-                type={PanelType.custom}
-                customWidth="650px"
-                headerText={
-                  translation.sett5
-                    ? translation.sett5
-                    : "Exclude users using csv"
-                }
-                isOpen={isOpenCustomA}
-                onDismiss={dismissPanelCustomA}
-                closeButtonAriaLabel={"Close"}
-              >
-                <ExcludeCSV
-                  appSettings={appSettings}
-                  setAppSettings={setAppSettings}
-                  langcode={props.langcode}
-                  dismiss={dismissPanelCustomA}
-                  dismissModel={dismissPanelExcldCSV}
-                  SweetAlertCsvPanel={SweetAlertCsvPanel}
-                />
-              </Panel>
+          />
+        </div>
+      </Panel>
+      <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={
+          translation.sett5 ? translation.sett5 : "Exclude users using csv"
+        }
+        isOpen={isOpenCustomA}
+        onDismiss={dismissPanelCustomA}
+        closeButtonAriaLabel={"Close"}
+      >
+        <ExcludeCSV
+          appSettings={appSettings}
+          setAppSettings={setAppSettings}
+          langcode={props.langcode}
+          dismiss={dismissPanelCustomA}
+          dismissModel={dismissPanelExcldCSV}
+          SweetAlertCsvPanel={SweetAlertCsvPanel}
+        />
+      </Panel>
 
       {isOpenExcldCSV && (
         <MiniModals
@@ -4235,6 +4797,7 @@ const AdvanceSetting = (props: any) => {
                   type="Number"
                   value={gridWidth}
                   min={150}
+                  max={400}
                 />
                 <span style={{ color: "black", marginLeft: "5px" }}>px</span>
               </div>
@@ -4327,12 +4890,12 @@ const AdvanceSetting = (props: any) => {
         closeButtonAriaLabel={"Close"}
       >
         <div>
-          <Stack>
+          <div>
             <UserPropsGridView
               SweetAlertGridView={SweetAlertGridView}
               Dismisspanel={dismissPanelUserPrtiesGV}
             />
-          </Stack>
+          </div>
         </div>
       </Panel>
 
@@ -4509,11 +5072,7 @@ const AdvanceSetting = (props: any) => {
         type={PanelType.custom}
         layerProps={{ eventBubblingEnabled: true }}
         customWidth="540px"
-        headerText={
-          translation.Searchfilters
-            ? translation.Searchfilters
-            : "Search filters"
-        }
+        headerText={translation.Searchfilters ?? "Search filters"}
         isOpen={isOpenSearchFltr}
         onDismiss={dismissPanelSearchFltr}
         closeButtonAriaLabel={"Close"}
@@ -4532,11 +5091,7 @@ const AdvanceSetting = (props: any) => {
         <MiniModals
           isPanel={false}
           crossButton={true}
-          heading={
-            translation.Recordstoload
-              ? translation.Recordstoload
-              : "Records to load"
-          }
+          heading={translation.Recordstoload ?? "Records to load"}
           closeAction={dismissPanelRecordLoad}
         >
           <div>
@@ -4554,9 +5109,7 @@ const AdvanceSetting = (props: any) => {
                     className={"settingViewLabel"}
                     style={{ paddingTop: "0px" }}
                   >
-                    {translation.Recordstoload
-                      ? translation.Recordstoload
-                      : "Records to load"}
+                    {translation.Recordstoload ?? "Records to load"}
                   </Label>
                   <IconButton
                     id="records"
@@ -4632,55 +5185,47 @@ const AdvanceSetting = (props: any) => {
         </Stack>
       </Panel>
 
-      {isOpenBdayAnniTemplt && (
-        <Panel
-          type={PanelType.custom}
-          customWidth="750px"
-          headerText={
-            translation.Advance8
-              ? translation.Advance8
-              : "Birthday and anniversary templates"
-          }
-          isOpen={isOpenBdayAnniTemplt}
-          onDismiss={dismissBdayAnniTemplt}
-          closeButtonAriaLabel={translation.Close ? translation.Close : "Close"}
-        >
-          <div>
-            <Stack horizontal>
-              <div style={{ padding: "5px", width: "100%" }}>
-                <Pivot aria-label="Large Link Size Pivot Example">
-                  <PivotItem
-                    headerText={
-                      translation.Birthdaytemplate
-                        ? translation.Birthdaytemplate
-                        : "Birthday template"
-                    }
-                  >
-                    <BirthdayTemplate
-                      SweetAlertEmailTemp={SweetAlertEmailTemp}
-                      appSettings={appSettings}
-                      setAppSettings={setAppSettings}
-                    />
-                  </PivotItem>
-                  <PivotItem
-                    headerText={
-                      translation.Anniversarytemplate
-                        ? translation.Anniversarytemplate
-                        : "Anniversary template"
-                    }
-                  >
-                    <AnniversaryTemplate
-                      SweetAlertEmailTemp={SweetAlertEmailTemp}
-                      appSettings={appSettings}
-                      setAppSettings={setAppSettings}
-                    />
-                  </PivotItem>
-                </Pivot>
-              </div>
-            </Stack>
-          </div>
-        </Panel>
-      )}
+      <Panel
+        type={PanelType.custom}
+        customWidth="750px"
+        headerText={
+          translation.Advance8 ?? "Birthday and anniversary templates"
+        }
+        isOpen={isOpenBdayAnniTemplt}
+        onDismiss={dismissBdayAnniTemplt}
+        closeButtonAriaLabel={translation.Close ? translation.Close : "Close"}
+      >
+        <div>
+          <Stack horizontal>
+            <div style={{ padding: "5px", width: "100%" }}>
+              <Pivot aria-label="Large Link Size Pivot Example">
+                <PivotItem
+                  headerText={
+                    translation.Birthdaytemplate ?? "Birthday template"
+                  }
+                >
+                  <BirthdayTemplate
+                    SweetAlertEmailTemp={SweetAlertEmailTemp}
+                    appSettings={appSettings}
+                    setAppSettings={setAppSettings}
+                  />
+                </PivotItem>
+                <PivotItem
+                  headerText={
+                    translation.Anniversarytemplate ?? "Anniversary template"
+                  }
+                >
+                  <AnniversaryTemplate
+                    SweetAlertEmailTemp={SweetAlertEmailTemp}
+                    appSettings={appSettings}
+                    setAppSettings={setAppSettings}
+                  />
+                </PivotItem>
+              </Pivot>
+            </div>
+          </Stack>
+        </div>
+      </Panel>
 
       {isOpenImgPrfTag && (
         <Panel
@@ -4759,6 +5304,7 @@ const AdvanceSetting = (props: any) => {
                       ? translation.SearchUser
                       : "Search user"
                   }
+                
                 />
               </div>
               <PrimaryButton
@@ -4911,19 +5457,42 @@ const AdvanceSetting = (props: any) => {
       <Panel
         type={PanelType.custom}
         customWidth="650px"
-        headerText={translation.importusers || "Import users"}
-        isOpen={isOpenImportUsers}
-        onDismiss={dismissImportUsers}
+        headerText={translation.importusers || "Import bulk users"}
+        isOpen={isOpenBulkUploadPanel}
+        onDismiss={() => setOpenBulkUploadPanel(false)}
         closeButtonAriaLabel={"Close"}
       >
         <ImportUsers
           SweetAlertImportUser={SweetAlertImportUser}
           appSettings={appSettings}
+          setUserImportedByCsv={setUserImportedByCsv}
           setAppSettings={setAppSettings}
           langcode={props.langcode}
           dismiss={dismissPanelCustomA}
           dismissModel={dismissPanelExcldCSV}
-          sampleFileData={props.UserArray[0]}
+          // setNonGoogleUsersData={setNonGoogleUsersData}
+          sampleFileData={[
+            {
+              name: "",
+              email: "",
+              firstName: "",
+              lastName: "",
+              manager: "",
+              department: "",
+              job: "",
+              imgae: "",
+              workphone: "",
+              mobile: "",
+              skills: "",
+              projects: "",
+              hobbies: "",
+              school: "",
+              About_Me: "",
+              DOB: null,
+              DOJ: null,
+       
+            },
+          ]}
         />
       </Panel>
 
@@ -4940,32 +5509,24 @@ const AdvanceSetting = (props: any) => {
         closeButtonAriaLabel={"Close"}
       >
         <div id="AdvanceShowHide">
-          <div className={styles.showHideModulePanelItems}>
-            <Label>
-              {translation.externaluser
-                ? translation.externaluser
-                : "Show external users"}
-            </Label>
+          {/* <div className={styles.showHideModulePanelItems}>
+            <Label>{translation.externaluser ?? "Show external users"}</Label>
             <Toggle
               checked={dashboard}
               onText={translation.show}
               offText={translation.hide}
               onChange={(e: any, checked: any) => onChangeDashboard(e, checked)}
             />
-          </div>
+          </div> */}
 
-          <div className={styles.seprator}></div>
+          {/* <div className={styles.seprator}></div>
 
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.FreeBusyInformation
-                ? translation.FreeBusyInformation
-                : "Free/busy information"}
+              {translation.FreeBusyInformation ?? "Free/busy information"}
               <a className={styles.helpTag} href="#">
-                {translation.configurehelp
-                  ? translation.configurehelp
-                  : "Configure help"}
-              </a>{" "}
+                {translation.configurehelp ?? "Configure help"}
+              </a>
             </Label>
             <Toggle
               checked={false} //add variable
@@ -4973,7 +5534,7 @@ const AdvanceSetting = (props: any) => {
               offText={translation.hide}
               onChange={(e: any, checked: any) => {}}
             />
-          </div>
+          </div> */}
 
           <div className={styles.seprator}></div>
 
@@ -4997,9 +5558,7 @@ const AdvanceSetting = (props: any) => {
 
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.OrganizationalChart
-                ? translation.OrganizationalChart
-                : "Organizational Chart"}
+              {translation.OrganizationalChart ?? "Organizational Chart"}
             </Label>
             <Toggle
               checked={showOrgChart}
@@ -5013,12 +5572,8 @@ const AdvanceSetting = (props: any) => {
 
           <div className={styles.seprator}></div>
 
-          <div className={styles.showHideModulePanelItems}>
-            <Label>
-              {translation.Userpresence
-                ? translation.Userpresence
-                : "User presence"}
-            </Label>
+          {/* <div className={styles.showHideModulePanelItems}>
+            <Label>{translation.Userpresence ?? "User presence"}</Label>
             <Toggle
               checked={showFav}
               onText={translation.show}
@@ -5026,13 +5581,9 @@ const AdvanceSetting = (props: any) => {
               onChange={() => {}}
             />
           </div>
-          <div className={styles.seprator}></div>
+          <div className={styles.seprator}></div> */}
           <div className={styles.showHideModulePanelItems}>
-            <Label>
-              {translation.EnableWFHText
-                ? translation.EnableWFHText
-                : "Enable WFH"}
-            </Label>
+            <Label>{translation.EnableWFHText ?? "Enable WFH"}</Label>
             <Toggle
               checked={showWFH}
               onText={translation.show}
@@ -5043,9 +5594,8 @@ const AdvanceSetting = (props: any) => {
           <div className={styles.seprator}></div>
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.displayweeklyworkstatus
-                ? translation.displayweeklyworkstatus
-                : "Display weekly work status on profile card"}
+              {translation.displayweeklyworkstatus ??
+                "Display weekly work status on profile card"}
             </Label>
             <Toggle
               checked={WeekWorkStatus}
@@ -5059,9 +5609,8 @@ const AdvanceSetting = (props: any) => {
           <div className={styles.seprator}></div>
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.allowusertoupdatetheirpronouns
-                ? translation.allowusertoupdatetheirpronouns
-                : "Allow user to update their pronouns"}
+              {translation.allowusertoupdatetheirpronouns ??
+                "Allow user to update their pronouns"}
             </Label>
             <Toggle
               checked={HideShowPronouns}
@@ -5073,6 +5622,171 @@ const AdvanceSetting = (props: any) => {
             />
           </div>
           <div className={styles.seprator}></div>
+        </div>
+      </Panel>
+
+      <Panel
+        type={PanelType.custom}
+        customWidth="100%"
+        onOuterClick={() => {}}
+        headerText={translation.importusers || "Import users"}
+        isOpen={isOpenImportUsers}
+        onDismiss={dismissImportUsers}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div id="ImportUserDelete">
+          <DefaultButton
+            text="Add"
+            menuProps={menuProps}
+            style={{ margin: "10px 0px" }}
+          />
+
+          <DetailsList
+            className={styles.detailsList}
+            setKey="items"
+            styles={ListStyles}
+            items={NonGoogleUsersData || []}
+            columns={NonGoogleColumns}
+            isHeaderVisible={true}
+            onShouldVirtualize={() => false}
+            selectionMode={SelectionMode.none}
+            ariaLabelForGrid="Item details"
+          />
+        </div>
+      </Panel>
+
+      <Panel
+        type={PanelType.custom}
+        customWidth="400px"
+        headerText={translation.importusers || "Import users"}
+        isOpen={isOpenImportUsersPanel}
+        onDismiss={() => setOpenImportUsersPanel(false)}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div id="singleUserUpload">
+          <Icon
+            iconName="save"
+            onClick={handleSaveImportSingleUser}
+            style={{
+              position: "fixed",
+              right: "60px",
+              top: "16px",
+              color: "white",
+              cursor: "pointer",
+            }}
+          />
+          <TextField
+            label="Name"
+            id="name"
+            value={formState.name}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Email"
+            id="email"
+            value={formState.email}
+            onChange={handleChange}
+            type="email"
+          />
+          <TextField
+            label="First Name"
+            id="firstName"
+            value={formState.firstName}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Last Name"
+            id="lastName"
+            value={formState.lastName}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Manager"
+            id="manager"
+            value={formState.manager}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Department"
+            id="department"
+            value={formState.department}
+            onChange={handleChange}
+          />
+          <TextField
+            label="job"
+            id="job"
+            value={formState.job}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Work Phone"
+            id="workphone"
+            value={formState.workphone}
+            onChange={handleChange}
+          />
+          <TextField
+            label="Mobile"
+            id="mobile"
+            value={formState.mobile}
+            onChange={handleChange}
+          />
+          <DatePicker
+            label="Date of Birth"
+            id="DOB"
+            value={formState.DOB}
+            onSelectDate={(date) => handleDateChange(date, "DOB")}
+            strings={datePickerStrings}
+            placeholder="Select a date"
+          />
+          <DatePicker
+            label="Date of Joining"
+            id="DOJ"
+            value={formState.DOJ}
+            onSelectDate={(date) => handleDateChange(date, "DOJ")}
+            strings={datePickerStrings}
+            placeholder="Select a date"
+          />
+          <TextField
+            label="Skills"
+            id="skills"
+            value={formState.skills}
+            multiline
+            onChange={handleTextAreaChange}
+            placeholder="Enter your skills"
+            styles={{ fieldGroup: { width: "100%" } }}
+          />
+          <TextField
+            label="Projects"
+            id="projects"
+            value={formState.projects}
+            onChange={handleTextAreaChange}
+            multiline
+            placeholder="Enter details about your projects"
+          />
+          <TextField
+            label="Hobbies"
+            id="hobbies"
+            value={formState.hobbies}
+            onChange={handleTextAreaChange}
+            multiline
+            placeholder="Enter your hobbies"
+            styles={{ fieldGroup: { width: "100%" } }}
+          />
+          <TextField
+            label="School"
+            id="school"
+            value={formState.school}
+            onChange={handleTextAreaChange}
+            multiline
+            placeholder="Enter your school information"
+          />
+          <TextField
+            label="About Me"
+            id="About_Me"
+            multiline
+            onChange={handleTextAreaChange}
+            placeholder="Tell us about yourself"
+          />
         </div>
       </Panel>
     </div>

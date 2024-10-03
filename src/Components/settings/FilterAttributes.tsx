@@ -16,9 +16,10 @@ import {
   Toggle,
 } from "@fluentui/react";
 import { useFields } from "../../context/store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
+
 import { useSttings } from "../SelectSource/store";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const KEY = "FilterAttribute";
 
@@ -32,7 +33,7 @@ const FilterAttributes = ({ isOpen, onDismiss }:any) => {
   const [allJobTitles, setAllJballJobTitles] = useState(jobTitles);
   const [allLocations, setAllLocations] = useState(locations);
 
-  const updateSetting = () => {
+  const update = () => {
     const setting = {
       ...appSettings,
       [KEY]: {
@@ -41,7 +42,7 @@ const FilterAttributes = ({ isOpen, onDismiss }:any) => {
         locations: allLocations,
       },
     };
-    updateSettingData(setting);
+    updateSettingJson(SETTING_LIST, setting);
     setAppSettings(setting);
   };
 
@@ -87,7 +88,7 @@ const FilterAttributes = ({ isOpen, onDismiss }:any) => {
             <AddDepartment
               allDepartments={allDepartments}
               setAllDepartments={setAllDepartments}
-              updateSetting={updateSetting}
+              update={update}
             />
           </Panel>
 
@@ -102,7 +103,7 @@ const FilterAttributes = ({ isOpen, onDismiss }:any) => {
             <AddJobTitle
               allJobTitles={allJobTitles}
               setAllJballJobTitles={setAllJballJobTitles}
-              updateSetting={updateSetting}
+              update={update}
             />
           </Panel>
 
@@ -117,7 +118,7 @@ const FilterAttributes = ({ isOpen, onDismiss }:any) => {
             <AddLocation
               allLocations={allLocations}
               setAllLocations={setAllLocations}
-              updateSetting={updateSetting}
+              update={update}
             />
           </Panel>
         </div>
@@ -165,7 +166,7 @@ const ListStyles = {
 const AddDepartment = ({
   allDepartments,
   setAllDepartments,
-  updateSetting,
+  update,
 }) => {
   const { SweetPrompt: SweetAlertDeleteDept } = SweetAlerts("#addDepartment",true);
   const { SweetAlert: SweetAlertUpdateDep } = SweetAlerts("#addDepartment",true);
@@ -196,7 +197,7 @@ const AddDepartment = ({
       Department: "",
       Active: true,
     });
-    updateSetting();
+    update();
   };
 
   const handleUpdate = () => {
@@ -206,7 +207,7 @@ const AddDepartment = ({
     newDep[index] = data;
     setAllDepartments(newDep);
     SweetAlertUpdateDep("success", "Department updated");
-    updateSetting();
+    update();
   };
 
   const handleDelete = () => {
@@ -220,7 +221,7 @@ const AddDepartment = ({
     setTimeout(() => {
       setOpenEditPanel(false);
     }, 2000);
-    updateSetting();
+    update();
   };
 
   const columns: IColumn[] = [
@@ -373,7 +374,7 @@ const AddDepartment = ({
   );
 };
 
-const AddJobTitle = ({ allJobTitles, setAllJballJobTitles, updateSetting }) => {
+const AddJobTitle = ({ allJobTitles, setAllJballJobTitles, update }) => {
   const { SweetPrompt: SweetAlertAddJobTitle } = SweetAlerts("#addJobTitle",true);
   const { SweetAlert: SweetAlertUpdateJobTitle } = SweetAlerts("#addJobTitle",true);
   const { SweetAlert: SweetAlertAddedJobTitle } = SweetAlerts("#addedJobTitle",true);
@@ -402,7 +403,7 @@ const AddJobTitle = ({ allJobTitles, setAllJballJobTitles, updateSetting }) => {
       JobTitle: "",
       Active: true,
     });
-    updateSetting();
+    update();
   };
 
   const handleUpdate = () => {
@@ -412,7 +413,7 @@ const AddJobTitle = ({ allJobTitles, setAllJballJobTitles, updateSetting }) => {
     newJob[index] = data;
     setAllJballJobTitles(newJob);
     SweetAlertUpdateJobTitle("success", "Job title updated");
-    updateSetting();
+    update();
   };
 
   const handleDelete = () => {
@@ -426,7 +427,7 @@ const AddJobTitle = ({ allJobTitles, setAllJballJobTitles, updateSetting }) => {
     setTimeout(() => {
       setOpenEditPanel(false);
     }, 2000);
-    updateSetting();
+    update();
   };
 
   const columns: IColumn[] = [
@@ -581,7 +582,7 @@ const AddJobTitle = ({ allJobTitles, setAllJballJobTitles, updateSetting }) => {
   );
 };
 
-const AddLocation = ({ allLocations, setAllLocations, updateSetting }) => {
+const AddLocation = ({ allLocations, setAllLocations, update }) => {
   const { SweetPrompt: SweetAlertDeleteLocation } = SweetAlerts("#addLocation",true);
   const { SweetAlert: SweetAlertUpdateLocation } = SweetAlerts("#addLocation",true);
   const { SweetAlert: SweetAlertAddedLocation } = SweetAlerts("#addedLocation",true);
@@ -610,7 +611,7 @@ const AddLocation = ({ allLocations, setAllLocations, updateSetting }) => {
       Location: "",
       Active: true,
     });
-    updateSetting();
+    update();
   };
 
   const handleUpdate = () => {
@@ -620,7 +621,7 @@ const AddLocation = ({ allLocations, setAllLocations, updateSetting }) => {
     newJob[index] = data;
     setAllLocations(newJob);
     SweetAlertUpdateLocation("success", "Job title updated");
-    updateSetting();
+    update();
   };
 
   const handleDelete = () => {
@@ -634,7 +635,7 @@ const AddLocation = ({ allLocations, setAllLocations, updateSetting }) => {
     setTimeout(() => {
       setOpenEditPanel(false);
     }, 2000);
-    updateSetting();
+    update();
   };
 
   const columns: IColumn[] = [

@@ -7,10 +7,11 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import * as XLSX from 'xlsx';
 import Excel from "exceljs";
 import { CommandBarButton, GetGroupCount } from "@fluentui/react";
-import useStore from "./store";
+import useStore, { useSttings } from "./store";
 import { gapi } from "gapi-script";
-import { encryptData, GetSettingValues, updateSettingData } from "../Helpers/HelperFunctions";
+import { encryptData, GetSettingValues } from "../Helpers/HelperFunctions";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 var exclname = "";
 const messageBarWarningStyles = {
@@ -45,6 +46,7 @@ var containerClient: any;
 
 function ImportPronouns(props) {
   const {translation}=useLanguage();
+  const { appSettings, setAppSettings } = useSttings();
   const { changeExcludeUsersBulk } = useStore();
   const[filename,setFileName]=React.useState("");
   const [saved, setSaved] = React.useState(false);
@@ -154,9 +156,9 @@ function ImportPronouns(props) {
     if(updateDataArray?.length){
     setLoading1(true);
     setButtonSaveText1("");
-    const updatedParsedData = { ...dataAPI, [KEY_NAME4]: encryptData(JSON.stringify(updateDataArray.slice(1))) };
+    const updatedParsedData = { ...dataAPI, [KEY_NAME4]: updateDataArray.slice(1) };
     console.log(updatedParsedData, 'parse');
-    updateSettingData(updatedParsedData);
+    updateSettingJson(SETTING_LIST, updatedParsedData);
     props.SweetAlertPrononus("success",translation.SettingSaved);
     
     setTimeout(()=>{
@@ -170,9 +172,9 @@ function ImportPronouns(props) {
   };
 
   React.useEffect(() => {
-    GetSettingValues().then((data)=>{
-        dataAPI=data;
-    });
+   
+        dataAPI=appSettings;
+    
   }, []);
 
   return (

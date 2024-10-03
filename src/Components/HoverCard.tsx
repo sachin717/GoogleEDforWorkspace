@@ -53,7 +53,7 @@ const HoverCardComponent: React.FC<HoverCardProps> = ({
         expandingCardProps={expandingCardProps}
         // instantOpenOnClick={true}
         // expandedCardOpenDelay={400}
-        // cardDismissDelay={300000000}
+        cardDismissDelay={30000000000}
       >
         <div >
           {children}

@@ -1,11 +1,10 @@
 import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import React, { useEffect, useRef, useState } from "react";
-
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { useLanguage } from "../../Language/LanguageContext";
 import { Icon } from "office-ui-fabric-react";
 import ReactSelect from "react-select";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 var allItems = [];
 let settingsData:any;
 function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlertLocation}) {
@@ -83,7 +82,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
           
           const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedexcludeByLocation };
           if(Object.keys(appSettings)?.length >0){
-            updateSettingData(updatedParsedData);
+            updateSettingJson(SETTING_LIST,updatedParsedData);
             setAppSettings(updatedParsedData)
            
           setExcludeByLocation(updatedParsedData?.ExcludeByLocation)
@@ -107,7 +106,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
             setExcludeByLocation(updatedLocations);
             setShowButton(true);
             if (Object.keys(data)?.length > 0) {
-              updateSettingData(data);
+              updateSettingJson(SETTING_LIST,data);
               setAppSettings(data);
             
               setExcludedValues([]);

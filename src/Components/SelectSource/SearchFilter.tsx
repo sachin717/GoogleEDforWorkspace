@@ -8,11 +8,12 @@ import {
 } from "@fluentui/react";
 import { useState, useRef, useEffect } from "react";
 //import {changeUserGridView} from "./store";
-import useStore from "./store";
+import useStore, { useSttings } from "./store";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { gapi } from "gapi-script";
 import { Buffer } from "buffer";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 let parsedData: any = "";
 var containerClient: any;
@@ -21,6 +22,7 @@ var KEY_NAME = "SearchFiltersPrope";
 export function SearchFilter(props) {
   const { changeSearchFilters } = useStore();
   const { translation } = useLanguage();
+  const {appSettings, setAppSettings} = useSttings();
   var sortedPeopleFilter;
   const [peopleFilter, setPeopleFilter] = useState([
     {
@@ -171,38 +173,8 @@ export function SearchFilter(props) {
     });
   }
 
-  async function updateSetting(uparsedData) {
-    var _parsedData = JSON.stringify(uparsedData);
-    var domain = gapi.auth2
-      .getAuthInstance()
-      .currentUser.le.wt.cu.split("@")[1];
-    //console.log(domain);
-    var _domain = domain.replace(/\./g, "_");
-    var storagedetails =
-      '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-      _domain +
-      '.json"}]';
-    var mappedcustomcol = JSON.parse(storagedetails);
-    await containerClient
-      .getBlockBlobClient(mappedcustomcol[0].blobfilename)
-      .upload(_parsedData, Buffer.byteLength(_parsedData))
-      .then(() => {
-        //setSaved(true);
-        setTimeout(() => {
-          props.dismiss();
-          //messageDismiss();
-        }, 3000);
-      });
-  }
 
-  /* const handleCheckboxChange = (index:number, isChecked:any) => {
-    console.log(index,isChecked)
-    setPeopleFilter((prevItems) =>
-      prevItems.map((item, i) =>
-        i === index ? { ...item, checked: isChecked } : item
-      )
-    );
-  }; */
+
   const handleCheckboxChange = (index, isChecked) => {
     setPeopleFilter((prevItems) =>
       prevItems.map((item, i) =>
@@ -220,18 +192,34 @@ export function SearchFilter(props) {
   }; */
 
   const handleSaveFilter: any = () => {
-    const updatedParsedData = { ...parsedData, [KEY_NAME]: peopleFilter };
+    const setting = { ...appSettings, [KEY_NAME]: peopleFilter };
 
-    //updateSetting(updatedParsedData);
-    console.log(updatedParsedData);
-    if (Object.keys(parsedData).length > 0) {
-      updateSetting(updatedParsedData);
-      props.SweetAlertSearchFilter("success", translation.SettingSaved);
-    }
+   
+    updateSettingJson(SETTING_LIST, setting);
+    setAppSettings(setting);
+    props.SweetAlertSearchFilter("success", translation.SettingSaved);
   };
   useEffect(() => {
-    GetSettingData();
-  }, []);
+    if (appSettings?.SearchFiltersPrope) {
+      const updatedPeople = appSettings?.SearchFiltersPrope?.map((person) => {
+        const updatedPerson = appSettings[KEY_NAME].find(
+          (data:any) => data.id === person.id
+        );
+        if (updatedPerson) {
+          return {
+            ...person,
+            checkbox: updatedPerson.checkbox,
+          };
+        }
+        return person;
+      });
+      sortedPeopleFilter = updatedPeople.sort((a:any, b:any) => a.id - b.id);
+      setPeopleFilter(sortedPeopleFilter);
+    } else {
+      setPeopleFilter(peopleFilter);
+    }
+  }, [appSettings.SearchFiltersPrope]);
+  
   return (
     <main id="searchfilters">
       <Icon

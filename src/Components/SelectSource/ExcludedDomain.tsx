@@ -2,7 +2,6 @@ import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import React, { useEffect, useRef } from "react";
 import useStore, { useSttings } from "./store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import Alert from "../Utils/Alert";
 import { SweetAlerts } from "./Utils/SweetAlert";
 import "sweetalert2/dist/sweetalert2.css";
@@ -10,6 +9,7 @@ import Styles  from "../SCSS/Ed.module.scss"
 import ReactSelect from "react-select";
 import { Icon } from "office-ui-fabric-react";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 var allItems = [];
 let settingsData:any;
 function ExcludedDomain({excludeOptionsForDomain,setSelectedExcludedDomian,selectedExcludedDomian,appSettings,setAppSettings,SweetAlertDomain}) {
@@ -41,7 +41,7 @@ function ExcludedDomain({excludeOptionsForDomain,setSelectedExcludedDomian,selec
       const searchItems = (text: string) => {
         if (text == "") {
           setExcludeDomain([...allItems]);
-          setShowButton(allItems.length > 0 ? true : false);
+          setShowButton(allItems?.length > 0 ? true : false);
           return;
         }
         const newArray = [...excludeDomain].filter(
@@ -63,7 +63,7 @@ function ExcludedDomain({excludeOptionsForDomain,setSelectedExcludedDomian,selec
           .map((y) => {
             return y.value;
           });
-          if(updatedDepartments.length==0)
+          if(updatedDepartments?.length==0)
           {
             setAlertMsg("Please select department!");
             // setAlert(true);
@@ -79,8 +79,8 @@ function ExcludedDomain({excludeOptionsForDomain,setSelectedExcludedDomian,selec
           setExcludeDomain(updatedexcludeByDomain);
           
           const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedexcludeByDomain };
-          if(Object.keys(appSettings).length >0){
-            updateSettingData(updatedParsedData);
+          if(Object.keys(appSettings)?.length >0){
+            updateSettingJson(SETTING_LIST,updatedParsedData);
             setAppSettings(updatedParsedData)
            
           setExcludeDomain(updatedParsedData?.ExcludeByDomain)
@@ -129,7 +129,7 @@ function ExcludedDomain({excludeOptionsForDomain,setSelectedExcludedDomian,selec
             const updatedExcluded = [...currentExcluded, ...excludedValues];
             const data = { ...appSettings, ExcludeByDomain: updatedExcluded };
             setExcludeDomain(updatedExcluded);
-            updateSettingData(data);
+            updateSettingJson(SETTING_LIST,data);
             console.log("data", data);
             setAppSettings(data);
             SweetAlertDomain("success", translation?.SettingSaved);
@@ -188,7 +188,7 @@ function ExcludedDomain({excludeOptionsForDomain,setSelectedExcludedDomian,selec
       onSearch={(newValue) => searchItems(newValue)}
       onChange={(e, newValue) => searchItems(newValue)}
       onClear={() => {
-        setShowButton(allItems.length > 0);
+        setShowButton(allItems?.length > 0);
         setExcludeDomain([...allItems]);
       }}
       placeholder="Search"
@@ -251,7 +251,7 @@ function ExcludedDomain({excludeOptionsForDomain,setSelectedExcludedDomian,selec
         </table>
       </div>
       
-      {excludeDomain.length ? <div><PrimaryButton text={"Include"} onClick={include} /></div>:""}
+      {excludeDomain?.length ? <div><PrimaryButton text={"Include"} onClick={include} /></div>:""}
     </div>
 </>
   )

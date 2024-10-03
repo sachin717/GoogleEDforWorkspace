@@ -1,291 +1,240 @@
 import * as React from "react";
-import { DefaultButton, Icon, IconButton, Label, MessageBar, MessageBarType, Modal, PrimaryButton, Stack, TextField } from "@fluentui/react";
+import {
+  DefaultButton,
+  Icon,
+  Label,
+  PrimaryButton,
+  Stack,
+} from "@fluentui/react";
 import "./Styles.scss";
 import { useBoolean } from "@fluentui/react-hooks";
 import { Buffer } from 'buffer';
-import { BlobServiceClient } from "@azure/storage-blob";
 import * as XLSX from 'xlsx';
 import Excel from "exceljs";
-import { CommandBarButton, GetGroupCount } from "@fluentui/react";
 import useStore from "./store";
-import { gapi } from "gapi-script";
-import { decryptData, encryptData, GetSettingValues, updateSettingData } from "../Helpers/HelperFunctions";
 import { useSttings } from "./store";
 import { useLanguage } from "../../Language/LanguageContext";
-var exclname = "";
-const messageBarWarningStyles = {
-  root: {
-    backgroundColor: 'rgb(255, 244, 206)',
-  }
-};
-const messageBarInfoStyles = {
-  root: {
-    backgroundColor: 'rgb(243, 242, 241)',
-  }
-};
-const messageBarErrorStyles = {
-  root: {
-    backgroundColor: 'rgb(253, 231, 233)',
-  }
-};
-const messageBarSuccessStyles = {
-  root: {
-    backgroundColor: 'rgb(223, 246, 221)',
-  }
-};
+import { updateSettingJson, USER_LIST } from "../../api/storage";
+import { useLists } from "../../context/store";
+import { encryptData } from "../Helpers/HelperFunctions";
 
-interface IRichText {
-  description: string;
+const KEY_NAME4 = "Users";
+
+interface ImportUsersProps {
+  sampleFileData: any;
+  SweetAlertImportUser: (type: string, message: string) => void;
 }
 
-var dataAPI: any = "";
-var parsedData: any = "";
-const KEY_NAME4 = "Users";
-var containerClient: any;
+const messageBarStyles = {
+  warning: { root: { backgroundColor: 'rgb(255, 244, 206)' } },
+  info: { root: { backgroundColor: 'rgb(243, 242, 241)' } },
+  error: { root: { backgroundColor: 'rgb(253, 231, 233)' } },
+  success: { root: { backgroundColor: 'rgb(223, 246, 221)' } }
+};
 
-function ImportUsers(props) {
-    const {translation}=useLanguage();
-    console.log("pros",props)
-    const {appSettings,setAppSettings}=useSttings();
-  const { changeExcludeUsersBulk } = useStore();
-  const[filenameUser,setFileNameUser]=React.useState("");
-  const [saved, setSaved] = React.useState(false);
-  const [saveMsg, setSaveMsg] = React.useState(null);
+const ImportUsers = (props) => {
+  const { translation } = useLanguage();
+  const {usersList, setUsersList} = useLists();
+  const { appSettings, setAppSettings } = useSttings();
+  const { SweetAlertImportUser } = props;
+  const [filenameUser, setFileNameUser] = React.useState<string>("");
+  const [updateDataArray, setUpdateDataArray] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [isModalOpen, { setTrue: openModal, setFalse: closeModal }] = useBoolean(false);
-  const [updateDataArray, setupdateDataArray] = React.useState<any>([]);
-  const [attachFile1, setattachFile1] = React.useState(null);
-  const [ButtonSaveText1, setButtonSaveText1] = React.useState<string>("Save");
-  const [loading1, setLoading1] = React.useState(false);
+  const [buttonSaveText, setButtonSaveText] = React.useState<string>("Save");
 
-  React.useEffect(() => {}, []);
-
-  function getFormattedTime() {
-    var today = new Date();
-    var y = today.getFullYear();
-    var m = today.getMonth() + 1; // JavaScript months are 0-based.
-    var d = today.getDate();
-    var h = today.getHours();
-    var mi = today.getMinutes();
-    var s = today.getSeconds();
-    return y + "" + m + "" + d + "" + h + "" + mi + "" + s;
-  }
-
-  var data: any[] = [
-    { 
-      givenName: '',
-      familyName: '',
-      fullName: '',
-    }
-  ];
-
-  const downloadTemplate = (csvData, fileName, sheetName) => {
-    var workbook = XLSX.utils.book_new();
-    var ws = XLSX.utils.json_to_sheet(csvData);
-    XLSX.utils.book_append_sheet(workbook, ws, sheetName);
-    XLSX.writeFile(workbook, `${fileName}` + '.xlsx', { type: 'file' });
-  }
-
-  const onAttachmentChange = (ev: any) => {
-    if (ev.target.files.length > 0) {
-      setattachFile1(ev.target.files);
-      console.log(ev.target.files[0]?.name,"----")
-      setFileNameUser(ev.target.files[0]?.name);
-    } else {
-      setattachFile1(null);
-    }
-    console.log('calling');
-    processDataPronouns(ev);
+  const getFormattedTime = () => {
+    const today = new Date();
+    return `${today.getFullYear()}${today.getMonth() + 1}${today.getDate()}${today.getHours()}${today.getMinutes()}${today.getSeconds()}`;
   };
 
-  const processDataPronouns = async (e: any) => {
-    const file = e.target.files[0];
+  const downloadTemplate = (csvData: any[], fileName: string, sheetName: string) => {
+    const workbook = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(csvData);
+    XLSX.utils.book_append_sheet(workbook, ws, sheetName);
+    XLSX.writeFile(workbook, `${fileName}.xlsx`);
+  };
+
+  const onAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      const file = e.target.files[0];
+      setFileNameUser(file.name);
+      processDataPronouns(file);
+    }
+  };
+
+  const formatDate = (date: any) => {
+    if (!date) return null;
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) return null; // Invalid date
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
+  const processDataPronouns = async (file: File) => {
     const wb = new Excel.Workbook();
     const reader = new FileReader();
-    var updateDataArray1: any[] = [];
-
-    reader?.readAsArrayBuffer(file);
-    reader.onload = () => {
+  
+    reader.readAsArrayBuffer(file);
+    reader.onload = async () => {
       const buffer = reader.result;
       if (buffer instanceof ArrayBuffer) {
-        wb.xlsx.load(Buffer.from(buffer)).then((workbook: { eachSheet: (arg0: (sheet: any, id: any) => void) => void; }) => {
-          workbook.eachSheet((sheet, id) => {
-            sheet.eachRow((row: { eachCell: (arg0: (cell: any, colNumber: any) => void) => void; }, rowIndex: any) => {
-              const mappedData: { [key: string]: any } = {};
-              row.eachCell((cell, colNumber) => {
-                const key = sheet.getRow(1).getCell(colNumber).value as string;
-                const value = cell.value;
-                if (key !== null) {
-                  mappedData[key] = value;
-                }
-              });
-              console.log(mappedData, 'mappeddat');
-              mappedData["IsExternalUser"]=true;
-            //   var updateData = {
-            //     name: {                                     
-            //       familyName: '',
-            //       givenName: '',
-            //       fullName: '',
-            //     },
-            //     checked: true,
-            //   };
-            //   Object.entries(mappedData)?.forEach(([key, value]) => {
-            //     if (key === "givenName") {
-            //       updateData.name.givenName = value;
-            //     } else if (key === "familyName") {
-            //       updateData.name.familyName = value;
-            //     } else if (key === "fullName") {
-            //       updateData.name.fullName = value;
-            //     }
-            //   });
-              updateDataArray1.push(mappedData);
-              setupdateDataArray(updateDataArray1);
+        try {
+          await wb.xlsx.load(Buffer.from(buffer));
+          wb.eachSheet((sheet) => {
+            sheet.eachRow({ includeEmpty: true }, (row, rowIndex) => {
+              // Skip the header row (usually the first row)
+              if (rowIndex > 1) {
+                const mappedData: { [key: string]: any } = {};
+                const headerRow = sheet.getRow(1);
+                
+                // Iterate over all header cells
+                headerRow.eachCell((cell, colNumber) => {
+                  const key = cell.value as string; // Header row
+                  let cellValue = row.getCell(colNumber).value; // Get the corresponding cell value in the current row
+                  
+                  if (key === 'DOB' || key === 'DOJ') {
+                    cellValue = formatDate(cellValue);
+                  }
+  
+                  mappedData[key] = cellValue ?? ""; // Assign cell value or empty string if undefined
+                });
+  
+                mappedData["IsExternalUser"] = true;
+                setUpdateDataArray((prev) => [...prev, mappedData]);
+              }
             });
           });
-        }).catch((error: any) => {
+        } catch (error) {
           console.error("Error loading workbook:", error);
-        });
+        }
       } else {
         console.error("Failed to load file as ArrayBuffer.");
       }
     };
   };
-
-  // const saveDataPronouns = () => {
-  //   setLoading1(true);
-  //   setButtonSaveText1("");
-  //   const updatedParsedData = { ...dataAPI, [KEY_NAME4]: encryptData(JSON.stringify(updateDataArray.slice(1))) };
-  //   console.log(updatedParsedData, 'parse');
-  //   updateSettingData(updatedParsedData);
-  //   setAppSettings(updatedParsedData);
-    
-  //   setTimeout(()=>{
-
-  //       setLoading1(false)
-  //       setButtonSaveText1("Save")
-  //   },1000)
-  // };
-  // const saveDataPronouns = () => {
-  //   setLoading1(true);
-  //   setButtonSaveText1("");
-  //   const encryptedData = encryptData(JSON.stringify(updateDataArray.slice(1)));
-  //   const updatedParsedData = { ...dataAPI };
-  //   if (updatedParsedData[KEY_NAME4]) {
-  //     const existingData = JSON.parse(decryptData(updatedParsedData[KEY_NAME4]));
-  //     const mergedData = [...existingData, ...updateDataArray.slice(1)];
-  //     updatedParsedData[KEY_NAME4] = encryptData(JSON.stringify(mergedData));
-  //   } else {
   
-  //     updatedParsedData[KEY_NAME4] = encryptedData;
-  //   }
-  
-  //   updateSettingData(updatedParsedData);
-  //   setAppSettings(updatedParsedData);
-  //   setTimeout(() => {
-  //     setLoading1(false);
-  //     setButtonSaveText1("Save");
-  //   }, 1000);
-  // };
-  const transformData = (data) => {
-    return data.map(item => {
-      if (typeof item.email === 'object' && item.email.text) {
-        return {
-          ...item,
-          email: item.email.text
-        };
-      }
-      return item;
-    });
+
+  const transformData = (data: any[]) => {
+    return data.map(item => ({
+      ...item,
+      email: typeof item.email === 'object' ? item.email.text : item.email,
+      manager: typeof item.manager === 'object' ? item.manager.text : item.manager,
+    }));
   };
-  const saveDataPronouns = () => {
-    if(updateDataArray?.length){
-  setLoading1(true);
-  setButtonSaveText1("");
-  const encryptedData = encryptData(JSON.stringify(updateDataArray.slice(1)));
-  const updatedParsedData = { ...appSettings };
-  console.log("transformaed",)
-  if (updatedParsedData[KEY_NAME4]) {
-    const existingData = JSON.parse(decryptData(updatedParsedData[KEY_NAME4]));
-    let  combinedData = [...existingData, ...updateDataArray.slice(1)];
-    // console.log(combinedData,"lol")
-    combinedData=transformData(combinedData);
-    const uniqueData = Array.from(new Map(combinedData.map(item => [item.email, item])).values());
-    console.log("sd",uniqueData)
-    updatedParsedData[KEY_NAME4] = encryptData(JSON.stringify(uniqueData));
-  } else {
-    updatedParsedData[KEY_NAME4] = encryptedData;
-    console.log("sd",updatedParsedData)
+
+  const saveDataUsers = () => {
+
+    if (updateDataArray.length === 0) {
+      SweetAlertImportUser("info", "Please select a file");
+      return;
+    }
+
+
+    setIsLoading(true);
+    setButtonSaveText("Saving...");
+    let encryptedData =[];
+  if(usersList.Users){
+    
+    encryptedData = [...updateDataArray,...usersList.Users];
+  }else{
+    encryptedData = updateDataArray;
+
   }
-  console.log("imp",updatedParsedData)
-  updateSettingData(updatedParsedData);
-  setAppSettings(updatedParsedData);
-  props.SweetAlertImportUser("success",translation.SettingSaved);
-  setTimeout(() => {
-    setLoading1(false);
-    setButtonSaveText1("Save");
-  }, 1000);
-}else{
-  props.SweetAlertImportUser("info","Please select file");
-}
-};
+  let res=Array.from(new Map(transformData(encryptedData).map(item => [item.email, item])).values());
+    let updatedParsedData = { ...usersList,Users:res};
+    
 
 
-  React.useEffect(() => {
-    GetSettingValues().then((data)=>{
-        dataAPI=data;
-    });
-  }, []);
+    
+     
+    
+
+   
+    console.log("users bulk upload before",updatedParsedData);
+    // const dataInc = {...data.Users }
+
+    function generateRandomId(length = 10) {
+      const characters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let result = "";
+      const charactersLength = characters.length;
+      for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charactersLength);
+        result += characters[randomIndex];
+      }
+      return result;
+    }
+    
+    let finalData= updatedParsedData?.Users?.map((item)=>{
+
+      // let ID= await generateUniqueId(item.email);'
+      const ID = generateRandomId();
+      return {...item,id:ID}
+    })
+    console.log("users bulk upload",{...usersList,Users:finalData})
+    let encData=encryptData(JSON.stringify({...usersList,Users:finalData}))
+    updateSettingJson(USER_LIST,encData);
+    setUsersList({...usersList,Users:finalData});
+    props.setUserImportedByCsv(true)
+
+    SweetAlertImportUser("success", translation.SettingSaved);
+
+    setTimeout(() => {
+      setIsLoading(false);
+      setButtonSaveText("Save");
+    }, 1000);
+  };
+
 
   return (
-    <div className={"CSVPanelMain"} id="importuser"  style={{margin:"10px 0",display:"flex",flexDirection:"column",gap:"10px"}}>
-      <div className={"uploadCSVblkStyles"}> 
+    <div className="CSVPanelMain" id="importuser" style={{ margin: "10px 0", display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div className="uploadCSVblkStyles">
         <Stack>
-          <DefaultButton 
-            className={"downloadButton"} 
-            style={{
-              color: "#333",
-              borderRadius: "20px",
-              marginBottom: "2%",
-              maxWidth: "200px"
-            }}
-            onClick={() => downloadTemplate([props.sampleFileData], "user_detail-" + getFormattedTime(), "A")}
+          <DefaultButton
+            className="downloadButton"
+            style={{ color: "#333", borderRadius: "20px", marginBottom: "2%", maxWidth: "200px" }}
+            onClick={() => downloadTemplate(props.sampleFileData, `user_detail-${getFormattedTime()}`, "A")}
           >
-            <CommandBarButton text={"Download sample file"} />
+            Download sample file
           </DefaultButton>
         </Stack>
-        <div className={"importCSVFileBlk"}>
-          <div  className={"importCSVFile"} style={{ display: "flex", gap: "5px", alignItems: "center" }}>
-            <Label onClick={() => document.getElementById("pronousimport").click()}   style={{whiteSpace:"nowrap"}} >{"Import File"}</Label>
-            <Icon onClick={() => document.getElementById("pronousimport").click()}  iconName="Attach" style={{ cursor: "pointer" }} />
-            <span style={{whiteSpace:"nowrap"}}>{filenameUser}</span>
-            <input id="pronousimport" onChange={onAttachmentChange} type="file" style={{ display: "none" }} />              
-          </div>       
+        <div className="importCSVFileBlk">
+          <div className="importCSVFile" style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+            <Label onClick={() => document.getElementById("pronousimport")?.click()} style={{ whiteSpace: "nowrap" }}>
+              Import File
+            </Label>
+            <Icon onClick={() => document.getElementById("pronousimport")?.click()} iconName="Attach" style={{ cursor: "pointer" }} />
+            <span style={{ whiteSpace: "nowrap" }}>{filenameUser}</span>
+            <input id="pronousimport" onChange={onAttachmentChange} type="file" style={{ display: "none" }} />
+          </div>
           <div>
-            <PrimaryButton onClick={saveDataPronouns}>
-              {ButtonSaveText1}
-              {loading1 && (
-                <div className={"elementToFadeInAndOut"}>
+            <PrimaryButton onClick={saveDataUsers}>
+              {buttonSaveText}
+              {isLoading && (
+                <div className="elementToFadeInAndOut">
                   <div></div>
                   <div></div>
                   <div></div>
                 </div>
               )}
             </PrimaryButton>
-          </div>      
+          </div>
         </div>
       </div>
-      
       <div>
-        <h3><b>{"Instructions:-"}</b></h3>
-        <ul style={{margin:"15px 30px"}}>
-          <li><label>{"Add multiple records up to 100 records per file.."}</label></li>
-          <li>{"Please fill the details with exact match to avoid conflicts of CSV file."}</li>
-          <li>{"Please don't add any commas or any other fields to avoid conflicts with commas of CSV file."}</li>
-          <li>{"Please don't change the order of the columns or add new columns; this may lead to feeding values in incorrect columns."}</li>
+        <h3><b>Instructions:</b></h3>
+        <ul style={{ margin: "15px 30px" }}>
+          <li>Add multiple records up to 100 records per file.</li>
+          <li>Please fill the details with exact match to avoid conflicts with the CSV file.</li>
+          <li>Please don't add any commas or other characters to avoid conflicts with CSV commas.</li>
+          <li>Please don't change the order of columns or add new columns; this may lead to incorrect data mapping.</li>
         </ul>
       </div>
     </div>
-  );    
-}
+  );
+};
 
 export default ImportUsers;
-

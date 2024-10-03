@@ -151,29 +151,28 @@ const DocumentCardBasicExample = (props) => {
         user={user}
         data={props.employees}
         settingData={props.settingData}
-        blobCall={props.blobCall}
         isModalOpenTrans = {Openmodal}
       />
     );
     setIsModalOpen(true);
   };
-  React.useEffect(() => {
-    const ListData = async () => {
-      try {
-        const list = await getschemasfields();
-        const fieldNames = list.map((item) => ({
-          key: item.fieldName,
-          text: item.displayname,
-        }));
+  // React.useEffect(() => {
+  //   const ListData = async () => {
+  //     try {
+  //       const list = await getschemasfields();
+  //       const fieldNames = list.map((item) => ({
+  //         key: item.fieldName,
+  //         text: item.displayname,
+  //       }));
 
-        setoptioncustomfields(fieldNames);
-      } catch (error) {
-        console.error("Error fetching list data:", error);
-      }
-    };
-    ListData();
-    // console.log(variable, "va");
-  }, []);
+  //       setoptioncustomfields(fieldNames);
+  //     } catch (error) {
+  //       console.error("Error fetching list data:", error);
+  //     }
+  //   };
+  //   ListData();
+  //   // console.log(variable, "va");
+  // }, []);
 
   // Loop through customFields to find objects with isCustomField:true
 
@@ -360,7 +359,7 @@ const DocumentCardBasicExample = (props) => {
                   <div className="titleStylesCF"></div> */}
                   </div>
 
-                  {userGridView.forEach((item) => {
+                  {/* {userGridView.forEach((item) => {
                     if (item.nameAPI) {
                       const match = optioncustomfields.find(
                         (entry) => entry.key === item.nameAPI
@@ -372,7 +371,7 @@ const DocumentCardBasicExample = (props) => {
                         // console.log(`userGridView ${userGridView}`);
                       }
                     }
-                  })}
+                  })} */}
 
                   <div>
                     {/*  {userGridView ? userGridView.map((item1) => {

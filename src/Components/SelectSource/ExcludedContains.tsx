@@ -2,11 +2,11 @@ import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import React, { useEffect, useRef, useState } from "react";
 import useStore, { useSttings } from "./store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import Alert from "../Utils/Alert";
 import ReactSelect from "react-select";
 import { Icon, TextField } from "office-ui-fabric-react";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 var allItems = [];
 let settingsData:any;
 function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
@@ -83,7 +83,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
           
           const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedexcludeByContains };
           if(Object.keys(appSettings)?.length >0){
-            updateSettingData(updatedParsedData);
+            updateSettingJson(SETTING_LIST,updatedParsedData);
             setAppSettings(updatedParsedData)
            
           setExcludedByContains(updatedParsedData?.ExcludedByContains)
@@ -109,7 +109,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
            console.log("containsData",containsData)
           if (Object.keys(appSettings)?.length > 0) {
             let data = { ...appSettings, ExcludedByContains: containsData };
-            updateSettingData(data);
+            updateSettingJson(SETTING_LIST,data);
             setAppSettings(data);
             setExcludedByContains(containsData);
             setShowButton(true);
@@ -167,7 +167,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
                                 onChange={(e, newValue) => searchItems(newValue)}
                                 onClear={() => {
                                     setExcludedByContains([...allItems]);
-                                    setShowButton(allItems.length > 0);
+                                    setShowButton(allItems?.length > 0);
                                 }}
                                 placeholder="Search"
                                 iconProps={{ iconName: "search" }}
