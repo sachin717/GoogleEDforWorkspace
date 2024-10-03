@@ -59,11 +59,11 @@ let _customgrps = ["Groups"];
 let resultgrpCf = [];
 var _arraygrpcf1 = [];
 
-// var CLIENT_ID ="1029246985871-0t5lk1e8s1utemuuo57j3ic728mp1f1t.apps.googleusercontent.com";
-// var API_KEY = "AIzaSyAoolZJ_iRVEAVKwZ9UBGbtvfI1g7bRMkU";
+var CLIENT_ID ="1029246985871-0t5lk1e8s1utemuuo57j3ic728mp1f1t.apps.googleusercontent.com";
+var API_KEY = "AIzaSyAoolZJ_iRVEAVKwZ9UBGbtvfI1g7bRMkU";
 
-const CLIENT_ID = '92371512736-24kr56vp9qnp6tm920ln9lj0tgidecin.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyCKzyduaRJJdR2vhNUzoAI3rkm_aSeYHTg';
+// const CLIENT_ID = '92371512736-24kr56vp9qnp6tm920ln9lj0tgidecin.apps.googleusercontent.com';
+// const API_KEY = 'AIzaSyCKzyduaRJJdR2vhNUzoAI3rkm_aSeYHTg';
 
  
 const DISCOVERY_DOCS = [
