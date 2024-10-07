@@ -338,6 +338,9 @@ const EmployeeDetailModal = (props: any) => {
     return staffList;
   }
   async function getUserManager(userEmail: any) {
+    if(userEmail == ""){
+      return;
+    }
     let page: any = "";
     let staffList: any = [];
     page = await gapi.client.directory.users.get({
@@ -350,6 +353,10 @@ const EmployeeDetailModal = (props: any) => {
   }
 
   async function getAllUsersGrpInOrg(userEmail: any) {
+    if(userEmail === ""){
+      return;
+    }
+    
     let page: any = "";
     let pageToken = "";
     let staffList: any = [];
@@ -366,7 +373,7 @@ const EmployeeDetailModal = (props: any) => {
       pageToken = page.nextPageToken;
     } while (pageToken);
 
-    return staffList;
+    return staffList.filter((x)=>x !== undefined)
   }
   const GetOFields = () => {
     memberof = [];
@@ -476,6 +483,7 @@ const EmployeeDetailModal = (props: any) => {
           )[0].ExternalList
         : "Date of Join";
     console.log("m a n g", props?.user);
+
     if (props?.user?.AdditionalManager) {
       props?.user?.AdditionalManager?.map((item) => {
         getUserManager(item).then((adManager) => {
@@ -512,7 +520,7 @@ const EmployeeDetailModal = (props: any) => {
         });
       });
     }
-    if (props?.user?.manager && props?.user?.manager != "") {
+    if (props?.user?.manager !== "") {
       getUserManager(props?.user?.manager).then((getuser) => {
         console.log("man-ger", getuser);
         if (getuser.length > 0) {
@@ -1032,6 +1040,7 @@ const EmployeeDetailModal = (props: any) => {
                   appSettings?.EmpInfoAlignment == "Right" ? null : (
                     <img
                       src={imagesList.BrandLogo}
+                      className="brandLogo"
                       alt=""
                       style={{
                         objectFit: "contain",
@@ -1056,7 +1065,7 @@ const EmployeeDetailModal = (props: any) => {
                           //style={{ paddingLeft: "0px" }}
                           className="empDetailIcon"
                           // href={"mailto:" + user.email}
-                          href={`${Chat}:${user.email}`}
+                          href={`https://mail.google.com/chat/u/0/#chat/home`}
                           title={user.email}
                           target="_blank"
                         >
@@ -1132,7 +1141,7 @@ const EmployeeDetailModal = (props: any) => {
                       </a>
                     </div>
 
-                    <div style={{ position: "absolute", right: "0px" }}>
+                    <div className="rightsideiconProfileCard" style={{ position: "absolute", right: "0px" }}>
                       {visibleReportIncorrectIcon && (
                         <IconButton
                           style={{ fontSize: "20px", padding: "15px 15px" }}
@@ -1142,13 +1151,13 @@ const EmployeeDetailModal = (props: any) => {
                           onClick={() => setOpenResportModal(true)}
                         />
                       )}
-                      <IconButton
+                     {!props.user.IsExternalUser ?<IconButton
                         style={{ fontSize: "20px", padding: "15px 15px" }}
                         title="Edit profile"
                         iconProps={{ iconName: "Edit" }}
                         ariaLabel="Edit profile"
                         onClick={() => openPanelCustomNM1(true)}
-                      />
+                      />:""}
                     </div>
                   </div>
                   <div className="empMoreDetailsBlock">

@@ -1,4 +1,23 @@
 :global{
+  .tabspivot:hover{
+background-color: #ddd;
+cursor: pointer;
+  }
+  /* src/HelpPanel.css */
+.panel {
+  height: 700px; /* Set a fixed height for the panel */
+}
+
+.left-panel {
+  width: 30%;
+  // padding: 20px;
+  border-right: 1px solid #ccc; /* Border to separate panels */
+}
+
+.right-panel {
+  width: 70%;
+  // padding: 20px;
+}
   .checkboxItem{
     margin-left: 43 !important;
   } 
@@ -377,3 +396,9 @@
   cursor: pointer;
 }
 
+
+
+.helpPanelStyles .ms-Panel-content {
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+}

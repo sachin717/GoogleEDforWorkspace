@@ -181,6 +181,7 @@ const SearchFilters = ({
       )
     setDropdownValues([]);
   }
+  
 
   let allView = [
     
@@ -270,7 +271,7 @@ const SearchFilters = ({
             {settingData && (
               <div
                 className="desktopfilters"
-                style={{ display: "flex", gap: "20px", alignItems: "center" }}
+                style={{ display: "flex", gap: "20px ", alignItems: "center",flexWrap:"wrap" }}
               >
                 <SearchBox
                   onBlur={() => setShowMobileFreeSearch(false)}

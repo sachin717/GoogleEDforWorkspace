@@ -1676,10 +1676,11 @@ const Dashboard = ({
   //   },
   // ];
   React.useEffect(() => {
-    console.log("app",usersList)
+    console.log(appSettings?.SyncUserInfoFrom,"selected data")
+
     if (appSettings?.SyncUserInfoFrom == "Google & Imported User") {
       setSearchBoxData(usersList?.AllUsersData?.GoogleUsers);
-      console.log("ss",usersList?.AllUsersData)
+      console.log("ss",usersList)
       employees = usersList?.AllUsersData?.GoogleUsers;
     }else{
       setSearchBoxData(usersList?.AllUsersData?.NonGoogleUser??[]);
@@ -2752,7 +2753,11 @@ const Dashboard = ({
             </p>
           </div>
           <div className="chartHeaders" style={{...itemStyle,background:"#ffa126"}}>
-            <p>{sampleData ? "33.5" : avgAgeHeader.toFixed(2)}</p>
+            <p> {sampleData 
+    ? "33.5" 
+    : (typeof avgAgeHeader === 'number' && !isNaN(avgAgeHeader) 
+      ? avgAgeHeader.toFixed(2) 
+      : "0")}</p>
             <p>
               {translation.AvgAgeYrs
                 ? translation.AvgAgeYrs
@@ -2760,7 +2765,12 @@ const Dashboard = ({
             </p>
           </div>
           <div className="chartHeaders" style={{...itemStyle,background:"#37c42d"}}>
-            <p>{sampleData ? "3.5" : avgTenureHeader.toFixed(2)}</p>
+            <p>{sampleData 
+  ? "3.5" 
+  : (typeof avgTenureHeader === 'number' && !isNaN(avgTenureHeader) 
+    ? avgTenureHeader.toFixed(2) 
+    : "0")}
+</p>
             <p>
               {translation.AvgEmpTen
                 ? translation.AvgEmpTen

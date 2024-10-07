@@ -205,7 +205,7 @@ const DocumentCardBasicExample = (props) => {
           </div>
         </Modal>
         {/* className="gridDiv" */}
-        <div style={{display:"flex",justifyContent:"start",gap:"5px",flexWrap:"wrap"}}>
+        <div className="gridWrapper" >
           {props.employees /* slice(0, numToShow) */
             .map((item, index) => {
               var diffStyle = {

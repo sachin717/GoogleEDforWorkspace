@@ -1,5 +1,9 @@
 import { gapi } from "gapi-script";
-import {defaultSettingList, defaultImagesList, defaultUserList} from "./defaultSettings";
+import {
+  defaultSettingList,
+  defaultImagesList,
+  defaultUserList,
+} from "./defaultSettings";
 import { decryptData } from "../Components/Helpers/HelperFunctions";
 
 /*--------------------- DO NOT MODIFY THIS CODE -----------------------*/
@@ -8,7 +12,7 @@ export const SETTING_LIST = "settings";
 export const IMAGES_LIST = "images";
 /*--------------------- DO NOT MODIFY THIS CODE -----------------------*/
 
-export const createSettingJson= async (listName:string, jsonData:any) => {
+export const createSettingJson = async (listName: string, jsonData: any) => {
   try {
     const bucketName = process.env.REACT_APP_BUCKET_NAME;
     const token = gapi.client.getToken().access_token;
@@ -45,7 +49,7 @@ export const createSettingJson= async (listName:string, jsonData:any) => {
   }
 };
 
-export const getSettingJson = async (listName:string) => {
+export const getSettingJson = async (listName: string) => {
   try {
     const bucketName = process.env.REACT_APP_BUCKET_NAME;
     const token = gapi.client.getToken().access_token;
@@ -65,15 +69,13 @@ export const getSettingJson = async (listName:string) => {
 
     const jsonResponse = await response.json();
 
-    if(jsonResponse?.error?.code == 404){
+    if (jsonResponse?.error?.code == 404) {
       console.log("setting list does not exists");
-      if(listName === USER_LIST){
+      if (listName === USER_LIST) {
         createSettingJson(USER_LIST, defaultUserList);
-      }
-      else if(listName === SETTING_LIST){
+      } else if (listName === SETTING_LIST) {
         createSettingJson(SETTING_LIST, defaultSettingList);
-      }
-      else if(listName === IMAGES_LIST){
+      } else if (listName === IMAGES_LIST) {
         createSettingJson(IMAGES_LIST, defaultImagesList);
       }
       return;
@@ -83,57 +85,53 @@ export const getSettingJson = async (listName:string) => {
     const rawData = await fetch(listApi);
     const settingList = await rawData.json();
 
-    console.log(`GET - ${listName}`, settingList);
     if (listName === USER_LIST) {
       let data;
-    
-      try {
-        
-        data = decryptData(settingList);
-        data=JSON.parse(data);
-        
-    
-      } catch (error) {
-        console.log('Error decrypting Users data:', error);
-        
-        data = []; 
-      }
-    
-      
-      
-    if(data){
 
-      return data;
-    }else{
-     return defaultUserList
+      try {
+        data = decryptData(settingList);
+        data = JSON.parse(data);
+      } catch (error) {
+        console.log("Error decrypting Users data:", error);
+
+        data = [];
+      }
+
+      console.log(`GET  others- ${listName}`, settingList);
+
+      if (data) {
+        console.log(`GET - ${listName}`, data);
+
+        return data;
+      } else {
+        return defaultUserList;
+      }
     }
-  }
-    
+
     return settingList;
   } catch (err) {
     console.log("Error in getSettingJson", err);
   }
 };
 
-export const updateSettingJson = async (listName:string, jsonData:any) => {
-  
+export const updateSettingJson = async (listName: string, jsonData: any) => {
   try {
-    if(listName === ""){
-      console.log("...............INVALID LIST NAME..........")
+    if (listName === "") {
+      console.log("...............INVALID LIST NAME..........");
       return;
     }
 
-    if(listName === SETTING_LIST && Object.keys(jsonData).length < 20){
+    if (listName === SETTING_LIST && Object.keys(jsonData).length < 20) {
       console.log("...............JSON DATA IS EMPTY..........");
       alert("JSON HAVE LESS THAN 20 KEYS, CAN'T UPDATE");
       return;
     }
 
-    if(listName === IMAGES_LIST && Object.keys(jsonData).length < 1){
+    if (listName === IMAGES_LIST && Object.keys(jsonData).length < 1) {
       alert("JSON HAVE LESS THAN 20 KEYS, CAN'T UPDATE");
       return;
     }
-    
+
     const bucketName = process.env.REACT_APP_BUCKET_NAME;
     const token = gapi.client.getToken().access_token;
     const domain = gapi.auth2
@@ -164,10 +162,8 @@ export const updateSettingJson = async (listName:string, jsonData:any) => {
     });
 
     console.log(`POST - ${listName} : `, jsonData);
-    
   } catch (err) {
     console.log("Error in createObject", err);
     return false;
   }
 };
-

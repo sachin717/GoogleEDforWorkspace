@@ -134,10 +134,11 @@ const BarCharts = ({ data, heading = "dfasp" }) => {
     fontSize: "20px",
     cursor: "pointer",
   };
+  console.log("chartdata>",data)
 
   return (
     <div>
-      <div style={cardStyle} className={styles.chartcon}>
+      <div style={{...cardStyle,position:"relative"}} className={styles.chartcon}>
         <p style={{ ...headingStyle, margin: "0",paddingTop:"10px" }}>{heading}</p>
         <button onClick={toggleFullscreen} style={buttonStyle}>
           {isFullscreen ? (
@@ -147,7 +148,7 @@ const BarCharts = ({ data, heading = "dfasp" }) => {
           )}
         </button>
 
-        <Bar className="barchart" data={data} options={options} />
+       {data?.labels?.filter(item=>item!="").length ?<Bar className="barchart" data={data} options={options} />:<div style={{position:"absolute", top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}>No data available</div>}
       </div>
 
       {isFullscreen && (
@@ -160,7 +161,7 @@ const BarCharts = ({ data, heading = "dfasp" }) => {
               <Icon iconName="FullScreen" />
             )}
           </button>
-          <Bar data={data} options={options} />
+         {data?.labels?.filter(item=>item!="").length ? <Bar data={data} options={options} />:<div style={{position:"absolute", top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}>No data available</div>}
         </div>
       )}
     </div>

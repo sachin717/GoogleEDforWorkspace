@@ -353,7 +353,7 @@ function GridCard({
         bgColor;
     } else if (textlength <= 6) {
       BGcolor =
-        "linear-gradient(to bottom left,rgba(255,0,0,0)," +
+        "linear-gradient(to bottom left,rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0)," +
         bgColor +
         "," +
         bgColor +
@@ -641,7 +641,8 @@ function GridCard({
                     </div>
                   )}
 
-                  {item1.name === "location" && item[item1.name]?.length ? (
+                  {item1.name === "location" && item[item1.name].trim().length ? (
+                    
                     <div className="card">
                       <Icon iconName="Location" />
                       <p>{item[item1.name]}</p>

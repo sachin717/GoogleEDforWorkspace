@@ -193,8 +193,8 @@ const DetailsListView = ({ employees }) => {
         manager: x.manager,
         address: x.floorname,
         buildingId: x.buildingid,
-        dateOfBirth: x.DOB.split("-").reverse().join("/"),
-        dateOfJoining: x.DOJ.split("-").reverse().join("/"),
+        dateOfBirth: x.DOB?.split("-").reverse().join("/"),
+        dateOfJoining: x.DOJ?.split("-").reverse().join("/"),
       };
     });
     setAllEmployees(allEmployee);

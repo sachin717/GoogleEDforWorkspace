@@ -99,7 +99,6 @@ import {
 import HideManager from "../settings/HideManager";
 import HideMobileNumber from "../settings/HideMobileNumber";
 
-
 let departmentList: { label: any; value: any }[] = [];
 let jobTitleList: { label: any; value: any }[] = [];
 var parsedData: any = "";
@@ -157,11 +156,14 @@ const profileCardProperties = [
 let previewBrandLogoImage: any = "";
 
 const AdvanceSetting = (props: any) => {
-
-  
   // const { setShowOrgChart, setShowHomePage, filterByLetter } = props;
-  const { departmentFields, jobTitleFields, excludeOptionsForDomain ,setCommandBarItems ,CommandBarItems,} =
-    useFields();
+  const {
+    departmentFields,
+    jobTitleFields,
+    excludeOptionsForDomain,
+    setCommandBarItems,
+    CommandBarItems,
+  } = useFields();
   const {
     languagePartUpdate,
     setLanguagePartUpdate,
@@ -169,15 +171,17 @@ const AdvanceSetting = (props: any) => {
     setLanguage,
   } = useLanguage();
   const { appSettings, setAppSettings } = useSttings();
-  const {usersList, setUsersList, imagesList, setImagesList} = useLists();
+  const { usersList, setUsersList, imagesList, setImagesList } = useLists();
 
   const { SweetAlert: SweetAlertGridView } = SweetAlerts("#UserPrtiesGV", true);
   const { SweetAlert: SweetAlertDashboardPanel } = SweetAlerts(
     "#dashboardpanel",
     true
   );
-  const { SweetAlert : ExportSweetAlert ,SweetPrompt: SweetAlertImportUserDelete } =
-    SweetAlerts("#ImportUserDelete");
+  const {
+    SweetAlert: ExportSweetAlert,
+    SweetPrompt: SweetAlertImportUserDelete,
+  } = SweetAlerts("#ImportUserDelete");
   const { SweetAlert: SweetAlertDomain } = SweetAlerts("#domain", true);
   const {
     SweetAlert: SweetAlertCustomFields,
@@ -186,8 +190,10 @@ const AdvanceSetting = (props: any) => {
   const { SweetAlert: SweetAlertJobTitle } = SweetAlerts("#jobTitle", true);
   const { SweetAlert: SweetAlertCsvPanel } = SweetAlerts("#csvpanel", true);
 
-  const { SweetAlert: SweetAlertIncludeduserlist } =
-    SweetAlerts("#Includeduserlist",true);
+  const { SweetAlert: SweetAlertIncludeduserlist } = SweetAlerts(
+    "#Includeduserlist",
+    true
+  );
   const {
     SweetAlert: SweetAlertCustomfunc,
     SweetPrompt: SweetPromptCustomFunc,
@@ -272,18 +278,20 @@ const AdvanceSetting = (props: any) => {
 
         break;
       case "AddBulk":
-      
         setOpenBulkUploadPanel(true);
 
         break;
       case "Export":
-     
         const date = new Date();
-     
-        if(usersList?.Users === undefined || usersList?.Users === null){
+
+        if (usersList?.Users === undefined || usersList?.Users === null) {
           ExportSweetAlert("error", "No Users found to export");
-        }else{
-          downloadTemplate(usersList?.Users || [], `NonGoogleUsers ${date.toDateString()}`, "A");
+        } else {
+          downloadTemplate(
+            usersList?.Users || [],
+            `NonGoogleUsers ${date.toDateString()}`,
+            "A"
+          );
         }
         break;
       default:
@@ -383,6 +391,8 @@ const AdvanceSetting = (props: any) => {
   );
   const [dashboardUsers, setDashboardUsers] = React.useState([]);
   const [GroupsChecked, setGroupsChecked] = React.useState(false);
+  const [IsOpenViewsPanel, setOpenViewsPanel] = React.useState(false);
+
   const [isEditImportUserPanel, setEditImportUserPanel] = React.useState(false);
   const [bLogo, setBlogo] = React.useState<any>("");
   const [selectedBithFilter, setSelectedBithFilter] = useState("");
@@ -566,19 +576,19 @@ const AdvanceSetting = (props: any) => {
     },
   ];
   function handleEditImportUser(item) {
-
     setEditImportUserPanel(true);
     setOpenImportUsersPanel(true);
-    let existingDOB=new Date(item.DOB)=="Invalid Date" as any?null:new Date(item.DOB);
-    let existingDOJ=new Date(item.DOJ)=="Invalid Date" as any?null:new Date(item.DOJ);
-    setFormState({ ...item, DOB: existingDOB, DOJ:existingDOJ });
+    let existingDOB =
+      new Date(item.DOB) == ("Invalid Date" as any) ? null : new Date(item.DOB);
+    let existingDOJ =
+      new Date(item.DOJ) == ("Invalid Date" as any) ? null : new Date(item.DOJ);
+    setFormState({ ...item, DOB: existingDOB, DOJ: existingDOJ });
   }
   function handleDeleteImportUser(item) {
     SweetAlertImportUserDelete(
       "warning",
       "Are you sure you want to delete this?"
     ).then((res) => {
-   
       if (res.isConfirmed) {
         let result = NonGoogleUsersData?.filter((data) => {
           return data.id != item.id;
@@ -588,10 +598,15 @@ const AdvanceSetting = (props: any) => {
           ...usersList,
           Users: result,
         });
-        updateSettingJson(USER_LIST,encryptData(JSON.stringify({
-          ...usersList,
-          Users: result,
-        })));
+        updateSettingJson(
+          USER_LIST,
+          encryptData(
+            JSON.stringify({
+              ...usersList,
+              Users: result,
+            })
+          )
+        );
       }
     });
   }
@@ -982,10 +997,9 @@ const AdvanceSetting = (props: any) => {
   }, []);
   React.useEffect(() => {
     if (isOpenImportUsers) {
-     
-       setNonGoogleUsersData(usersList?.Users);
+      setNonGoogleUsersData(usersList?.Users);
     }
-  }, [isOpenImportUsers,isUserImportedByCsv]);
+  }, [isOpenImportUsers, isUserImportedByCsv]);
 
   useEffect(() => {
     window.addEventListener("resize", changeView);
@@ -1000,7 +1014,6 @@ const AdvanceSetting = (props: any) => {
         }
       } else {
         setView(appSettings.DefaultView);
-        
       }
     }
 
@@ -1019,9 +1032,7 @@ const AdvanceSetting = (props: any) => {
   async function onLanguageChange(event: any, item: any) {
     setSelectedLang(item);
 
-  
     let lang = item?.key as string;
-   
 
     setLanguage(lang);
     let temp = {
@@ -1030,10 +1041,10 @@ const AdvanceSetting = (props: any) => {
       LanguageData: translation,
       BrowserLanguageActive: browserLangDetectToggle,
     };
-    
+
     await updateSettingJson(SETTING_LIST, temp);
-    setAppSettings(temp)
-    setLanguagePartUpdate((prev)=>!prev);
+    setAppSettings(temp);
+    setLanguagePartUpdate((prev) => !prev);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
 
@@ -1042,7 +1053,7 @@ const AdvanceSetting = (props: any) => {
   function onChangeClearAlphaFilter(e: any, checked: any) {
     setClearAlphaFilter(checked);
     const setting = { ...appSettings, clearAlphaFilter: checked };
-    updateSettingJson(SETTING_LIST,setting);
+    updateSettingJson(SETTING_LIST, setting);
     setAppSettings(setting);
     SweetAlertClearAlphaFilter("success", translation.SettingSaved);
   }
@@ -1066,12 +1077,11 @@ const AdvanceSetting = (props: any) => {
       BrowserLanguageActive: checked,
       BrowserLanguage: window.navigator.language,
     };
-    
+
     await updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
     setLanguagePartUpdate(!languagePartUpdate);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
-   
   }
 
   const onChangeInfoAlign = (alignment) => {
@@ -1101,7 +1111,7 @@ const AdvanceSetting = (props: any) => {
         CustomHomePageLinkActive: checked,
       },
     };
- 
+
     updateSettingJson(SETTING_LIST, temp);
   }
 
@@ -1118,7 +1128,7 @@ const AdvanceSetting = (props: any) => {
     let temp = { ...parsedData, ShowOrgChart: checked };
     updateSettingJson(SETTING_LIST, temp);
     setAppSettings(temp);
-    setCommandBarItems({ShowOrgChart: checked})
+    setCommandBarItems({ ShowOrgChart: checked });
     SweetAlertShowHideAdvanced("success", translation.SettingSaved);
   }
 
@@ -1151,18 +1161,23 @@ const AdvanceSetting = (props: any) => {
       const imgBlob = await response.blob();
 
       const base64Image = await convertToBase64(imgBlob);
-      const setting = {...imagesList,BirthdayAndAnniversaryImage: base64Image};
+      const setting = {
+        ...imagesList,
+        BirthdayAndAnniversaryImage: base64Image,
+      };
 
       updateSettingJson(IMAGES_LIST, setting);
       setImagesList(setting);
       SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
     } catch (error) {
-
       SweetAlertBirthAndAnnivSetting("success", "Something went wrong");
     }
   }
   function handleRemoveBithImg() {
-    updateSettingJson(SETTING_LIST,{ ...appSettings, BirthdayAndAnniversaryImage: "" });
+    updateSettingJson(SETTING_LIST, {
+      ...appSettings,
+      BirthdayAndAnniversaryImage: "",
+    });
     setImageToCrop("");
     setShowBirthAnivImg("");
     SweetAlertBirthAndAnnivSetting("success", translation.SettingSaved);
@@ -1209,9 +1224,7 @@ const AdvanceSetting = (props: any) => {
         updateSettingJson(IMAGES_LIST, temp);
         setImagesList(temp);
         SweetAlertOutSidePanel("success", translation.SettingSaved);
-      } catch (error) {
-     
-      }
+      } catch (error) {}
     }
   }
 
@@ -1281,8 +1294,7 @@ const AdvanceSetting = (props: any) => {
   async function GetSettingData() {
     const settingJson = await getSettingJson(SETTING_LIST);
     const usersJson = await getSettingJson(USER_LIST);
-    console.log("settingData",settingJson)
-   
+    console.log("settingData", settingJson);
 
     if (Object.keys(usersJson)?.length) {
       setUsersList(usersJson);
@@ -1314,7 +1326,7 @@ const AdvanceSetting = (props: any) => {
         setSelectedEmpInfoAlignment(parsedData?.EmpInfoAlignment);
       }
       // if (parsedData?.BrandLogo) {
-        setBlogo(imagesList.BrandLogo);
+      setBlogo(imagesList.BrandLogo);
       // }
       if (parsedData?.SyncUserInfoFrom) {
         setSyncUserInfo(parsedData?.SyncUserInfoFrom);
@@ -1360,9 +1372,7 @@ const AdvanceSetting = (props: any) => {
       //   setDashboardIncludedUserTableShowData(parsedData?.dashboardAccessUsers);
       // }
       if (usersJson?.DashboardSpecificUsers) {
-        setDashboardUsers(
-          usersJson.DashboardSpecificUsers
-        );
+        setDashboardUsers(usersJson.DashboardSpecificUsers);
         setDashboardIncludedUserTableShowData(
           usersJson?.DashboardSpecificUsers
         );
@@ -1448,7 +1458,6 @@ const AdvanceSetting = (props: any) => {
         // changeCheckboxesChecked(updatedCheckboxesProfile);
       } else {
         setCheckboxesChecked(checkboxesChecked);
-      
       }
       if (parsedData.ListViewPrope) {
         const updatedCheckboxes = { ...checkboxesCheckedListView };
@@ -1465,7 +1474,6 @@ const AdvanceSetting = (props: any) => {
         setSelectedOrgchart(parsedData.orgChartType);
       }
       if (parsedData.records_to_load) {
-      
         setCheckedValueRecord(parsedData.records_to_load.toString());
       }
       if (parsedData.orgChartHead) {
@@ -1476,7 +1484,7 @@ const AdvanceSetting = (props: any) => {
       }
 
       dynamicwidth = parsedData.gridWidth;
-   
+
       setdivwidth(dynamicwidth);
       if (parsedData.sortby) {
         setSelectedOption(parsedData.sortby);
@@ -1607,13 +1615,12 @@ const AdvanceSetting = (props: any) => {
       filteredHideShowViews[currentDefaultView.toLowerCase()] === true;
     if (availableView && isDefaultViewAvailable) {
       return {
-       ...appSettings,
+        ...appSettings,
         DefaultView: availableView,
         hideShowViews: hideShowViews,
       };
     } else {
       return {
-      
         ...appSettings,
         DefaultView: getFirstAvailableView(filteredHideShowViews),
         hideShowViews: hideShowViews,
@@ -1702,56 +1709,61 @@ const AdvanceSetting = (props: any) => {
   // }
 
   async function handleSaveImportSingleUser() {
-    let newUserData :any= formState;
-    
+    let newUserData: any = formState;
 
     if (isEditImportUserPanel) {
-       if(newUserData.DOB=="Invalid Date"){
-        newUserData.DOB=null;
-       }
-       if(newUserData.DOJ=="Invalid Date"){
-        newUserData.DOJ=null;
-       }
-      let updatedUsers=[];
+      if (newUserData.DOB == "Invalid Date") {
+        newUserData.DOB = null;
+      }
+      if (newUserData.DOJ == "Invalid Date") {
+        newUserData.DOJ = null;
+      }
+      let updatedUsers = [];
 
       // let existingData=usersList?.Users??[];
-      let existingData=usersList?.Users==""||usersList?.Users===undefined||usersList?.Users==null?[]:usersList?.Users;
+      let existingData =
+        usersList?.Users == "" ||
+        usersList?.Users === undefined ||
+        usersList?.Users == null
+          ? []
+          : usersList?.Users;
       const userIndex = existingData.findIndex(
-            (existingUser) => existingUser.id === newUserData.id
-          );
-         
-          if (userIndex > -1) {
-              
-                let existingDOB=existingData[userIndex].DOB==""?null:existingData[userIndex].DOB
-                let existingDOJ=existingData[userIndex].DOJ==""?null:existingData[userIndex].DOJ
-                  const updatedUser = {
-                    ...existingData[userIndex],
-                    ...newUserData,
-                    
-      
-                    DOB: newUserData.DOB
-                      ? convertToISO(newUserData.DOB.toLocaleDateString())
-                      : existingDOB,
-                    DOJ: newUserData.DOJ
-                      ? convertToISO(newUserData.DOJ.toLocaleDateString())
-                      : existingDOJ,
-                  };
-                  updatedUsers.push(updatedUser);
-                  let updatedUserData = existingData.map(
-                        (user) =>
-                          updatedUsers.find(
-                            (updatedUser) => updatedUser.id === user.id
-                          ) || user
-                      );
-                  
-                   SweetAlertSingleUserUpload("success", "User updated successfully");
-                   setTimeout(()=>{
+        (existingUser) => existingUser.id === newUserData.id
+      );
 
-                     setOpenImportUsersPanel(false)
-                   },2000)
-                   saveUpdatedUsers(updatedUserData)
-                }
+      if (userIndex > -1) {
+        let existingDOB =
+          existingData[userIndex].DOB == ""
+            ? null
+            : existingData[userIndex].DOB;
+        let existingDOJ =
+          existingData[userIndex].DOJ == ""
+            ? null
+            : existingData[userIndex].DOJ;
+        const updatedUser = {
+          ...existingData[userIndex],
+          ...newUserData,
 
+          DOB: newUserData.DOB
+            ? convertToISO(newUserData.DOB.toLocaleDateString())
+            : existingDOB,
+          DOJ: newUserData.DOJ
+            ? convertToISO(newUserData.DOJ.toLocaleDateString())
+            : existingDOJ,
+        };
+        updatedUsers.push(updatedUser);
+        let updatedUserData = existingData.map(
+          (user) =>
+            updatedUsers.find((updatedUser) => updatedUser.id === user.id) ||
+            user
+        );
+
+        SweetAlertSingleUserUpload("success", "User updated successfully");
+        setTimeout(() => {
+          setOpenImportUsersPanel(false);
+        }, 2000);
+        saveUpdatedUsers(updatedUserData);
+      }
 
       // // Editing functionality
       // let existingUserData;
@@ -1790,7 +1802,6 @@ const AdvanceSetting = (props: any) => {
       //       const updatedUser = {
       //         ...existingUserData[userIndex],
       //         ...newUser,
-              
 
       //         DOB: newUser.DOB
       //           ? convertToISO(newUser.DOB.toLocaleDateString())
@@ -1825,33 +1836,35 @@ const AdvanceSetting = (props: any) => {
       //   }
       // }
     } else {
+      let existingData =
+        usersList?.Users == "" ||
+        usersList?.Users === undefined ||
+        usersList?.Users == null
+          ? []
+          : usersList?.Users;
+      if (!newUserData.email || !isValidEmail(newUserData.email)) {
+        SweetAlertSingleUserUpload("info", "Please enter a valid email");
+        return;
+      }
+      const id = await generateUniqueId(newUserData.email);
+      const userWithId = {
+        ...newUserData,
+        id,
+        DOB: newUserData.DOB
+          ? convertToISO(newUserData.DOB.toLocaleDateString())
+          : "",
+        DOJ: newUserData.DOJ
+          ? convertToISO(newUserData.DOJ.toLocaleDateString())
+          : "",
+        IsExternalUser: true,
+      };
+      existingData.push(userWithId);
+      if (existingData?.length) {
+        saveUpdatedUsers(existingData);
 
-      let existingData=usersList?.Users==""||usersList?.Users===undefined||usersList?.Users==null?[]:usersList?.Users;
-          if (!newUserData.email || !isValidEmail(newUserData.email)) {
-                SweetAlertSingleUserUpload("info", "Please enter a valid email");
-                return;
-              }
-              const id = await generateUniqueId(newUserData.email);
-                    const userWithId = {
-                      ...newUserData,
-                      id,
-                      DOB: newUserData.DOB
-                        ? convertToISO(newUserData.DOB.toLocaleDateString())
-                        : "",
-                      DOJ: newUserData.DOJ
-                        ? convertToISO(newUserData.DOJ.toLocaleDateString())
-                        : "",
-                        IsExternalUser:true,
-                    };
-                    existingData.push(userWithId)
-                    if(existingData?.length){
-                      saveUpdatedUsers(existingData)
-                      
-                      SweetAlertSingleUserUpload("success", "Users added successfully");
-                    }
+        SweetAlertSingleUserUpload("success", "Users added successfully");
+      }
 
-              
-            
       // Adding new users functionality
       // let existingUserData;
       // try {
@@ -1927,15 +1940,18 @@ const AdvanceSetting = (props: any) => {
 
   function saveUpdatedUsers(users) {
     users = removeDuplicatesFromObject(users, "email");
-    
-    setNonGoogleUsersData(users);
-  
-  
 
-    updateSettingJson(USER_LIST,encryptData(JSON.stringify({
-      ...usersList,
-      Users:users,
-    })));
+    setNonGoogleUsersData(users);
+
+    updateSettingJson(
+      USER_LIST,
+      encryptData(
+        JSON.stringify({
+          ...usersList,
+          Users: users,
+        })
+      )
+    );
     setUsersList({
       ...usersList,
       Users: users,
@@ -1958,25 +1974,23 @@ const AdvanceSetting = (props: any) => {
       DOB: null,
       DOJ: null,
       id: null,
-    })
-  
+    });
   }
 
- async function handleShowHideViews() {
+  async function handleShowHideViews() {
     let updateData = updateDefaultViewIfNeeded(appSettings, hideShowViews);
     setView(updateData.DefaultView);
-   await updateSettingJson(SETTING_LIST, updateData);
+    await updateSettingJson(SETTING_LIST, updateData);
     setAppSettings(updateData);
-  
+
     SweetAlertOutSidePanel("success", translation.SettingSaved);
   }
 
- 
   // function handleExcludeLoc() {
   //   if (selectedExcludedLoc?.length) {
   //     if (Object.keys(parsedData)?.length > 0) {
   //       let data = { ...parsedData, ExcludeByLocation: selectedExcludedLoc };
-  //     
+  //
   //       setAppSettings(data);
   //       SweetAlertOutSidePanel("success", translation.SettingSaved);
   //     }
@@ -1989,7 +2003,7 @@ const AdvanceSetting = (props: any) => {
     if (selectedExcludedEmail?.length) {
       if (Object.keys(parsedData)?.length > 0) {
         let data = { ...appSettings, ExcludedByEmail: selectedExcludedEmail };
-        updateSettingJson(SETTING_LIST,data);
+        updateSettingJson(SETTING_LIST, data);
         setAppSettings(data);
         SweetAlertOutSidePanel("success", translation.SettingSaved);
       }
@@ -1998,7 +2012,6 @@ const AdvanceSetting = (props: any) => {
     }
   }
 
- 
   async function blobToString(blob: any) {
     const fileReader = new FileReader();
     return new Promise((resolve, reject) => {
@@ -2055,8 +2068,6 @@ const AdvanceSetting = (props: any) => {
 
       const jsonData = XLSX.utils.sheet_to_json(sheet);
       setExcelDataDashboardUser(jsonData);
-
-
     };
 
     reader.readAsArrayBuffer(file);
@@ -2072,10 +2083,15 @@ const AdvanceSetting = (props: any) => {
         return { email: item.email, name: item?.name };
       });
       if (Object.keys(usersList)?.length > 0) {
-        updateSettingJson(USER_LIST, encryptData(JSON.stringify({
-          ...usersList,
-          DashboardSpecificUsers: res,
-        })));
+        updateSettingJson(
+          USER_LIST,
+          encryptData(
+            JSON.stringify({
+              ...usersList,
+              DashboardSpecificUsers: res,
+            })
+          )
+        );
 
         setUsersList({
           ...usersList,
@@ -2131,7 +2147,7 @@ const AdvanceSetting = (props: any) => {
       ...appSettings,
       [KEY_NAME]: checkboxesListView,
     };
- 
+
     if (Object.keys(appSettings).length > 0) {
       updateSettingJson(SETTING_LIST, updatedParsedData);
       SweetAlertListView("success", translation.SettingSaved);
@@ -2148,18 +2164,16 @@ const AdvanceSetting = (props: any) => {
         ...appSettings,
         [KEY_NAME2]: propertiesObj,
       };
-    
+
       updateSettingJson(SETTING_LIST, updatedParsedDataProfile);
       setAppSettings(updatedParsedDataProfile);
       SweetAlertProfileView("success", translation.SettingSaved);
     } else {
       SweetAlertProfileView("error", "Something went wrong");
-  
     }
   };
 
   const onDragEnd = (result) => {
- 
     if (!result.destination) return;
 
     const newOrder = Array.from(profileCardPropertiesData);
@@ -2234,7 +2248,7 @@ const AdvanceSetting = (props: any) => {
       ...parsedData,
       ["records_to_load"]: checkedValueRecord,
     };
-   
+
     updateSettingJson(SETTING_LIST, setting);
     setAppSettings(setting);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
@@ -2300,10 +2314,15 @@ const AdvanceSetting = (props: any) => {
     let data = [...dashboardUsers];
     data = removeDuplicatesFromObject(data, "email");
     setDashboardIncludedUserTableShowData(data);
-    updateSettingJson(USER_LIST, encryptData(JSON.stringify({
-      ...usersList,
-      DashboardSpecificUsers: data,
-    })));
+    updateSettingJson(
+      USER_LIST,
+      encryptData(
+        JSON.stringify({
+          ...usersList,
+          DashboardSpecificUsers: data,
+        })
+      )
+    );
 
     setUsersList({
       ...usersList,
@@ -2313,30 +2332,34 @@ const AdvanceSetting = (props: any) => {
   }
 
   function deleteIncludedUserInDashboard(email) {
-    if(isUserAdminCheck(dashboardUsers,email)){
-      SweetAlertIncludeduserlist("info", 'Admin cannot remove itself');
-    }else{
-    // let data = dashboardIncludedUserTable.filter(
-    //   (item) => item.email !== email
-    // );
-    let data = dashboardUsers.filter((item) => item.email !== email);
+    if (isUserAdminCheck(dashboardUsers, email)) {
+      SweetAlertIncludeduserlist("info", "Admin cannot remove itself");
+    } else {
+      // let data = dashboardIncludedUserTable.filter(
+      //   (item) => item.email !== email
+      // );
+      let data = dashboardUsers.filter((item) => item.email !== email);
 
-    setDashboardUsers(data);
-    // setDashboardIncludedUserTable(data);
-    // setDashboardIncludedUser(data);
-    setDashboardIncludedUserTableShowData(data);
-    updateSettingJson(USER_LIST, encryptData(JSON.stringify({
-      ...usersList,
-      DashboardSpecificUsers: data,
+      setDashboardUsers(data);
+      // setDashboardIncludedUserTable(data);
+      // setDashboardIncludedUser(data);
+      setDashboardIncludedUserTableShowData(data);
+      updateSettingJson(
+        USER_LIST,
+        encryptData(
+          JSON.stringify({
+            ...usersList,
+            DashboardSpecificUsers: data,
+          })
+        )
+      );
 
-    })));
-
-    setUsersList({
-      ...usersList,
-      DashboardSpecificUsers: data,
-    });
-    SweetAlertIncludeduserlist("success",translation.SettingSaved)
-  }
+      setUsersList({
+        ...usersList,
+        DashboardSpecificUsers: data,
+      });
+      SweetAlertIncludeduserlist("success", translation.SettingSaved);
+    }
   }
 
   function handleDashboardUserSearch(e) {
@@ -2351,7 +2374,6 @@ const AdvanceSetting = (props: any) => {
       setDashboardIncludedUserTableShowData(filteredUsers);
     }
   }
-
 
   const onUploadFile = (event) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -2371,8 +2393,8 @@ const AdvanceSetting = (props: any) => {
     const seenDepartments = new Set();
     userData.forEach((user) => {
       const userInfo = {
-        label: user?.organizations[0]?.department,
-        value: user?.organizations[0]?.department,
+        label: user?.organizations !== undefined ? user?.organizations[0]?.department:"",
+        value: user?.organizations !== undefined ? user?.organizations[0]?.department:"",
       };
       departmentList.push(userInfo);
     });
@@ -2384,8 +2406,8 @@ const AdvanceSetting = (props: any) => {
     );
     userData?.forEach((user) => {
       const userInfo2 = {
-        label: user?.organizations[0]?.title,
-        value: user?.organizations[0]?.title,
+        label: user?.organizations !== undefined ? user?.organizations[0]?.title:"",
+        value: user?.organizations !== undefined ? user?.organizations[0]?.title:"",
       };
 
       jobTitleList?.push(userInfo2);
@@ -2581,7 +2603,7 @@ const AdvanceSetting = (props: any) => {
       };
 
       if (Object.keys(parsedData).length > 0) {
-        updateSettingJson(SETTING_LIST,updatedData);
+        updateSettingJson(SETTING_LIST, updatedData);
       }
     } else if (selectedOrgchart === "StanderdOrgCharts") {
       const updatedParsedData = {
@@ -2589,7 +2611,7 @@ const AdvanceSetting = (props: any) => {
         [KEY_NAME5]: selectedOrgchart,
       };
       if (Object.keys(parsedData).length > 0) {
-        updateSettingJson(SETTING_LIST,updatedParsedData);
+        updateSettingJson(SETTING_LIST, updatedParsedData);
       }
       SweetAlertOutSidePanel("success", translation.SettingSaved);
     } else {
@@ -2600,7 +2622,7 @@ const AdvanceSetting = (props: any) => {
   function handleAutoLoad(e: any, checked: any) {
     setAutoLoad(checked);
     // if (Object.keys(parsedData)?.length > 0) {
-   
+
     updateSettingJson(SETTING_LIST, { ...parsedData, AutoLoad: checked });
     setAppSettings({ ...parsedData, AutoLoad: checked });
     SweetAlertOutSidePanel("success", translation.SettingSaved);
@@ -2609,7 +2631,6 @@ const AdvanceSetting = (props: any) => {
 
   async function handleSelect(item) {
     setDashboardUsers([...dashboardUsers, item]);
-
   }
 
   const handleLabelSave = () => {
@@ -2630,7 +2651,7 @@ const AdvanceSetting = (props: any) => {
       ...appSettings,
       TopBarFilterView: topBarView,
     };
-   
+
     updateSettingJson(SETTING_LIST, setting);
     setAppSettings(setting);
     SweetAlertOutSidePanel("success", translation.SettingSaved);
@@ -2646,10 +2667,9 @@ const AdvanceSetting = (props: any) => {
   useEffect(() => {
     GetSettingData();
   }, []);
-  
+
   useEffect(() => {
     if (isOpenImportUsers) {
- 
       setNonGoogleUsersData(usersList?.Users);
     }
   }, [isOpenImportUsers]);
@@ -2667,7 +2687,6 @@ const AdvanceSetting = (props: any) => {
         }
       } else {
         setView(appSettings.DefaultView);
-      
       }
     }
 
@@ -2711,7 +2730,7 @@ const AdvanceSetting = (props: any) => {
     openPanelUserPrtiesPCV,
     openModalViews,
     setHideManagerPanel,
-    setHideMobile
+    setHideMobile,
   };
 
   const excludeOptionsSettingProps = {
@@ -2765,7 +2784,6 @@ const AdvanceSetting = (props: any) => {
     ...pagesProps,
   };
 
-
   return (
     <div>
       <OrgChart
@@ -2804,11 +2822,10 @@ const AdvanceSetting = (props: any) => {
         onDismiss={setViewsSHMPanel}
       />
 
-   <GeneralShowHideModule
+      <GeneralShowHideModule
         isOpen={isShowHideModuleOpen}
         onDismiss={setIshowHideModuleOpen}
       />
-     
 
       <RolesAndPermisstions
         isOpen={isOpenRolePermission}
@@ -2820,8 +2837,8 @@ const AdvanceSetting = (props: any) => {
         onDismiss={setRestrictedPanel}
       />
 
-      <HideManager isOpen={hideManagerPanel} onDismiss={setHideManagerPanel}/>
-      <HideMobileNumber isOpen={hideMobile} onDismiss={setHideMobile}/>
+      <HideManager isOpen={hideManagerPanel} onDismiss={setHideManagerPanel} />
+      <HideMobileNumber isOpen={hideMobile} onDismiss={setHideMobile} />
 
       <Panel
         type={PanelType.custom}
@@ -2836,7 +2853,8 @@ const AdvanceSetting = (props: any) => {
         <div id="birthAndAnnivSetting">
           <div style={{ borderBottom: "1px solid #ddd" }}>
             <Label>
-              {translation?.UpcomingBirthdays ?? "Upcoming Birthdays and Work Anniversaries"}
+              {translation?.UpcomingBirthdays ??
+                "Upcoming Birthdays and Work Anniversaries"}
             </Label>
             <div
               style={{
@@ -2966,7 +2984,6 @@ const AdvanceSetting = (props: any) => {
           </div>
         </div>
       </Panel>
-
 
       <Panel
         type={PanelType.custom}
@@ -3929,15 +3946,15 @@ const AdvanceSetting = (props: any) => {
               }}
             >
               {/* {bLogo?.length > 0 && ( */}
-                <img
-                  src={bLogo}
-                  style={{
-                    objectFit: "contain",
-                    // border: "0.5px solid black",
-                    height: "120px",
-                    width: "200px",
-                  }}
-                />
+              <img
+                src={bLogo}
+                style={{
+                  objectFit: "contain",
+                  // border: "0.5px solid black",
+                  height: "120px",
+                  width: "200px",
+                }}
+              />
               {/* )} */}
 
               <input
@@ -5304,7 +5321,6 @@ const AdvanceSetting = (props: any) => {
                       ? translation.SearchUser
                       : "Search user"
                   }
-                
                 />
               </div>
               <PrimaryButton
@@ -5490,7 +5506,6 @@ const AdvanceSetting = (props: any) => {
               About_Me: "",
               DOB: null,
               DOJ: null,
-       
             },
           ]}
         />
@@ -5789,6 +5804,152 @@ const AdvanceSetting = (props: any) => {
           />
         </div>
       </Panel>
+      {/* <Panel
+        type={PanelType.custom}
+        customWidth="650px"
+        headerText={"Views Panel"}
+        isOpen={false}
+        onDismiss={() => setOpenViewsPanel(false)}
+        closeButtonAriaLabel={"Close"}
+      >
+        <div>
+          <div
+            style={{ paddingBottom: "10px", borderBottom: "1px solid #ddd" }}
+          >
+            <Label>Views</Label>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+             <Checkbox
+                label={translation.Grid}
+                checked={hideShowViews.grid}
+                onChange={() => handleViewsCheckboxChange("grid")}
+              />
+              <Checkbox
+                label={translation.List}
+                checked={hideShowViews.list}
+                onChange={() => handleViewsCheckboxChange("list")}
+              />
+              <Checkbox
+                label={translation.Tile}
+                checked={hideShowViews.tile}
+                onChange={() => handleViewsCheckboxChange("tile")}
+              />
+               <PrimaryButton
+              text={translation.save}
+              
+              onClick={handleShowHideViews}
+            />
+            </div>
+          </div>
+          <div
+            style={{ paddingBottom: "10px", borderBottom: "1px solid #ddd" }}
+          >
+            <Label>Desktop default view</Label>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+                 <Checkbox
+                      disabled={!appSettings.hideShowViews.list}
+                      label={translation.Grid}
+                      title={translation.Grid}
+                      checked={selectedView === "Grid"}
+                      onChange={() => handleCheckboxChange("Grid")}
+                    />
+              <Checkbox
+                      disabled={!appSettings.hideShowViews.list}
+                      label={translation.List}
+                      title={translation.List}
+                      checked={selectedView === "List"}
+                      onChange={() => handleCheckboxChange("List")}
+                    />
+                <Checkbox
+                    disabled={!appSettings.hideShowViews.tile}
+                    label={translation.Tile}
+                    title={translation.Tile}
+                    checked={selectedView === "Tile"}
+                    onChange={() => handleCheckboxChange("Tile")}
+                  />
+             <PrimaryButton onClick={() => saveDefaultView()}>
+                  {translation.Save ? translation.Save : "Save"}
+                </PrimaryButton>
+            </div>
+         
+          </div>
+          <div
+            style={{ paddingBottom: "10px", borderBottom: "1px solid #ddd" }}
+          >
+            <Label>Mobile default view</Label>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Checkbox
+                disabled={!appSettings.hideShowViews.grid}
+                label={translation.Grid}
+                title={translation.Grid}
+                checked={selectedMobileView === "Grid"}
+                onChange={() => handleCheckboxChangeMobileView("Grid")}
+              />
+              <Checkbox
+                disabled={!appSettings.hideShowViews.list}
+                label={translation.List}
+                title={translation.List}
+                checked={selectedMobileView === "List"}
+                onChange={() => handleCheckboxChangeMobileView("List")}
+              />
+              <Checkbox
+                disabled={!appSettings.hideShowViews.tile}
+                label={translation.Tile}
+                title={translation.Tile}
+                checked={selectedMobileView === "Tile"}
+                onChange={() => handleCheckboxChangeMobileView("Tile")}
+              />
+              <PrimaryButton onClick={() => saveDefaultMobileView()}>
+                {translation.Save ? translation.Save : "Save"}
+              </PrimaryButton>
+            </div>
+          </div>
+          <div  style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "end",
+                 padding: "10px 0",
+                 borderBottom: "1px solid #ddd"
+              }}>
+              <Label>User properties in list view</Label>
+              <PrimaryButton text="Configure" />
+            </div>
+          <div  style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "end",
+                 padding: "10px 0",
+                 borderBottom: "1px solid #ddd"
+              }}>
+              <Label>{  translation.Userprocard
+            ? translation.Userprocard
+            : "User properties in profile card"}</Label>
+              <PrimaryButton text="Configure" onClick={openPanelUserPrtiesPCV} />
+            </div>
+
+      
+
+
+        
+        </div>
+      </Panel> */}
     </div>
   );
 };

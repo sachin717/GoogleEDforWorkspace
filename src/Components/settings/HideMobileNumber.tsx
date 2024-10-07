@@ -194,13 +194,7 @@ const Delete = ({ usersWithHiddenMobile, setUsersWithHiddenMobile }) => {
 
   return (
     <div>
-      {selectedUsers.length > 0 && (
-        <div
-          style={{ margin: "5px 0px", display: "flex", justifyContent: "end" }}
-        >
-          <PrimaryButton onClick={handelDelete}>Delete</PrimaryButton>
-        </div>
-      )}
+   
       <table className={"excludeTable"}>
         <thead>
           <tr>
@@ -235,6 +229,14 @@ const Delete = ({ usersWithHiddenMobile, setUsersWithHiddenMobile }) => {
           </tbody>
         )}
       </table>
+
+      {selectedUsers?.length > 0 && (
+        <div
+          style={{ margin: "5px 0px", display: "flex"}}
+        >
+          <PrimaryButton onClick={handelDelete}>Delete</PrimaryButton>
+        </div>
+      )}
     </div>
   );
 };

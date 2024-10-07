@@ -50,6 +50,8 @@ import {
   defaultUserList,
 } from "../../api/defaultSettings";
 import { ContextProvider } from "../../context/Context";
+import HelpPanel from "../HelpPage";
+import HelpPage from "../HelpPage";
 
 const Container = styled.div`
   ${style}
@@ -101,6 +103,7 @@ const GoogleEmployeeDirectory = () => {
   const [isImportedUser, setImpotedUser] = useState(false);
   const [selectedGrp, setselectedGrp] = useState([]);
   const [isList, setisList] = useState(false);
+  const [showHelpPage, setShowHelpPage] = useState(false);
   const [recordsToload, setRecordsToload] = useState(25);
   const [UserArray, setUserArray] = useState([]);
   const [currentUserAdmin, setCurrentUserAdmin] = useState(false);
@@ -331,47 +334,49 @@ const GoogleEmployeeDirectory = () => {
         pageToken: pageToken,
       });
 
-      staffList = staffList?.concat(page?.result?.users).filter((user) => {
-        if (parsedData?.ExcludeByDepartment !== undefined) {
-          const excludedDepartments = parsedData?.ExcludeByDepartment?.map(
-            (dept) => dept.value
-          );
-          if (
-            user &&
-            excludedDepartments.includes(user.organizations[0].department)
-          ) {
-            return false;
-          }
-        }
-        if (parsedData.ExcludeByJobTitle !== undefined) {
-          const excludedByJob = parsedData.ExcludeByJobTitle.map(
-            (job) => job?.value
-          );
-          if (user && excludedByJob.includes(user?.organizations[0]?.title)) {
-            return false;
-          }
-        }
+      staffList = page?.result?.users;
 
-        if (parsedData.ExcludeUsersBulk !== undefined) {
-          const excludeByName = parsedData.ExcludeUsersBulk.map((user) =>
-            user?.name?.fullName?.toLowerCase().trim()
-          );
-          const userGivenNameLower = user?.name?.fullName.toLowerCase().trim();
-          if (excludeByName.includes(userGivenNameLower)) {
-            return false;
-          }
-        }
-        if (parsedData?.ExcludeByDomain != undefined) {
-          let excludedDomains = parsedData?.ExcludeByDomain.map((item) => {
-            return item.value;
-          });
-          if (user && excludedDomains.includes(user?.primaryEmail)) {
-            return false;
-          }
-        }
+      // staffList = staffList?.concat(page?.result?.users).filter((user) => {
+      //   if (parsedData?.ExcludeByDepartment !== undefined) {
+      //     const excludedDepartments = parsedData?.ExcludeByDepartment?.map(
+      //       (dept) => dept.value
+      //     );
+      //     if (
+      //       user &&
+      //       excludedDepartments.includes(user.organizations[0].department)
+      //     ) {
+      //       return false;
+      //     }
+      //   }
+      //   if (parsedData.ExcludeByJobTitle !== undefined) {
+      //     const excludedByJob = parsedData.ExcludeByJobTitle.map(
+      //       (job) => job?.value
+      //     );
+      //     if (user && excludedByJob?.includes(user?.organizations[0]?.title)) {
+      //       return false;
+      //     }
+      //   }
 
-        return true;
-      });
+      //   if (parsedData.ExcludeUsersBulk !== undefined) {
+      //     const excludeByName = parsedData.ExcludeUsersBulk.map((user) =>
+      //       user?.name?.fullName?.toLowerCase().trim()
+      //     );
+      //     const userGivenNameLower = user?.name?.fullName.toLowerCase().trim();
+      //     if (excludeByName.includes(userGivenNameLower)) {
+      //       return false;
+      //     }
+      //   }
+      //   if (parsedData?.ExcludeByDomain != undefined) {
+      //     let excludedDomains = parsedData?.ExcludeByDomain.map((item) => {
+      //       return item.value;
+      //     });
+      //     if (user && excludedDomains.includes(user?.primaryEmail)) {
+      //       return false;
+      //     }
+      //   }
+
+      //   return true;
+      // });
 
       pageToken = page.nextPageToken;
     } while (pageToken);
@@ -1157,7 +1162,7 @@ const GoogleEmployeeDirectory = () => {
               let data = {
                 ...usersJson,
                 AllUsersData:{
-                GoogleUsers: usersJson.Users??[],
+                GoogleUsers: staffMember??[],
                 NonGoogleUser: decryptedData??[],
                 }
               };
@@ -1166,7 +1171,7 @@ const GoogleEmployeeDirectory = () => {
               updateSettingJson(USER_LIST, encryptData(JSON.stringify({
                 ...usersJson,
                 AllUsersData:{
-                GoogleUsers: usersJson.Users??[],
+                  GoogleUsers: staffMember??[],
                 NonGoogleUser: decryptedData??[],
                 }
               })));
@@ -1794,13 +1799,13 @@ const GoogleEmployeeDirectory = () => {
       _customgrps.map((item) => {
         resultgrpCf = _arraygrpcf1
           ? _arraygrpcf1.map((a) => ({
-              key: a.email,
-              label: a.name,
-              value: a.name,
+              key: a?.email,
+              label: a?.name,
+              value: a?.name,
             }))
           : [];
         resultgrpCf = resultgrpCf.filter((items) => {
-          return items.key != null;
+          return items?.key != null;
         });
 
         resultgrpCf1 = [];
@@ -1881,6 +1886,7 @@ const GoogleEmployeeDirectory = () => {
     setBirthAndAnivModalOpen,
     filterByLetter,
     setSettings,
+    setShowHelpPage,
     appSettings:parsedData,
 
     setshowDashboard,
@@ -1989,6 +1995,8 @@ const GoogleEmployeeDirectory = () => {
                     </div>
                   )}
 
+                  <HelpPage onDismiss={()=>setShowHelpPage(false)} isOpen={showHelpPage} />
+                    
                   {showOrgChart && <OrgChartPage {...orgChartPageProps} />}
                 </div>
                 <div style={{ width: "100%", float: "right" }}></div>
@@ -2003,79 +2011,204 @@ const GoogleEmployeeDirectory = () => {
   );
 };
 
-const TopBarFilter = ({ optimization,isClickClearFilter,UserArray,isImportedUser ,SyncUserInfoFrom}) => {
-  const {
+// const TopBarFilter = ({ optimization,isClickClearFilter,UserArray,isImportedUser ,SyncUserInfoFrom}) => {
+//   const {
   
-    view,
+//     view,
   
-  } = useStore();
-  // console.log(UserArray)
-  const { departmentFields, FormatedUserData } = useFields();
-  const [selectedTab, setSelectedTab] = useState("");
-  const [data,setData]=useState(FormatedUserData);
-//   console.log(view,"views selected")
-// //   useEffect(()=>{
-// // setData(FormatedUserData)
-// //   },[])
-// console.log(isClickClearFilter,departmentFields,view)
-useEffect(()=>{
+//   } = useStore();
+//   // console.log(UserArray)
+//   const { departmentFields, FormatedUserData } = useFields();
+//   const [selectedTab, setSelectedTab] = useState("");
+//   const [data,setData]=useState(FormatedUserData);
+// //   console.log(view,"views selected")
+// // //   useEffect(()=>{
+// // // setData(FormatedUserData)
+// // //   },[])
+// // console.log(isClickClearFilter,departmentFields,view)
+// useEffect(()=>{
 
-    if(view=="NonM365"){
-      setData(NonMUsers)
-     }else{
-      setData(FormatedUserData)
-     }
+//     if(view=="NonM365"){
+//       setData(NonMUsers)
+//      }else{
+//       setData(FormatedUserData)
+//      }
   
  
-},[view,FormatedUserData?.length,isClickClearFilter])
+// },[view,FormatedUserData?.length,isClickClearFilter])
 
-  return (
-    <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+//   return (
+//     <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
       
-      {departmentFields.map((x) => {
-        let count = 0;
-        for (let i = 0; i < data?.length; i++) {
-          if (data[i]?.department === x.value) {
-            count++;
-          }
-        }
+//       {departmentFields.map((x) => {
+//         let count = 0;
+//         for (let i = 0; i < data?.length; i++) {
+//           if (data[i]?.department === x.value) {
+//             count++;
+//           }
+//         }
 
-        return (
-          <div
-            key={x.value}
-            style={{
-              padding: "0px 10px 3px",
-              backgroundColor: "rgb(0, 112, 220, .4)",
-              fontSize: "13px",
-              cursor: "pointer",
-              color: "rgb(0, 112, 220)",
-              height: "15px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              userSelect: "none",
-              boxSizing: "border-box",
-              height: "35px",
-              columnGap: "5px",
-              minWidth: "100px",
-              fontWeight: "400",
-            }}
-            className={`${styles.topbarfilter} topbarFilter ${
-              selectedTab === x.value ? "topbarfilterBorderBottom" : ""
-            } `}
-            onClick={() => {
-              setSelectedTab(x.value);
-              optimization(x.value, "departments");
-            }}
-          >
-            <p>{x.label}</p>
-            <p style={{ fontWeight: "600", fontSize: "18px" }}>{count}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
+//         return (
+//           <div
+//             key={x.value}
+//             style={{
+//               padding: "0px 10px 3px",
+//               backgroundColor: "rgb(0, 112, 220, .4)",
+//               fontSize: "13px",
+//               cursor: "pointer",
+//               color: "rgb(0, 112, 220)",
+//               height: "15px",
+//               display: "flex",
+//               justifyContent: "center",
+//               alignItems: "center",
+//               userSelect: "none",
+//               boxSizing: "border-box",
+//               height: "35px",
+//               columnGap: "5px",
+//               minWidth: "100px",
+//               fontWeight: "400",
+//             }}
+//             className={`${styles.topbarfilter} topbarFilter ${
+//               selectedTab === x.value ? "topbarfilterBorderBottom" : ""
+//             } `}
+//             onClick={() => {
+//               setSelectedTab(x.value);
+//               optimization(x.value, "departments");
+//             }}
+//           >
+//             <p>{x.label}</p>
+//             <p style={{ fontWeight: "600", fontSize: "18px" }}>{count}</p>
+//           </div>
+//         );
+//       })}
+//     </div>
+//   );
+// };
+// import React, { useState, useEffect } from 'react';
+
+// import React, { useState, useEffect } from 'react';
+
+const TopBarFilter = ({ optimization, isClickClearFilter, UserArray, isImportedUser, SyncUserInfoFrom }) => {
+    const { view } = useStore();
+    const { departmentFields, FormatedUserData } = useFields();
+    const [selectedTab, setSelectedTab] = useState("");
+    const [data, setData] = useState(FormatedUserData);
+    const [showMore, setShowMore] = useState(false);
+    const [dropdownVisible, setDropdownVisible] = useState(false);
+
+    const MAX_VISIBLE_TABS = 10;
+    const visibleTabs = showMore ? departmentFields : departmentFields.slice(0, MAX_VISIBLE_TABS);
+
+    useEffect(() => {
+        if (view === "NonM365") {
+            setData(NonMUsers);
+        } else {
+            setData(FormatedUserData);
+        }
+    }, [view, FormatedUserData?.length, isClickClearFilter]);
+
+    const handleTabClick = (x) => {
+        setSelectedTab(x.value);
+        optimization(x.value, "departments");
+    };
+
+    return (
+        <div style={{ display: "flex", gap: "10px", marginBottom: "10px", flexWrap: "wrap" }}>
+            {visibleTabs.map((x) => {
+                let count = data.filter(user => user?.department === x.value).length;
+
+                return (
+                    <div
+                        key={x.value}
+                        style={{
+                            padding: "0px 10px 3px",
+                            backgroundColor: "rgba(0, 112, 220, 0.4)",
+                            fontSize: "13px",
+                            cursor: "pointer",
+                            color: "rgb(0, 112, 220)",
+                            height: "35px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            userSelect: "none",
+                            boxSizing: "border-box",
+                            columnGap: "5px",
+                            minWidth: "100px",
+                            fontWeight: "400",
+                        }}
+                        className={`topbarFilter ${selectedTab === x.value ? "topbarfilterBorderBottom" : ""}`}
+                        onClick={() => handleTabClick(x)}
+                    >
+                        <p>{x.label}</p>
+                        <p style={{ fontWeight: "600", fontSize: "18px" }}>{count}</p>
+                    </div>
+                );
+            })}
+
+            {departmentFields.length > MAX_VISIBLE_TABS && (
+                <div style={{ position: 'relative' }}>
+                    <button
+                        onClick={() => setDropdownVisible(!dropdownVisible)}
+                        style={{
+                            padding: "5px 10px",
+                            backgroundColor: "rgb(0, 112, 220)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "5px",
+                            cursor: "pointer",
+                            fontSize: "13px",
+                            minWidth: "35px", // Set a minimum width
+                            height: "35px",
+                        }}
+                    >
+                        ...
+                    </button>
+                    {dropdownVisible && (
+                        <div style={{
+                            position: 'fixed',
+                            backgroundColor: 'white',
+                           
+                            boxShadow:"0 0 1px rgba(0,0,0,0.5)",
+                          
+                         
+                            zIndex: 6001,
+                            padding: '5px 0',
+                            width: '200px', // Increased width for the dropdown
+                        }}>
+                            {departmentFields.slice(MAX_VISIBLE_TABS).map((x) => {
+                                let count = data.filter(user => user?.department === x.value).length;
+
+                                return (
+                                    <div
+                                        key={x.value}
+                                        style={{
+                                            padding: "5px",
+                                            display:"flex",
+                                            gap:"8px",
+                                            cursor: "pointer",
+                                            borderBottom:"1px solid #ddd",
+                                            color: "rgb(0, 112, 220)",
+                                            borderRadius:"none",
+                                            zIndex:"1000"
+                                        }}
+                                        className="tabspivot"
+                                        onBlur={()=>setDropdownVisible(false)}
+                                        onClick={() => handleTabClick(x)}
+                                    >
+                                        <p style={{ margin: 0 }}>{x.label}</p>
+                                        <p style={{ fontWeight: "600", fontSize: "18px", margin: 0 }}>{count}</p>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
 };
+
+
 
 const SignInPage = ({ signInWithPopup }) => {
   return (

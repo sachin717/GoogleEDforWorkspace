@@ -3,7 +3,7 @@ import { gapi } from "gapi-script";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from "buffer";
 import CryptoJS from "crypto-js";
-import * as base64js from 'base64-js';
+import * as base64js from "base64-js";
 import { getSettingJson, SETTING_LIST } from "../../api/storage";
 
 let containerClient: any;
@@ -66,7 +66,6 @@ async function blobToString(blob: any) {
     fileReader.readAsArrayBuffer(blob);
   });
 }
-
 
 export function getCurrentUser() {
   const auth2 = gapi.auth2.getAuthInstance();
@@ -133,9 +132,7 @@ export async function GetSettingValues() {
   }
 }
 
-
 export function filterTrueValues(obj) {
-
   return Object?.fromEntries(
     Object?.entries(obj)?.filter(([key, value]) => value === true) // Filter out only true values
   );
@@ -201,12 +198,23 @@ export const ExcludeUsers = (staffList, parsedData) => {
       );
     });
 
-    let loc =
-      item?.locations[0]?.buildingId +
-      " " +
-      item?.locations[0]?.floorName +
-      " " +
-      item?.locations[0]?.floorSection;
+    // let loc =
+    // item?.locations[0]?.buildingId +
+    // " " +
+    // item?.locations[0]?.floorName +
+    // " " +
+    // item?.locations[0]?.floorSection;
+
+    let loc = "";
+    if (item?.location !== undefined) {
+      loc =
+        item?.locations[0]?.buildingId +
+        " " +
+        item?.locations[0]?.floorName +
+        " " +
+        item?.locations[0]?.floorSection;
+    }
+
     const locationMatch = parsedData?.ExcludeByLocation?.some((exclusion) =>
       exclusion?.value?.toLowerCase()?.includes(loc?.toLowerCase())
     );
@@ -327,19 +335,17 @@ export async function isUserAdmin(email) {
   }
 }
 
-export  function isUserAdminCheck(users,email) {
+export function isUserAdminCheck(users, email) {
   const currentUser = getCurrentUser()?.cu;
-   const DataUser = users.find((item)=>{
-    return item.email==currentUser
-   })
+  const DataUser = users.find((item) => {
+    return item.email == currentUser;
+  });
 
   if (!email) {
     return false;
   }
 
   try {
-
-    
     return DataUser?.isAdmin;
     // return true;
   } catch (error) {
@@ -383,10 +389,12 @@ export const customFunctionFilter = (users: any[], parsedData: any) => {
 export async function generateUniqueId(email) {
   const encoder = new TextEncoder();
   const data = encoder.encode(email);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex.substring(0, 16); // Shorten to 16 characters 
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return hashHex.substring(0, 16); // Shorten to 16 characters
 }
 
 export function getRestrictedAccess(data, currentUser) {
@@ -486,61 +494,62 @@ export function applyRestrictions(users, restrictions) {
 }
 
 export function convertToISO(dateString) {
-  
-  const [month, day, year] = dateString.split('/');
+  const [month, day, year] = dateString.split("/");
 
- 
-  const paddedMonth = month.padStart(2, '0');
-  const paddedDay = day.padStart(2, '0');
+  const paddedMonth = month.padStart(2, "0");
+  const paddedDay = day.padStart(2, "0");
 
- 
   return `${year}-${paddedMonth}-${paddedDay}`;
 }
 
 export const sendEmail = async () => {
   const accessToken = gapi.client.getToken().access_token;
-  
+
   if (!accessToken) {
-      console.log('No access token found.');
-      return;
+    console.log("No access token found.");
+    return;
   }
 
   // Static data
-  const recipientValue = 'kambojsama84@gmail.com';
-  const subject = 'SMS Forwarding from akash';
-  const body = 'hii';
+  const recipientValue = "kambojsama84@gmail.com";
+  const subject = "SMS Forwarding from akash";
+  const body = "hii";
 
   const message = [
-      `To: ${recipientValue}`,
-      `Subject: ${subject}`,
-      '',
-      body
-  ].join('\n');
+    `To: ${recipientValue}`,
+    `Subject: ${subject}`,
+    "",
+    body,
+  ].join("\n");
 
   // Encode the message to base64 and replace characters for URL safety
-  const encodedMessage = base64js.fromByteArray(new TextEncoder().encode(message))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+  const encodedMessage = base64js
+    .fromByteArray(new TextEncoder().encode(message))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 
-  console.log(accessToken, 'accessToken');
+  console.log(accessToken, "accessToken");
 
   try {
-      const response = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages/send', {
-          method: 'POST',
-          headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ raw: encodedMessage }),
-      });
-
-      if (!response.ok) {
-          throw new Error(`Error sending email: ${response.statusText}`);
+    const response = await fetch(
+      "https://www.googleapis.com/gmail/v1/users/me/messages/send",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ raw: encodedMessage }),
       }
+    );
 
-      console.log('Email sent successfully.');
+    if (!response.ok) {
+      throw new Error(`Error sending email: ${response.statusText}`);
+    }
+
+    console.log("Email sent successfully.");
   } catch (error) {
-      console.error('Error sending email:', error);
+    console.error("Error sending email:", error);
   }
 };

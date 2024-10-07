@@ -501,6 +501,7 @@ const header: React.CSSProperties = {
   padding: "0px 0px 5px 10px",
   borderBottom: "1px solid #cacaca",
   margin: "10px 0px 0px 0px",
+  color:"rgb(0,120,212)",
 };
 
 const list: React.CSSProperties = {

@@ -1,8 +1,8 @@
 export const defaultUserList = {
-  Users: "",
-  DashboardSpecificUsers: "",
+  Users: [],
+  DashboardSpecificUsers: [],
   IsAdmin: "",
-  IsSpecificUser: "",
+  IsSpecificUser: [],
 };
 
 export const defaultImagesList = {
@@ -16,6 +16,7 @@ export const defaultSettingList = {
   DefaultView: "Grid",
   sortby: "givenName",
   gridWidth: 150,
+  ReportEmails:"",
   GridViewPrope: [
     {
       id: 1,

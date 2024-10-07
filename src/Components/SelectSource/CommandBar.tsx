@@ -55,6 +55,7 @@ export interface IShowPanelProps {
   generatePDF: () => void;
   setBirthAndAnivModalOpen: any;
   showHomePage: boolean;
+  setShowHelpPage:any;
 }
 
 const CommandBar: React.FC<IShowPanelProps> = (props) => {
@@ -228,6 +229,17 @@ const CommandBar: React.FC<IShowPanelProps> = (props) => {
       },
     });
   }
+ 
+    baseFarItems.push({
+      key: "Help",
+      text: "Help",
+      ariaLabel: "Help",
+      iconOnly: true,
+      iconProps: { iconName: "Help" },
+      className: selectedLetter === "question" ? "activeColor" : "farItem",
+      onClick: () => props.setShowHelpPage(true)
+    });
+  
   const farItems = [...baseFarItems];
 
   return (

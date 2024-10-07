@@ -12,6 +12,7 @@
   overflow-x: visible !important;
   page-break-before: auto;
   page-break-after: auto;
+  overflow: auto;
 
 }
 .App-logo {

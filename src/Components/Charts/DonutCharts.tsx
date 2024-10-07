@@ -154,7 +154,7 @@ const DonutChart = ({ data, heading = "dsfasd" }) => {
     cursor: "pointer",
     zIndex: 1001,
   };
-
+console.log("donut",data)
   return (
     <div>
       <div style={cardStyle} className={styles.chartcon}>
@@ -166,7 +166,7 @@ const DonutChart = ({ data, heading = "dsfasd" }) => {
             <Icon iconName="FullScreen" />
           )}
         </button>
-        <Doughnut data={data} options={options || defaultOptions} />
+        {data?.labels?.filter(item => item !== "" && item !== "undefined").length ?  <Doughnut data={data} options={options} />:<div style={{position:"absolute", top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}>No data available</div>}
       </div>
       
       {isFullscreen && (
@@ -179,7 +179,7 @@ const DonutChart = ({ data, heading = "dsfasd" }) => {
               <Icon iconName="FullScreen" />
             )}
           </button>
-          <Doughnut data={data} options={options || defaultOptions} />
+          {data?.labels?.filter(item => item !== "" && item !== "undefined").length? <Doughnut data={data} options={options || defaultOptions} />:<div style={{position:"absolute", top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}>No data available</div>}
         </div>
       )}
     </div>
