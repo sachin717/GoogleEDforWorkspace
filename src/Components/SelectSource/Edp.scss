@@ -225,8 +225,14 @@ div:where(.swal2-container) div:where(.swal2-popup) {
   height: fit-content !important;
 }
 .ms-ExpandingCard-expandedCard{
-  height: 270px !important;
+  height: 180px !important;
   overflow: auto;
+}
+.gridWrapper{
+  display:flex;
+  justify-content:start;
+  gap:5px;
+  flex-wrap:wrap;
 }
 
 
@@ -463,8 +469,8 @@ div:where(.swal2-container) div:where(.swal2-popup) {
 
 .MainContainer {
   margin: 0 auto;
-  width: 104px;
-  height: 104px;
+  width: 100px;
+  height: 100px;
   rotate: 20deg;
 }
 .textvested {
@@ -567,8 +573,8 @@ div:where(.swal2-container) div:where(.swal2-popup) {
   font-size: 42px;
   font-weight: 600;
   line-height: 100px;
-  height: 103px;
-  width: 103px;
+  height: 100px;
+  width: 100px;
   background-color: "rgb(0, 120, 212) ";
 }
 .viewIconsStyleActive {
@@ -707,10 +713,50 @@ color: blue;
 }
 
 ///
+/// 
+/// 
+/// 
+
+
+@media (max-width: 380px) {
+  .gridWrapper {
+    display: grid !important;
+    grid-template-columns:1fr 1fr !important;
+  }
+  .tileView {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+  .user-card {
+    width: 109px !important;
+   
+  }
+}
+
+@media (max-width: 424px) and (min-width: 380px) {
+  html{
+    background-color: #f5f5f5 !important;
+  }
+  .gridWrapper {
+    display: grid !important;
+    grid-template-columns: 50% 50% !important;
+  }
+  .tileView {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+  .user-card {
+    width: 72% !important;
+  }
+}
+
 @media all and (max-width: 480px) {
   .searchFiltersDiv {
     display: none;
 
+  }
+  .rightsideiconProfileCard{
+    display: none;
   }
 
   .filterDiv {
@@ -726,6 +772,13 @@ color: blue;
 @media (max-width: 800px) {
   .tileView {
     display: flex;
+  }
+  .ms-Dialog-main{
+    min-width: fit-content !important;
+
+  }
+  .brandLogo{
+    display: none !important;
   }
 }
 @media (max-width: 800px) {
@@ -798,15 +851,7 @@ color: blue;
     display: block !important;
   }
 }
-@media (max-width: 380px) {
-  .gridDiv {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12 0px, 1fr));
-  }
-  // .user-card {
-  //   // width: 98% !important;
-  // }
-}
+
 
 // .css-1nmdiq5-menu {
 //   z-index: 9 !important;
@@ -917,7 +962,7 @@ color: blue;
 
 .css-yk16xz-control {
   min-height: 32px !important;
-  // border-color:  hsl(40deg 1% 45%);
+  // border-color:  hsl(40deg 1% 45%);p
   border-color: #d3d1ce !important;
   border-radius: 2px !important;
   cursor: pointer;
@@ -967,3 +1012,14 @@ color: blue;
   color: var(--lightThemeTextColorBlack) !important;
 }
 
+@media (max-width: 350px) {
+  .gridWrapper {
+    display: grid !important;
+    grid-template-columns:1fr !important;
+  }
+
+  .user-card{
+  width: 85% !important;
+  }
+
+}

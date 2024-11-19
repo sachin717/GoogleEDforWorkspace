@@ -171,6 +171,7 @@ const LineChart = ({ data, heading = "dfasd" }) => {
     left: "50%",
     position: "fixed",
   };
+console.log("line",data)
 
   return (
     <div>
@@ -185,7 +186,7 @@ const LineChart = ({ data, heading = "dfasd" }) => {
           </button>
 
         <div style={containerStyle}>
-          <Line className="linechart" data={data} options={options} />
+         {data?.labels?.filter(item => item !== "" && item !== "Invalid Date").length ? <Line className="linechart" data={data} options={options} />:<div style={{position:"absolute", top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}>No data available</div>}
         </div>
       </div>
       
@@ -201,7 +202,7 @@ const LineChart = ({ data, heading = "dfasd" }) => {
             </button>
 
           <div style={containerStyle}>
-            <Line  data={data} options={options} />
+          {data?.labels?.filter(item => item !== "" && item !== "Invalid Date").length? <Line  data={data} options={options} />:<div style={{position:"absolute", top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}>No data available</div>}
           </div>
         </div>
       )}

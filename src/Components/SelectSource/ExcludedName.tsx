@@ -2,10 +2,10 @@ import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import React, { useEffect, useRef } from "react";
 import useStore, { useSttings } from "./store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { useLanguage } from "../../Language/LanguageContext";
 import ReactSelect from "react-select";
 import { Icon } from "office-ui-fabric-react";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 var allItems = [];
 let settingsData:any;
 function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAlertExcludeName}) {
@@ -69,7 +69,7 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
       const searchItems = (text: string) => {
         if (!text.trim()) {
           setExcludedName([...appSettings?.ExcludeByName || []]);
-          setShowButton(appSettings?.ExcludeByName.length > 0);
+          setShowButton(appSettings?.ExcludeByName?.length > 0);
           return;
         }
       
@@ -78,7 +78,7 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
         );
       
         setExcludedName(filteredItems);
-        setShowButton(filteredItems.length > 0);
+        setShowButton(filteredItems?.length > 0);
       };
       
       
@@ -88,7 +88,7 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
           .map((y) => {
             return y.value;
           });
-          if(updatedName.length==0)
+          if(updatedName?.length==0)
           {
             SweetAlertExcludeName("info","Please select user name !");
            
@@ -101,8 +101,8 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
           setExcludedName(updatedexcludeByName);
           
           const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedexcludeByName };
-          if(Object.keys(appSettings).length >0){
-            updateSettingData(updatedParsedData);
+          if(Object.keys(appSettings)?.length >0){
+            updateSettingJson(SETTING_LIST,updatedParsedData);
             setAppSettings(updatedParsedData)
            
           setExcludedName(updatedParsedData?.ExcludeByName)
@@ -125,8 +125,8 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
             const data = { ...appSettings, ExcludeByName: updatedNames };
             setExcludedName(updatedNames);
           setShowButton(true);
-            if (Object.keys(data).length > 0) {
-              updateSettingData(data);
+            if (Object.keys(data)?.length > 0) {
+              updateSettingJson(SETTING_LIST,data);
               setAppSettings(data);
 
               SweetAlertExcludeName("success", translation.SettingSaved);
@@ -144,7 +144,7 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
 <div className={"tabMainDiv"} id="excludeName">
      
  <div style={{ padding: "0%" }}>
-                <Label>Select name(s) to exclude</Label>
+                <Label>{translation.SelectNamesToExclude||"Select name(s) to exclude"}</Label>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "end", gap: "8px" }}>
                         <ReactSelect
@@ -156,9 +156,9 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
                             menuPosition="fixed"
                             maxMenuHeight={150}
                         />
-                        {excludedValues.length > 0 ? (
+                        {excludedValues?.length > 0 ? (
                             <PrimaryButton
-                                text="Exclude"
+                               text={translation.Exclude||"Exclude"}
                                 onClick={handleExcludeUserName}
                             />
                         ):""}
@@ -180,9 +180,9 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
                                 onChange={(e, newValue) => searchItems(newValue)}
                                 onClear={() => {
                                   setExcludedName([...allItems]);
-                                    setShowButton(allItems.length > 0);
+                                    setShowButton(allItems?.length > 0);
                                 }}
-                                placeholder="Search"
+                                placeholder={translation.search||"Search"}
                                 iconProps={{ iconName: "search" }}
                             />
                         </div>
@@ -201,9 +201,9 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
         <table className={"excludeTable"}>
           <thead>
             <tr>
-              <th>{"Action"}</th>
-              <th>{"Name"}</th>
-              <th>{"Status"}</th>
+              <th>{translation.Action||"Action"}</th>
+              <th>{translation.Name||"Name"}</th>
+              <th>{translation.Status||"Status"}</th>
             </tr>
           </thead>
           {showButton ? (
@@ -229,7 +229,7 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
               <tr>
                 <td colSpan={3}>
                  
-                   {"No Records Found"}
+                {translation.NoRecordsFound||"No Records Found"}
                  
                 </td>
               </tr>
@@ -237,7 +237,7 @@ function ExcludedName({excludeByNameOptions,appSettings,setAppSettings,SweetAler
           )}
         </table>
       </div>
-      {excludedName ? <div><PrimaryButton text={"Include"} onClick={include} /></div>:""}
+      {excludedName.length ? <div><PrimaryButton text={translation?.Include||"Include"} onClick={include} /></div>:""}
     </div>
 </>
   )

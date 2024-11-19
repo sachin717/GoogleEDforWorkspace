@@ -2,11 +2,11 @@ import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import React, { useEffect, useRef, useState } from "react";
 import useStore, { useSttings } from "./store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import Alert from "../Utils/Alert";
 import ReactSelect from "react-select";
 import { Icon, TextField } from "office-ui-fabric-react";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 var allItems = [];
 let settingsData:any;
 function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
@@ -83,7 +83,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
           
           const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedexcludeByContains };
           if(Object.keys(appSettings)?.length >0){
-            updateSettingData(updatedParsedData);
+            updateSettingJson(SETTING_LIST,updatedParsedData);
             setAppSettings(updatedParsedData)
            
           setExcludedByContains(updatedParsedData?.ExcludedByContains)
@@ -109,7 +109,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
            console.log("containsData",containsData)
           if (Object.keys(appSettings)?.length > 0) {
             let data = { ...appSettings, ExcludedByContains: containsData };
-            updateSettingData(data);
+            updateSettingJson(SETTING_LIST,data);
             setAppSettings(data);
             setExcludedByContains(containsData);
             setShowButton(true);
@@ -127,7 +127,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
 <div className={"tabMainDiv"} id="excludedContains">
 
      <div style={{ padding: "0%" }}>
-                <Label>Enter string to exclude</Label>
+                <Label>{translation.EnterStringToExclude||"Enter string to exclude"}</Label>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "end", gap: "8px" }}>
                     <TextField
@@ -135,7 +135,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
                 onChange={(e: any) =>
                   setExcludedValues({ value: e.target.value })
                 }
-                placeholder="Exclude string "
+                placeholder={translation.ExcludeString||"Exclude string"}
               />
 
                         
@@ -143,7 +143,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
                         
                             <PrimaryButton
                                 style={{margin:"auto"}}
-                                text="Exclude"
+                                text={translation.Exclude||"Exclude"}
                                 onClick={handleExcludeContains}
 
                             />
@@ -167,16 +167,16 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
                                 onChange={(e, newValue) => searchItems(newValue)}
                                 onClear={() => {
                                     setExcludedByContains([...allItems]);
-                                    setShowButton(allItems.length > 0);
+                                    setShowButton(allItems?.length > 0);
                                 }}
-                                placeholder="Search"
+                                placeholder={translation.search||"Search"}
                                 iconProps={{ iconName: "search" }}
                             />
                         </div>
                         {!isExpanded ? (
                             <Icon
                                 style={{ fontSize: "16px", cursor: "pointer", padding: "2px" }}
-                                iconName="Search"
+                                iconName={translation.search||"Search"}
                                 onClick={handleClickSearch}
                             />
                         ):""}
@@ -189,9 +189,10 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
         <table className={"excludeTable"}>
           <thead>
             <tr>
-              <th>{"Action"}</th>
-              <th>{"Employee Name"}</th>
-              <th>{"Status"}</th>
+            <th>{translation.Action||"Action"}</th>
+              <th>{translation.EmployeeName||"Employee Name"}</th>
+              <th>{translation.Status||"Status"}</th>
+             
             </tr>
           </thead>
           {showButton ? (
@@ -217,7 +218,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
               <tr>
                 <td colSpan={3}>
                  
-                   {"No Records Found"}
+                {translation.NoRecordsFound||"No Records Found"}
                  
                 </td>
               </tr>
@@ -225,7 +226,7 @@ function ExcludedContains({appSettings,setAppSettings,SweetAlertContains}) {
           )}
         </table>
       </div>
-      {excludedByContains?.length?<div><PrimaryButton text={"Include"} onClick={include} /></div>:""}
+      {excludedByContains?.length?<div><PrimaryButton text={translation?.Include||"Include"} onClick={include} /></div>:""}
     </div>
 </>
   )

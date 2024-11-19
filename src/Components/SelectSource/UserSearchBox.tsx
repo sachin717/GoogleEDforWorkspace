@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TextField, Persona, PersonaSize } from '@fluentui/react';
 
 // Define TypeScript types if using TypeScript
@@ -15,12 +15,18 @@ interface UserSearchProps {
   options: OptionItem[];
   placeholder?: string;
   onSelect: (item: OptionItem) => void;
+  clearInput?:boolean;
+  width?:any;
 }
 
-const UserSearchBox: React.FC<UserSearchProps> = ({ options, placeholder = 'Search...', onSelect }) => {
+const UserSearchBox: React.FC<UserSearchProps> = ({width=450, clearInput,options, placeholder = 'Search...', onSelect }) => {
   const [userInput, setUserInput] = useState('');
   const [showList, setShowList] = useState(false);
 
+  useEffect(()=>{
+setUserInput("");
+// onSelect([]);
+  },[clearInput])
   // Handle item click
   const handleSelect = (item: OptionItem) => {
     onSelect(item);
@@ -40,9 +46,10 @@ const UserSearchBox: React.FC<UserSearchProps> = ({ options, placeholder = 'Sear
   );
 
   return (
-    <div style={{ width: 450 }}>
+    <div style={{ width: width }}>
       <TextField
         type="text"
+        
         onChange={handleInputChange}
         value={userInput}
         placeholder={placeholder}

@@ -16,7 +16,7 @@ export const SweetAlerts = (Id?: string,InPanel?:boolean) => {
         showConfirmButton: false,
         text: message,
         width: "330px",
-        timer:3000,
+        timer:2000,
 
         focusCancel: true,
         didOpen: () => {

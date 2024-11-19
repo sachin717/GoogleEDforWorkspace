@@ -26,6 +26,7 @@ import * as React from "react";
 // import styles from "../Edp.module.scss";
 import CustomAdd from "./CustomAdd";
 import { gapi } from "gapi-script";
+import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
 // import SharePointProps from "./SharePointProps";
 // import MultiSelect from "react-multi-select-component";
 const messageBarWarningStyles = {
@@ -203,48 +204,9 @@ function CustomEdit(checkedValue) {
 
 // get Settings 
 async function GetSettingData() {
-  var domain = gapi.auth2
-    .getAuthInstance()
-    .currentUser.le.wt.cu.split("@")[1];
-  //console.log(domain);
-  var _domain = domain.replace(/\./g, "_");
-  var storagedetails =
-    '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-    _domain +
-    '.json"}]';
-  var mappedcustomcol = JSON.parse(storagedetails);
-  const sasToken =
-    "sv=2022-11-02&ss=b&srt=sco&sp=rwdlaciytfx&se=2028-02-28T12:24:45Z&st=2024-02-29T04:24:45Z&spr=https&sig=FrbdvHpW929m3xVikmm5HiBL6Q00lHjk0a5CPuw1H2U%3D";
-  const blobStorageClient = new BlobServiceClient(
-    // this is the blob endpoint of your storage acccount. Available from the portal
-    // they follow this format: <accountname>.blob.core.windows.net for Azure global
-    // the endpoints may be slightly different from national clouds like US Gov or Azure China
-    "https://" +
-      mappedcustomcol[0].storageaccount +
-      ".blob.core.windows.net?" +
-      sasToken
-    //   ,
-    // null
-    //new InteractiveBrowserCredential(signInOptions)
-  );
-  containerClient = blobStorageClient.getContainerClient(
-    mappedcustomcol[0].containername
-  );
-  const blobClient = containerClient.getBlobClient(
-    mappedcustomcol[0].blobfilename
-  );
-  const exists = await blobClient.exists();
-
-  if (exists) {
-    const downloadBlockBlobResponse = await blobClient.download();
-    const downloaded: any = await blobToString(
-      await downloadBlockBlobResponse.blobBody
-    );
-    
-    const decoder = new TextDecoder();
-    const str = decoder.decode(downloaded);
-   
-    parsedData = JSON.parse(str);
+  const settingJson = await getSettingJson(SETTING_LIST);
+    if (Object.keys(settingJson)?.length) {
+    parsedData = settingJson;
     // logic for profileview checkboxes
     if(parsedData?.GridViewPrope){
       const updatedPeople = parsedData?.GridViewPrope?.map(person => {
@@ -290,36 +252,6 @@ async function blobToString(blob: any) {
     };
     fileReader.onerror = reject;
     fileReader.readAsArrayBuffer(blob);
-  });
-}
-//
-
-// update Settings
- 
-async function  updateSetting(uparsedData)
-{
-  var _parsedData = JSON.stringify(uparsedData);
-  var domain = gapi.auth2
-  .getAuthInstance()
-  .currentUser.le.wt.cu.split("@")[1];
-//console.log(domain);
-var _domain = domain.replace(/\./g, "_");
-var storagedetails =
-  '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-  _domain +
-  '.json"}]';
-var mappedcustomcol = JSON.parse(storagedetails);
-await containerClient
-  .getBlockBlobClient(mappedcustomcol[0].blobfilename)
-  .upload(_parsedData, Buffer.byteLength(_parsedData))
-  .then(() => {
- setSaved(true);
- SuccessMsg();
-
-SuccessMsg();
-    setTimeout(() => {
-      messageDismiss();
-    }, 5000);
   });
 }
 
@@ -391,7 +323,7 @@ if(parsedData !== null){
   setSaved(true);
   checkedValue.dismiss();
  
- updateSetting(updatedParsedData)
+ updateSettingJson(SETTING_LIST,updatedParsedData)
 }
 
   }

@@ -1,10 +1,14 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { OrgChart } from "d3-org-chart";
 import OrgChartSettings from "./OrgChartSettings";
 import { IconButton, Modal, Icon } from "@fluentui/react";
 import EmployeeDetailModal from "../SelectSource/EmployeeDetailModal";
 import { useSttings } from "../SelectSource/store";
 import { useFields } from "../../context/store";
+import { getCurrentUser } from "../Helpers/HelperFunctions";
+import * as jspdf from "jspdf";
+import html2canvas from "html2canvas";
+import ReactSelect from "react-select";
 
 const modalPropsStylesEmpPC = {
   main: {
@@ -25,7 +29,30 @@ const iconButtonStyles = {
   },
 };
 
-export default function FullOrgChart() {
+const stylesReactSelect: any = {
+  control: (provided: any, state: any) => ({
+    ...provided,
+    borderRadius: "0px",
+    minHeight: "32px",
+    boxShadow: state.isFocused ? `0 0 0 .5px black` : provided.boxShadow,
+    borderColor: state.isFocused ? `black` : provided.borderColor,
+    "&:hover": {
+      borderColor: state.isFocused ? `black` : provided.borderColor,
+    },
+  }),
+  placeholder: (provided: any) => ({
+    ...provided,
+    color: "#AAA",
+    fontSize: "15px",
+  }),
+};
+
+export default function FullOrgChart({
+  setSettings,
+  setShowHomePage,
+  setShowOrgChart,
+  setshowDashboard,
+}) {
   const [chartData, setChartData] = useState([]);
   const [rootChartNode, setRootChartNode] = useState<any>(null);
   const [isOpenSettingPanel, setIsOpenSettingsPanel] = useState(false);
@@ -39,7 +66,7 @@ export default function FullOrgChart() {
   const [headerFontSize, setHeaderFontSize] = useState<number>(18);
   const [departmentFontSize, setDepartmentFontSize] = useState<number>(15);
   const [jobTitleFontSize, setJobTitleFontSize] = useState<number>(15);
-  const [locationFontSize, setLocationSize] = useState<number>(12);
+  const [locationFontSize] = useState<number>(12);
 
   const [headerTextFontStyles, setHeaderTextFontStyles] = useState<any>({
     bold: false,
@@ -59,6 +86,30 @@ export default function FullOrgChart() {
     underline: false,
   });
 
+  const [refres, setRefresh] = useState(1);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [newUser, setNewUser] = useState<any>(null);
+
+  function backToHome() {
+    setSettings(false);
+    setShowHomePage(true);
+    setShowOrgChart(false);
+    setshowDashboard(false);
+  }
+
+  const generatePDF = () => {
+    const input = document.getElementById("D3orgchart");
+
+    html2canvas(input).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jspdf.jsPDF();
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("OrgChart");
+    });
+  };
+
   //dependencies for OrgChart to re-render with updated styles
   const dependices = [
     imagesPosition,
@@ -69,18 +120,40 @@ export default function FullOrgChart() {
     headerTextFontStyles,
     departmentFontStyles,
     jobTitleFontStyle,
+    refres,
+    newUser,
   ];
   const { appSettings } = useSttings();
   const { allUsers } = useFields();
   //  ------------------ STYLE STATES ENDS-------------
 
-  const d3Container = useRef(null);
-  let chart = null;
+  const ref = useRef(null);
+  let chart = useMemo(() => new OrgChart(), [allUsers, ...dependices]);
+  const userOption = useMemo(
+    () => allUsers.map((x: any) => ({ value: x.email, label: x.name })),
+    [allUsers]
+  );
 
   const getChartData = (rootEmail: string) => {
-    if (rootEmail == "") return;
+    if (rootEmail === "") return;
+
     const root = allUsers.find((x: any) => x.email === rootEmail);
-    const reportees = allUsers.filter((x: any) => root.email === x.manager);
+
+    const getReportees = (managerEmail: string, parentId: string) => {
+      const reportees = allUsers.filter((x: any) => x.manager === managerEmail);
+      return reportees.flatMap((x: any) => [
+        {
+          id: x.id,
+          parentId: parentId,
+          imageUrl: x.image,
+          name: x.name,
+          jobTitle: x.job,
+          department: x.department,
+          location: x.location,
+        },
+        ...getReportees(x.email, x.id),
+      ]);
+    };
 
     const rootUser = {
       id: root.id,
@@ -92,24 +165,22 @@ export default function FullOrgChart() {
       location: root.location,
     };
 
-    const reporteesToRoot = reportees.map((x: any) => {
-      return {
-        id: x.id,
-        parentId: root.id,
-        imageUrl: x.image,
-        name: x.name,
-        jobTitle: x.job,
-        department: x.department,
-        location: x.location,
-      };
-    });
+    const reporteesToRoot = getReportees(root.email, root.id);
 
-    setChartData([...reporteesToRoot, rootUser]);
+    setChartData([rootUser, ...reporteesToRoot]);
     setRootChartNode(rootUser);
   };
 
   useEffect(() => {
-    getChartData(appSettings.OrgChart?.chartHead?.value || "");
+    if (appSettings.OrgChart.chartType === "TwoLevelOrgChart") {
+      const user = getCurrentUser();
+      getChartData(user.cu ?? "");
+      setNewUser({ value: user.cu, label: user.Ad });
+    } else {
+      getChartData(appSettings.OrgChart?.chartHead?.value || "");
+      setNewUser(appSettings.OrgChart?.chartHead || null);
+    }
+
     setHeaderFontSize(appSettings?.OrgChartStyles?.headFontSize || "20");
     setImagePosition(appSettings?.OrgChartStyles?.position || "center");
     setJobTitleFontSize(appSettings?.OrgChartStyles?.jobFontSize || "15");
@@ -146,35 +217,23 @@ export default function FullOrgChart() {
 
   // useEffect which renders the chart on DOM
   useEffect(() => {
-    if (!chart) {
-      chart = new OrgChart();
-    }
-
     chart
-      .container(d3Container.current)
+      .container(ref.current)
       .data(chartData)
-      .childrenMargin((node) => 60)
+      .initialZoom(0.7)
+      .childrenMargin(() => 60)
       .nodeWidth(() => 250)
       .nodeHeight(() => 175)
       .onNodeClick((d: any) => handleNodeClick(d))
-      .buttonContent(({ node }) => {
+      .buttonContent(({ node }: any) => {
         const buttonStyles = `
-          color:#FFF;
-          padding:3px 6px;
-          font-size:10px;
-          margin:auto auto;
-          background-color: rgb(0, 112, 220);
-        `;
-
-        return `<div style="${buttonStyles}"> 
-                  <span style="font-size:9px">${
-                    node.children
-                      ? `<i class="fas fa-angle-up"></i>`
-                      : `<i class="fas fa-angle-down"></i>`
-                  }
-                  </span> 
-                  ${node.data._directSubordinates}  
-                </div>`;
+            color:#FFF;
+            padding:3px 6px;
+            font-size:10px;
+            margin:auto auto;
+            background-color: rgb(0, 112, 220);
+          `;
+        return `<div style="${buttonStyles}">${node.data._directSubordinates}</div>`;
       })
 
       .nodeContent((d: any) => {
@@ -182,119 +241,130 @@ export default function FullOrgChart() {
 
         const orgChartStyles = {
           imgCon: `
-            text-align: ${imagesPosition};
-            margin-left: -10px;
-            margin-right: -10px
-          `,
+              text-align: ${imagesPosition};
+              margin-left: -10px;
+              margin-right: -10px
+            `,
           img: `
-            margin-top:-30px;
-            border-radius:100px;
-            width:60px;
-            height:60px;
-            object-fit:cover;
-          `,
+              margin-top:-30px;
+              border-radius:100px;
+              width:60px;
+              height:60px;
+              object-fit:cover;
+            `,
           wrapper: `
-            padding-top:30px;
-            background-color:none;
-            margin-left:1px;
-            height:${d.height}px;
-            border-radius:2px;
-            overflow:visible; 
-            // transform: scale(0.8)
-          `,
+              padding-top:30px;
+              background-color:none;
+              margin-left:1px;
+              height:${d.height}px;
+              border-radius:2px;
+              overflow:visible;
+            `,
           container: `
-            height:${d.height - 32}px;
-            padding-top:0px;
-            background-color:#f4f4f4;
-            border:1px solid lightgray;
-            
-          `,
+              height:${d.height - 32}px;
+              padding-top:0px;
+              background-color:#f4f4f4;
+              border:1px solid lightgray;
+            `,
           textWrapper: `
-            margin-top:-34px;
-            background-color: rgb(0, 112, 220);
-            height:10px;
-            width:${d.width - 2}px;
-            border-radius:1px
-          `,
+              margin-top:-34px;
+              background-color: rgb(0, 112, 220);
+              height:10px;
+              width:${d.width - 2}px;
+              border-radius:1px
+            `,
           textContainer: `
-            padding:30px; 
-            padding-top:35px;
-            text-align:center;
-            padding-bottom:10px;
-            margin-left-5px;
-          `,
+              padding-top:35px;
+              padding-bottom:10px;
+              margin-left-5px;
+              display:flex;
+              justify-content:center;
+              flex-direction:column;
+              align-items:center;
+            `,
           name: `
-            color:#333;
-            font-size:${headerFontSize}px;
-            font-weight:${headerTextFontStyles.bold && "bold"};
-            font-style:${headerTextFontStyles.italic && "italic"};
-            text-decoration: ${headerTextFontStyles.underline && "underline"};
-          `,
+              color:#333;
+              font-size:${headerFontSize}px;
+              font-weight:${headerTextFontStyles.bold && "bold"};
+              font-style:${headerTextFontStyles.italic && "italic"};
+              text-decoration: ${headerTextFontStyles.underline && "underline"};
+              width: 180px;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
+              text-align:center;
+            `,
           jobTitle: `
-            font-size:${jobTitleFontSize}px;
-            font-weight: ${jobTitleFontStyle.bold === true ? "bold" : ""};
-            font-style: ${jobTitleFontStyle.italic === true ? "italic" : ""};
-            text-decoration: ${
-              jobTitleFontStyle.underline === true ? "underline" : ""
-            };
-            text-overflow: ${textOverFlow}
-            color:#333;
-            margin-top:4px;
-          `,
+              font-size:${jobTitleFontSize}px;
+              font-weight: ${jobTitleFontStyle.bold === true ? "bold" : ""};
+              font-style: ${jobTitleFontStyle.italic === true ? "italic" : ""};
+              text-decoration: ${
+                jobTitleFontStyle.underline === true ? "underline" : ""
+              };
+              color:#333;
+              margin-top:4px;
+              width: 180px;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
+              text-align:center;
+            `,
           department: `
-            font-size:${departmentFontSize}px;
-            color:#404040;
-            margin-top:4px;
-            font-weight:${departmentFontStyles.bold && "bold"};
-            font-style: ${departmentFontStyles.italic && "italic"};
-            text-decoration: ${departmentFontStyles.underline && "underline"};
-            text-overflow: ${textOverFlow}
-          `,
+              width: 180px;
+              font-size:${departmentFontSize}px;
+              color:#404040;
+              font-weight:${departmentFontStyles.bold && "bold"};
+              font-style: ${departmentFontStyles.italic && "italic"};
+              text-decoration: ${departmentFontStyles.underline && "underline"};
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
+              text-align:center;
+            `,
           location: `
-            font-size: ${locationFontSize}px;
-            color:#404040;
-            margin-top:4px;
-            text-overflow: ${textOverFlow}
-          `,
+              width: 180px;
+              font-size: ${locationFontSize}px;
+              color:#404040;
+              margin-top:4px;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
+              text-align:center;
+            `,
         };
 
         const initial = name[0];
 
-        //---------- Styles for org chart end--------
-
-        // ----------------Org Chart Card------------
-
         return `
-        <div style="${orgChartStyles.wrapper}">
-          <div style="${orgChartStyles.container}">
-            <div style="${orgChartStyles.imgCon}">
-              <img
-                src="${imageUrl}";
-                onerror="this.src='${`https://api.dicebear.com/9.x/initials/svg?backgroundColor=0070DC&seed=${initial}`}'"
-                alt="IMAGE"
-                style="${orgChartStyles.img}"
-              />
-            </div>
-            <div style="${orgChartStyles.textWrapper}">
-              <div style="${orgChartStyles.textContainer}">
-                <div style="${orgChartStyles.name}">${name}</div>
-                <div style="${orgChartStyles.jobTitle}">${jobTitle}</div>
-                <div style="${orgChartStyles.department}">${department}</div>
-                <div style="${orgChartStyles.location}">${location}</div>
+          <div style="${orgChartStyles.wrapper}">
+            <div style="${orgChartStyles.container}">
+              <div style="${orgChartStyles.imgCon}">
+                <img
+                  src="${imageUrl}"
+                  onerror="this.src='${`https://api.dicebear.com/9.x/initials/svg?backgroundColor=0070DC&seed=${initial}`}'"
+                  style="${orgChartStyles.img}"
+                />
+              </div>
+              <div style="${orgChartStyles.textWrapper}">
+                <div style="${orgChartStyles.textContainer}">
+                  <div title="${`${name}`}" style="${orgChartStyles.name}">${name}</div>
+                  <div title="${`${jobTitle}`}" style="${orgChartStyles.jobTitle}">${jobTitle}</div>
+                  <div title="${`${department}`}" style="${orgChartStyles.department}">${department}</div>
+                  <div title="${`${location}`}" style="${orgChartStyles.location}">${location}</div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>`;
+          </div>`;
       })
       .render();
 
     return () => {
       // Cleanup function to remove the chart from the DOM when the component is unmounted
-      if (d3Container.current) {
-        d3Container.current.innerHTML = ""; // Clear the container
+      if (ref.current) {
+        ref.current.innerHTML = ""; // Clear the container
       }
     };
-  }, [chartData, ...dependices]);
+  }, [chartData, ...dependices, allUsers]);
 
   return (
     <div>
@@ -329,25 +399,85 @@ export default function FullOrgChart() {
             justifyContent: "end",
             marginTop: "10px",
             alignItems: "center",
+            gap: "3px",
           }}
         >
-          <IconButton
-            onClick={() => setIsOpenSettingsPanel(true)}
-            iconProps={{ iconName: "Settings" }}
-          />
+          <div>
+            <div>
+              <ReactSelect
+                options={userOption}
+                value={newUser}
+                isClearable={appSettings.OrgChart?.chartHead?.value === newUser?.value ? false :true}
+                placeholder="Select user"
+                styles={stylesReactSelect}
+                onChange={(value: any) => {
+                  if (value === null) {
+                    getChartData(appSettings.OrgChart?.chartHead?.value || "");
+                    setNewUser(appSettings.OrgChart?.chartHead);
+                    return;
+                  }
+                  getChartData(value.value);
+                  setNewUser(value);
+                }}
+              />
+            </div>
+            <div style={{ display: "flex", marginTop: "5px", alignItems:"center" }}>
+              <div
+                style={{ color: "rgb(0, 120, 212)", cursor: "pointer" }}
+                onClick={
+                  isExpanded
+                    ? () => {
+                        setIsExpanded(false);
+                        chart.collapseAll();
+                      }
+                    : () => {
+                        setIsExpanded(true);
+                        chart.expandAll();
+                      }
+                }
+              >
+                {isExpanded ? "Collapse all" : "Expand all"}
+              </div>
+              {/* <IconButton
+                onClick={() => chart.zoomIn()}
+                iconProps={{ iconName: "ZoomIn" }}
+                title="Zoom in"
+              />
+              <IconButton
+                onClick={() => chart.zoomOut()}
+                iconProps={{ iconName: "ZoomOut" }}
+                title="Zoom out"
+              /> */}
+              <IconButton
+                onClick={backToHome}
+                iconProps={{ iconName: "Home" }}
+              />
+              <IconButton
+                onClick={() => setRefresh((prev) => prev + 1)}
+                iconProps={{ iconName: "Refresh" }}
+                title="Home"
+              />
+              <IconButton
+                onClick={() => generatePDF()}
+                iconProps={{ iconName: "Print" }}
+                title="Print"
+              />
+              <IconButton
+                onClick={() => chart.exportSvg()}
+                iconProps={{ iconName: "Generate" }}
+                title="Generate"
+              />
+              <IconButton
+                onClick={() => setIsOpenSettingsPanel(true)}
+                iconProps={{ iconName: "Repair" }}
+                title="Repair"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div
-        style={{
-          position: "relative",
-          scale: "0.75",
-          display: "flex",
-          justifyContent: "center",
-        }}
-        ref={d3Container}
-        id={"D3orgchart"}
-      />
+      <div ref={ref} id={"D3orgchart"} />
 
       <div>
         <Modal

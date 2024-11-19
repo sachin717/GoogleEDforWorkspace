@@ -14,8 +14,9 @@ import { useId } from "@fluentui/react-hooks";
 import Alert from "../Utils/Alert";
 import { TooltipHost, ITooltipHostStyles } from "@fluentui/react/lib/Tooltip";
 import { useLanguage } from "../../Language/LanguageContext";
-import { updateSettingData } from "../Helpers/HelperFunctions";
+
 import { useSttings } from "./store";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 const dropdownStyles: Partial<IDropdownStyles> = {
   dropdown: { width: 300 },
 };
@@ -89,7 +90,15 @@ function ImageTag(props) {
   ];
   React.useEffect(() => {
     // let imageTagValue = localStorage.getItem("cardcolor")?.split("^");
-    let imageTagValue = appSettings?.ImageProfileTagData?.split("^");
+    let imageTagValue = appSettings?.ImageProfileTagData ?? "";
+    if(imageTagValue[0]?.length||imageTagValue[1]?.length||imageTagValue[2]?.length) {
+      imageTagValue= appSettings?.ImageProfileTagData?.split("^");
+    }else{
+      setAttribute("location");
+      setBG("#03AB36");
+      setFC("#ffffff");
+    }
+  
 
     if (imageTagValue?.length) {
       setAttribute(imageTagValue[0]);
@@ -134,14 +143,14 @@ function ImageTag(props) {
       usrarr.push(attributesValue + "^" + BG + "^" + FC);
       // localStorage.setItem("cardcolor", attributesValue + "^" + BG + "^" + FC);
       let data=attributesValue + "^" + BG + "^" + FC;
-      updateSettingData({...appSettings,ImageProfileTagData:data})
+      updateSettingJson(SETTING_LIST,{...appSettings,ImageProfileTagData:data})
       setAppSettings({...appSettings,ImageProfileTagData:data});
     } else {
       usrarr.push(attributesValue + "^" + BG + "^" + FC);
 
       // localStorage.setItem("cardcolor", attribute + "^" + BG + "^" + FC);
       let data=attribute + "^" + BG + "^" + FC;
-      updateSettingData({...appSettings,ImageProfileTagData:data})
+      updateSettingJson(SETTING_LIST,{...appSettings,ImageProfileTagData:data})
       setAppSettings({...appSettings,ImageProfileTagData:data});
       setTimeout(() => {
         setLoading1(false);
@@ -164,7 +173,7 @@ function ImageTag(props) {
 
   function removeccloumn() {
     localStorage.clear();
-    updateSettingData({...appSettings,ImageProfileTagData:""})
+    updateSettingJson(SETTING_LIST,{...appSettings,ImageProfileTagData:""})
     setAppSettings({...appSettings,ImageProfileTagData:""});
     setLoading1(false);
     // setButtonSaveText1("");

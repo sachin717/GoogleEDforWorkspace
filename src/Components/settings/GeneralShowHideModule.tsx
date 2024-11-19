@@ -13,19 +13,28 @@ import {
   changeFavicon,
   convertToBase64,
   removeFavicon,
-  updateSettingData,
+  
 } from "../Helpers/HelperFunctions";
 import { useSttings } from "../SelectSource/store";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
+import {
+  getSettingJson,
+  IMAGES_LIST,
+  SETTING_LIST,
+  updateSettingJson,
+} from "../../api/storage";
+import { useFields, useLists } from "../../context/store";
 
 const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
+                       
   const { translation } = useLanguage();
   const [dashboard, setShowDashboard] = useState(false);
+  const [settingData, setSettingData] = useState({});
   const [allowUserToPrintPDF, setAllowUsersToPrintPDF] = useState(false);
   const [isExportToCsv, setExportToCsv] = useState(false);
   const [imageToCrop, setImageToCrop] = React.useState(undefined);
   const [favIcon, setFavIcon] = React.useState<any>("");
-  const [showFav, setShowFav] = useState<any>("");
+  const [showFav, setShowFav] = useState<any>(false);
   const [croppedImage, setCroppedImage] = React.useState(undefined);
   const [CropButton, setCropButton] = React.useState(false);
   const [bLogo, setBlogo] = React.useState<any>("");
@@ -37,48 +46,54 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
   );
 
   const [showBirthAniv, setShowBirthAniv] = React.useState(false);
+  const { imagesList, setImagesList } = useLists();
+  const { setCommandBarItems } = useFields();
 
-  function onChangeDashboard(e: any, checked: any) {
+  async function onChangeDashboard(e: any, checked: any) {
     setShowDashboard(checked);
-    updateSettingData({ ...appSettings, showDashboard: checked });
-    setAppSettings({ ...appSettings, showDashboard: checked });
+    updateSettingJson(SETTING_LIST, { ...settingData, showDashboard: checked });
+    setCommandBarItems({showDashboard: checked })
+    setAppSettings({ ...settingData, showDashboard: checked });
     SweetAlertGeneralHideShow("success", translation.SettingSaved);
   }
 
   function handleChangeBirthAniv(e: any, checked: any) {
     setShowBirthAniv(checked);
-    const setting = { ...appSettings, showBirthAniv: checked };
-    updateSettingData(setting);
+    const setting = { ...settingData, showBirthAniv: checked };
+    updateSettingJson(SETTING_LIST, setting);
     setAppSettings(setting);
+    setCommandBarItems({showBirthAniv: checked })
+    console.log("appstt",appSettings)
+    
     SweetAlertGeneralHideShow("success", translation.SettingSaved);
   }
 
   function handleshowHideFav(e: any, checked: any) {
     setShowFav(checked);
-    if (checked == false) {
-      let temp = { ...appSettings, Favicon: { isFavIconShow: false, url: "" } };
-      updateSettingData(temp);
-      removeFavicon();
-      setFavIcon("");
-      SweetAlertGeneralHideShow("success", translation.SettingSaved);
-    }
+    let temp = { ...settingData, Favicon:checked};
+    updateSettingJson(SETTING_LIST, temp);
+    removeFavicon();
+    setFavIcon("");
+    SweetAlertGeneralHideShow("success", translation.SettingSaved);
   }
 
-  const handleAllowUsersToPrintPDF = (_, checked: boolean) => {
+  const handleAllowUsersToPrintPDF = async (_, checked: boolean) => {
     setAllowUsersToPrintPDF(checked);
     const setting = {
-      ...appSettings,
+      ...settingData,
       AllowUserToPrintPDF: checked,
     };
-    updateSettingData(setting);
+    await updateSettingJson(SETTING_LIST, setting);
+    setCommandBarItems({AllowUserToPrintPDF: checked })
     setAppSettings(setting);
     SweetAlertGeneralHideShow("success", translation.SettingSaved);
   };
 
   function handleExportToCsv(e: any, checked: any) {
     setExportToCsv(checked);
-    let temp = { ...appSettings, IsExportToCsv: checked };
-    updateSettingData(temp);
+    let temp = { ...settingData, IsExportToCsv: checked };
+    updateSettingJson(SETTING_LIST, temp);
+    setCommandBarItems({IsExportToCsv: checked })
     setAppSettings(temp);
     SweetAlertGeneralHideShow("success", translation.SettingSaved);
   }
@@ -101,36 +116,49 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
     if (croppedImage) {
       let url = await convertToBase64(imgUrl);
       let temp = {
-        ...appSettings,
-        Favicon: { isFavIconShow: showFav, url: url },
+        ...settingData,
+        Favicon:showFav,
       };
-      updateSettingData(temp);
+      const imagesJson = {...imagesList,FavIcon:url };
+      updateSettingJson(IMAGES_LIST, imagesJson);
+      updateSettingJson(SETTING_LIST, temp);
       changeFavicon(url);
     }
   }
 
   function handleRemoveFavIcon() {
-    let temp = { ...appSettings, Favicon: { isFavIconShow: false, url: "" } };
-    updateSettingData(temp);
+    let temp = { ...settingData, Favicon: { isFavIconShow: false, url: "" } };
+    updateSettingJson(IMAGES_LIST, temp);
     removeFavicon();
   }
+  async function getSettingsData() {
+    let data = await getSettingJson(SETTING_LIST);
+    return data;
+}
 
   useEffect(() => {
-    setShowBirthAniv(appSettings?.showBirthAniv);
-    setExportToCsv(appSettings?.IsExportToCsv);
-    setAllowUsersToPrintPDF(appSettings?.AllowUserToPrintPDF);
-    setShowDashboard(appSettings?.showDashboard);
-    if (
-      appSettings?.Favicon?.url?.length &&
-      appSettings?.Favicon?.isFavIconShow
-    ) {
-      setFavIcon(appSettings?.Favicon?.url);
+  
+    getSettingsData().then((data)=>{
+
+      setSettingData(data)
+    setShowBirthAniv(data?.showBirthAniv);
+    setExportToCsv(data?.IsExportToCsv);
+    setAllowUsersToPrintPDF(data?.AllowUserToPrintPDF);
+    setShowDashboard(data?.showDashboard);
+    
+    
+    console.log("appSettings.Favicon",appSettings.Favicon);
+    console.log("imagesList", imagesList)
+    
+    if(data.Favicon){
       setShowFav(true);
-    } else {
-      setFavIcon("");
+      setFavIcon(imagesList.Favicon);
+    }else{
       setShowFav(false);
       removeFavicon();
     }
+  })
+   
   }, []);
 
   return (
@@ -145,11 +173,7 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
       >
         <div id="generalHideShow">
           <div className={styles.showHideModulePanelItems}>
-            <Label>
-              {translation.HideShowDB
-                ? translation.HideShowDB
-                : "Show dashboard"}
-            </Label>
+            <Label>{translation.HideShowDB ?? "Show dashboard"}</Label>
             <Toggle
               checked={dashboard}
               onText={translation.show}
@@ -161,13 +185,10 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
 
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.UpcomingBirthdays
-                ? translation.UpcomingBirthdays
-                : "Upcoming birthday and work anniversaries"}
+              {translation.UpcomingBirthdays ??
+                "Upcoming birthday and work anniversaries"}
               <a className={styles.helpTag} href="#">
-                {translation.configurehelp
-                  ? translation.configurehelp
-                  : "Configure help"}
+                {translation.configurehelp ?? "Configure help"}
               </a>{" "}
             </Label>
             <Toggle
@@ -183,11 +204,10 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
 
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.HideShowPDF
-                ? translation.HideShowPDF
-                : "Allow users to print pdf"}
+              {translation.HideShowPDF ?? "Allow users to print pdf"}
             </Label>
             <Toggle
+          
               checked={allowUserToPrintPDF}
               onChange={(e: any, checked: any) => {
                 handleAllowUsersToPrintPDF(e, checked);
@@ -200,9 +220,7 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
 
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.sett1
-                ? translation.sett1
-                : "Allow users to export directory"}
+              {translation.sett1 ?? "Allow users to export directory"}
             </Label>
             <Toggle
               checked={isExportToCsv}
@@ -215,9 +233,7 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
 
           <div className={styles.showHideModulePanelItems}>
             <Label>
-              {translation.showfavoriteicon
-                ? translation.showfavoriteicon
-                : "Show favorite icon"}
+              {translation.showfavoriteicon ?? "Show favorite icon"}
             </Label>
             <Toggle
               checked={showFav}
@@ -231,9 +247,7 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
             <div className={styles.faviconWrapper}>
               <div className={styles.faviconContainer}>
                 <Label>
-                  {translation.customizethefavicon
-                    ? translation.customizethefavicon
-                    : "Customize the favicon"}
+                  {translation.customizethefavicon ?? "Customize the favicon"}
                 </Label>
                 <input
                   style={{
@@ -263,9 +277,8 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
                 </PrimaryButton>
               </div>
               <span>
-                {translation.faviconnote
-                  ? translation.faviconnote
-                  : `
+                {translation.faviconnote ??
+                  `
                 Note : Please upload of 64 x 64 px size with the same aspect
                 ratio and use <br /> transparent or white background for better
                 viewing experience`}
@@ -303,7 +316,7 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
                     }
                   }}
                 >
-                  {translation.crop ? translation.crop : "Crop"}
+                  {translation.crop ?? "Crop"}
                 </PrimaryButton>
                 <PrimaryButton onClick={() => handleFavIconSave(croppedImage)}>
                   {translation.Save ? translation.save : "Save"}

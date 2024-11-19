@@ -3,13 +3,23 @@ import FullOrgChart from "../OrgChart/FullOrgChart";
 import styles from "../SCSS/OrgChartPage.module.scss";
 import { useLanguage } from "../../Language/LanguageContext";
 
-const OrgChartPage = ({ setShowOrgChart, setShowHomePage, filterByLetter }) => {
-  const {languagePartUpdate,setLanguagePartUpdate,translation, setTranslation,languages, setLanguage, getTranslation } = useLanguage();
+const OrgChartPage = ({
+  setShowOrgChart,
+  setShowHomePage,
+  filterByLetter,
+  setSettings,
+  setshowDashboard,
+}) => {
+  const { translation } = useLanguage();
   return (
     <div>
       <div className={styles.container}>
         <div>
-          <Label className={styles.orgChartHeader}>{translation.OrganizationalChart?translation.OrganizationalChart:"Organization Chart"}</Label>
+          <Label className={styles.orgChartHeader}>
+            {translation.OrganizationalChart
+              ? translation.OrganizationalChart
+              : "Organization Chart"}
+          </Label>
         </div>
         <div className={styles.cancleBtn}>
           <IconButton
@@ -27,7 +37,12 @@ const OrgChartPage = ({ setShowOrgChart, setShowHomePage, filterByLetter }) => {
           />
         </div>
       </div>
-      <FullOrgChart />
+      <FullOrgChart
+        setSettings={setSettings}
+        setShowHomePage={setShowHomePage}
+        setShowOrgChart={setShowOrgChart}
+        setshowDashboard={setshowDashboard}
+      />
     </div>
   );
 };

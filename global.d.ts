@@ -1,4 +1,6 @@
+import { CSSProperties } from "react";
+
 declare module "*.scss" {
-  const content: any;
+  const content: CSSProperties;
   export default content;
 }

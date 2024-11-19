@@ -1,11 +1,10 @@
 import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import React, { useEffect, useRef, useState } from "react";
-
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { useLanguage } from "../../Language/LanguageContext";
 import { Icon } from "office-ui-fabric-react";
 import ReactSelect from "react-select";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 var allItems = [];
 let settingsData:any;
 function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlertLocation}) {
@@ -83,7 +82,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
           
           const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedexcludeByLocation };
           if(Object.keys(appSettings)?.length >0){
-            updateSettingData(updatedParsedData);
+            updateSettingJson(SETTING_LIST,updatedParsedData);
             setAppSettings(updatedParsedData)
            
           setExcludeByLocation(updatedParsedData?.ExcludeByLocation)
@@ -107,7 +106,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
             setExcludeByLocation(updatedLocations);
             setShowButton(true);
             if (Object.keys(data)?.length > 0) {
-              updateSettingData(data);
+              updateSettingJson(SETTING_LIST,data);
               setAppSettings(data);
             
               setExcludedValues([]);
@@ -123,7 +122,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
 <>
 <div className={"tabMainDiv"} id="excludedLocation">
 <div style={{ padding: "0%" }}>
-                <Label>Select location(s) to exclude</Label>
+                <Label>{translation.SelectLocationsToExclude||"Select location(s) to exclude"}</Label>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "end", gap: "8px" }}>
                         <ReactSelect
@@ -137,7 +136,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
                         />
                         {excludedValues.length > 0 ? (
                             <PrimaryButton
-                                text="Exclude"
+                                text={translation.Exclude||"Exclude"}
                                 onClick={handleExcludeLoc}
                             />
                         ):""}
@@ -161,7 +160,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
                                     setExcludeByLocation([...allItems]);
                                     setShowButton(allItems.length > 0);
                                 }}
-                                placeholder="Search"
+                                placeholder={translation.search||"Search"}
                                 iconProps={{ iconName: "search" }}
                             />
                         </div>
@@ -181,9 +180,9 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
         <table className={"excludeTable"}>
           <thead >
             <tr>
-              <th>{"Action"}</th>
-              <th>{"Name"}</th>
-              <th>{"Status"}</th>
+              <th>{translation.Action||"Action"}</th>
+              <th>{translation.Name||"Name"}</th>
+              <th>{translation.Status||"Status"}</th>
             </tr>
           </thead>
           {showButton ? (
@@ -209,7 +208,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
               <tr>
                 <td colSpan={3}>
                  
-                   {"No Records Found"}
+                   {translation.NoRecordsFound||"No Records Found"}
                  
                 </td>
               </tr>
@@ -217,7 +216,7 @@ function ExcludedLocation({locationOptions,appSettings,setAppSettings,SweetAlert
           )}
         </table>
       </div>
-      {excludeByLocation?.length ?<div> <PrimaryButton text={"Include"} onClick={include} /></div>:""}
+      {excludeByLocation?.length ?<div> <PrimaryButton text={translation?.Include||"Include"} onClick={include} /></div>:""}
     </div>
 </>
   )

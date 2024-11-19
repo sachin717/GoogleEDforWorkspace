@@ -18,12 +18,13 @@ import { Buffer } from "buffer";
 //import styles from "../Edp.module.scss";
 import { SearchBox } from "@fluentui/react/lib/SearchBox";
 import { IIconProps } from "@fluentui/react/lib/Icon";
-import useStore from "./store";
+import useStore, { useSttings } from "./store";
 import { gapi } from "gapi-script";
 import ReactSelect from "react-select";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { Icon } from "office-ui-fabric-react";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
+import { useLists } from "../../context/store";
 const filterIcon: IIconProps = { iconName: "Filter" };
 
 
@@ -58,7 +59,7 @@ const messageBarSuccessStyles = {
 };
 var allItems = [];
 function JTitle(props) {
- 
+  const { usersList} = useLists();
   const KEY_NAME4 = "ExcludeByJobTitle";
   const {translation}=useLanguage();
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -74,8 +75,11 @@ function JTitle(props) {
   const searchRef = React.useRef(null);
   const searchBoxRef = React.useRef(null);
   allItems=props?.appSettings?.ExcludeByJobTitle;
+
+  const { appSettings } = useSttings();
+
   React.useEffect(()=>{
-   
+    setShowButton(true)
     settitles(props?.appSettings?.ExcludeByJobTitle)
     console.log("j",props?.appSettings?.ExcludeByJobTitle)
     },[])
@@ -132,7 +136,7 @@ function JTitle(props) {
       const updatedParsedData = { ...props.appSettings, [KEY_NAME4]: updatedExcludeByJlist };
       if(Object.keys(props?.appSettings)?.length){
         console.log(updatedParsedData,'updated')
-        updateSettingData(updatedParsedData);
+        updateSettingJson(SETTING_LIST,updatedParsedData);
         props.setAppSettings(updatedParsedData);
       }
    
@@ -159,7 +163,7 @@ function JTitle(props) {
          
         if (Object.keys(updatedParsedData).length > 0) {
           console.log(updatedParsedData);
-          updateSettingData(updatedParsedData);
+          updateSettingJson(SETTING_LIST,updatedParsedData);
           props.setAppSettings(updatedParsedData);
           props.SweetAlertJobTitle("success", translation.SettingSaved);
         }
@@ -191,11 +195,17 @@ const handleBlur = () => {
     <div className={"tabMainDiv*"} id="jobTitle">
   
       <div style={{ padding: "0%" }}>
-                <Label>Select job title(s) to exclude</Label>
+                <Label>{translation.SelectJobTitlesToExclude||"Select job title(s) to exclude"}</Label>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "end", gap: "8px" }}>
                         <ReactSelect
-                            options={props.jobTitleFields}
+                            // options={props.jobTitleFields}
+                            options={appSettings?.SyncUserInfoFrom === "importedUser"
+                              ? usersList?.Users.map(item => ({
+                                  value: item?.job,
+                                  label: item?.job
+                                })) ?? []
+                              : props.jobTitleFields}
                             onChange={(value:any)=>setExcludedValues(value)}
                             value={excludedValues}
                             isMulti
@@ -205,7 +215,7 @@ const handleBlur = () => {
                         />
                         {excludedValues.length > 0 ? (
                             <PrimaryButton
-                                text="Exclude"
+                            text={translation.Exclude||"Exclude"}
                                 onClick={excjtitle}
                             />
                         ):""}
@@ -229,7 +239,7 @@ const handleBlur = () => {
                                     settitles([...allItems]);
                                     setShowButton(allItems.length > 0);
                                 }}
-                                placeholder="Search"
+                                placeholder={translation.search||"Search"}
                                 iconProps={{ iconName: "search" }}
                             />
                         </div>
@@ -249,9 +259,9 @@ const handleBlur = () => {
       <table className={"excludeTable"}>
           <thead>
             <tr>
-              <th>{"Action"}</th>
-              <th>{"JobTitle"}</th>
-              <th>{"Status"}</th>
+              <th>{translation.Action||"Action"}</th>
+              <th>{translation.JobTitle1||"JobTitle"}</th>
+              <th>{translation.Status||"Status"}</th>
             </tr>
           </thead>
           {showButton ? (
@@ -282,7 +292,7 @@ const handleBlur = () => {
                     styles={messageBarInfoStyles}
                     dismissButtonAriaLabel={"Close"}
                   >
-                    {"No Records Found"}
+                    {translation.NoRecordsFound||"No Records Found"}
                   </MessageBar>
                 </td>
               </tr>
@@ -290,7 +300,7 @@ const handleBlur = () => {
           )}
         </table>
       </div>
-      {showButton && <PrimaryButton text={"Include"} onClick={include} />}
+      {titles?.length ? <PrimaryButton  text={translation?.Include||"Include"} onClick={include} />:""}
     </div>
   );
 }

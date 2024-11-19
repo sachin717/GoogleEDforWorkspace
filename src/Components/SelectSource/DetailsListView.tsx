@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Persona, PersonaSize, Icon, IconButton } from "@fluentui/react";
+import {
+  Persona,
+  PersonaSize,
+  Icon,
+  IconButton,
+  PersonaInitialsColor,
+} from "@fluentui/react";
 import { Modal } from "@fluentui/react";
 import "../SelectSource/Edp.scss";
 import {
@@ -82,6 +88,7 @@ const ListStyles = {
 };
 
 const DetailsListView = ({ employees }) => {
+  const { appSettings, setAppSettings } = useSttings();
   const { translation } = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { variable } = useStore();
@@ -94,7 +101,7 @@ const DetailsListView = ({ employees }) => {
   const [userCard, setUserCard] = useState(null);
   const [showColumns, setShowColumns] = useState([]);
 
-  const columns = [
+  let columns = [
     {
       key: "name",
       name: translation.Name || "Name",
@@ -159,6 +166,27 @@ const DetailsListView = ({ employees }) => {
       maxWidth: 250,
     },
   ];
+  const nameMapping = {
+    Department: "Department",
+    Name: "Name",
+    Mobile: "Mobile",
+    Email: "Email",
+    Manager: "Manager",
+    Address: "Address",
+    BuildingId: "Building ID",
+    DateOfBirth: "Date of Birth",
+    DateOfJoin: "Date of Joining", // Note: use the exact match for the column
+  };
+  useEffect(() => {
+    const filteredColumns = columns.filter((column) => {
+      const mappedName = Object.keys(nameMapping).find(
+        (key) => nameMapping[key] === column.name
+      );
+      return mappedName && appSettings?.ListViewPrope[mappedName] === true;
+    });
+    // console.log("fil",filteredColumns)
+    columns = [...filteredColumns];
+  }, []);
 
   const openPanelForUser = (user: any) => {
     setUserCard(<EmployeeDetailModal isModalOpenTrans={true} user={user} />);
@@ -170,6 +198,7 @@ const DetailsListView = ({ employees }) => {
       const persona = (
         <div style={{ cursor: "pointer" }} onClick={() => openPanelForUser(x)}>
           <Persona
+            initialsColor={PersonaInitialsColor.blue}
             imageInitials={x.initials}
             text={
               variable === "familyName"
@@ -193,8 +222,8 @@ const DetailsListView = ({ employees }) => {
         manager: x.manager,
         address: x.floorname,
         buildingId: x.buildingid,
-        dateOfBirth: x.DOB.split("-").reverse().join("/"),
-        dateOfJoining: x.DOJ.split("-").reverse().join("/"),
+        dateOfBirth: x.DOB?.split("-").reverse().join("/"),
+        dateOfJoining: x.DOJ?.split("-").reverse().join("/"),
       };
     });
     setAllEmployees(allEmployee);

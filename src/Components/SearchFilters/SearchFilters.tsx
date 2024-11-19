@@ -1,11 +1,15 @@
 import * as React from "react";
-import { Dropdown, Icon, SearchBox } from "@fluentui/react";
+import { Icon, SearchBox } from "@fluentui/react";
 import { removeDuplicatesFromObject } from "../Helpers/HelperFunctions";
 import { useSttings } from "../SelectSource/store";
-import useStore from "../SelectSource/store";
 import MultiSelect from "react-select";
-import { useFields } from "../../context/store";
-import ImportUsers from "../SelectSource/ImportUsers";
+import { useFields, useLists } from "../../context/store";
+import { useLanguage } from "../../Language/LanguageContext";
+import {
+  getSettingJson,
+  SETTING_LIST,
+  updateSettingJson,
+} from "../../api/storage";
 
 const searchBoxStyles = {
   root: {
@@ -44,10 +48,14 @@ const stylesForDropDown: any = {
     fontSize: "15px",
   }),
 };
-
+let whichViewIsEnabled = "Grid";
 const SearchFilters = ({
-  parsedData,
+  settingData,
   optimization,
+  isClickClearFilter,
+  setClickClearFilter,
+  filterByLetter,
+  setselectedGrp,
   groupsOptions,
   selectedGrp,
   filterByTaxonomySearchMultiGrp,
@@ -59,14 +67,15 @@ const SearchFilters = ({
   setImpotedUser,
   UserArray,
 }) => {
-  // console.log("gpop", groupsOptions);
+  const { translation } = useLanguage();
   const { appSettings } = useSttings();
-  const { departmentFields, jobTitleFields,setDepDropDown } = useFields();
+  const { departmentFields, jobTitleFields,setDepDropDown , showHideSettings} = useFields();
+  const { usersList} = useLists();
   const ShowAsDropdown = appSettings?.ShowHideViewModules?.ShowAsDropdown;
 
   const [showMobileFreeSearch, setShowMobileFreeSearch] = React.useState(false);
   const [showMobileViewSearch, setShowMobileViewSearch] = React.useState(false);
-  const [whichViewIsEnabled, setWhichViewIsEnabled] = React.useState("Grid");
+  const [availableView, setAvailableView] = React.useState<any>([]);
   const dropsDowns = ["Departments", "Title"];
   const [searchValues, setSearchValues] = React.useState({
     name: "",
@@ -78,20 +87,53 @@ const SearchFilters = ({
 
   const [timeoutId, setTimeoutId] = React.useState(null);
   const freeSearchRef = React.useRef(null);
+  React.useEffect(() => {
+    let result = allView?.filter(({ name }) => {
+      if (name == "Grid" && !appSettings?.hideShowViews?.grid) return false;
+      if (name == "List" && !appSettings?.hideShowViews?.list) return false;
+      if (name == "Tile" && !appSettings?.hideShowViews?.tile) return false;
 
-  const getDeprtmentPivots = ()=>{
-    const dep = UserArray.map((x)=>({value:x.department, label:x.department}));
-    const x = removeDuplicatesFromObject(dep,"value");
-    const sd = appSettings?.FilterAttribute.departments;
-    const ll = sd.map((x)=>({value:x.Department,label:x.Department}));
-    const y = [...x, ...ll];
-    const xx = removeDuplicatesFromObject(y,"value");
-    setDepDropDown(xx);
+      return true;
+    });
+    setAvailableView(result);
+  }, []);
+
+  const getDeprtmentPivots = () => {
+    if (whichViewIsEnabled == "NonM365") {
+      const dep = usersList?.Users?.map((x) => ({
+        value: x.department,
+        label: x.department,
+      }));
+      let x = removeDuplicatesFromObject(dep, "value");
+      const sd = appSettings?.FilterAttribute.departments || [];
+      const ll = sd.map((x:any) => ({ value: x.Department, label: x.Department }));
+      if(x == undefined || x == null){
+        x = [];
+      }
+      const y = [...x, ...ll];
+      const xx = removeDuplicatesFromObject(y, "value");
+      setDepDropDown(xx);
+    } else {
+      const dep = UserArray.map((x) => ({
+        value: x.department,
+        label: x.department,
+      }));
+      const x = removeDuplicatesFromObject(dep, "value");
+      const sd = appSettings?.FilterAttribute.departments;
+      const ll = sd.map((x) => ({ value: x.Department, label: x.Department }));
+      const y = [...x, ...ll];
+      const xx = removeDuplicatesFromObject(y, "value");
+      setDepDropDown(xx);
+    }
+  };
+  async function getSettingData() {
+    let data = await getSettingJson(SETTING_LIST);
+    return data;
   }
 
-  React.useEffect(()=>{
+  React.useEffect(() => {
     getDeprtmentPivots();
-  },[])
+  }, [isClickClearFilter]);
 
   React.useEffect(() => {
     return () => {
@@ -112,48 +154,48 @@ const SearchFilters = ({
     }
 
     const id = setTimeout(() => {
-      optimization(value, mode);
+      optimization(value.trim(), mode);
     }, 300);
 
     setTimeoutId(id);
   }
 
   async function handleClearFilter() {
-      // if (appSettings?.clearAlphaFilter) {
-        document.getElementById("letter-All").click();
-      // }
-      setSearchValues({
-        name: "",
-        departments: "",
-        title: "",
-        "free search": "",
-      });
-      document.querySelectorAll(".topbarFilter").forEach(
-        (x)=>{
-          if( x.classList.contains("topbarfilterBorderBottom")){
-            x.classList.remove("topbarfilterBorderBottom");
-            x.classList.add("onInActiveTab")
-          }
-        }
-      )
+    setClickClearFilter((prev) => !prev);
+    // if (appSettings?.clearAlphaFilter) {
+    document.getElementById(`letter-${translation.All}`).click();
+    filterByLetter(translation.All);
+    // }
+    setSearchValues({
+      name: "",
+      departments: "",
+      title: "",
+      "free search": "",
+    });
+    setselectedGrp([]);
+    document.querySelectorAll(".topbarFilter").forEach((x) => {
+      if (x.classList.contains("topbarfilterBorderBottom")) {
+        x.classList.remove("topbarfilterBorderBottom");
+        x.classList.add("onInActiveTab");
+      }
+    });
     setDropdownValues([]);
   }
 
   let allView = [
-    
-  
     {
       title: "Grid View",
       iconName: "ContactCard",
       name: "Grid",
       onclick: () => {
         setView("Grid");
-        setWhichViewIsEnabled("Grid");
+        whichViewIsEnabled = "Grid";
+        // updateSettingJson(SETTING_LIST,{...appSettings,CurrentView:whichViewIsEnabled})
         setisGrid(true);
         setisList(false);
         setisTile(false);
         setImpotedUser(false);
-        getDeprtmentPivots()
+        getDeprtmentPivots();
       },
     },
     {
@@ -162,7 +204,8 @@ const SearchFilters = ({
       name: "List",
       onclick: () => {
         setView("List");
-        setWhichViewIsEnabled("List");
+        whichViewIsEnabled = "List";
+        // updateSettingJson(SETTING_LIST,{...appSettings,CurrentView:whichViewIsEnabled})
         setisGrid(false);
         setisList(true);
         setisTile(false);
@@ -176,7 +219,8 @@ const SearchFilters = ({
       name: "Tile",
       onclick: () => {
         setView("Tile");
-        setWhichViewIsEnabled("Tile");
+        whichViewIsEnabled = "Tile";
+        // updateSettingJson(SETTING_LIST,{...appSettings,CurrentView:whichViewIsEnabled})
         setisGrid(false);
         setisList(false);
         setisTile(true);
@@ -188,21 +232,24 @@ const SearchFilters = ({
 
   const filterViews = (views, settings) => {
     return views.filter((view) => {
-      return settings[view.name.toLowerCase()] === true;
+      return settings[view?.name?.toLowerCase()] === true;
     });
   };
-  function showNonM365(){
+
+  function showNonM365() {
     setImpotedUser(true);
     setView("NonM365");
-    setWhichViewIsEnabled("NonM365");
+    whichViewIsEnabled = "NonM365";
+    // updateSettingJson(SETTING_LIST,{...appSettings,CurrentView:whichViewIsEnabled})
     setisGrid(false);
     setisList(false);
     setisTile(false);
-    
-    
+    getDeprtmentPivots();
   }
 
-  allView = filterViews(allView, appSettings?.hideShowViews);
+  React.useEffect(() => {
+    allView = filterViews(allView, appSettings?.hideShowViews);
+  }, []);
   return (
     <div>
       <div className="search-con">
@@ -216,10 +263,15 @@ const SearchFilters = ({
           }}
         >
           <div>
-            {parsedData && (
+            {settingData && (
               <div
                 className="desktopfilters"
-                style={{ display: "flex", gap: "20px", alignItems: "center" }}
+                style={{
+                  display: "flex",
+                  gap: "20px ",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
               >
                 <SearchBox
                   onBlur={() => setShowMobileFreeSearch(false)}
@@ -231,9 +283,9 @@ const SearchFilters = ({
                   onChange={(e) =>
                     handleFreeSearch(e?.target?.value || "", "free search")
                   }
-                  value={searchValues["free search"]}
+                  value={searchValues["free search"] || ""}
                 />
-                {appSettings.SearchFiltersPrope.map(
+                {appSettings?.SearchFiltersPrope?.map(
                   (filter: any, index: number) => {
                     if (filter.checkbox) {
                       return ShowAsDropdown ? (
@@ -263,26 +315,6 @@ const SearchFilters = ({
                             }}
                           />
                         ) : (
-                          // <SearchBox
-                          //   key={index}
-                          //   autoComplete="off"
-                          //   className="searchBoxStyles"
-                          //   styles={searchBoxStyles}
-                          //   placeholder={filter.name}
-                          //   value={searchValues[filter.name.toLowerCase()]}
-                          //   onEscape={handleClearFilter}
-                          //   onClear={handleClearFilter}
-                          //   onChange={(e: any) =>
-                          //     if(filter.name=="Custom Fields"){
-
-                          //     }else{
-                          //     handleFreeSearch(
-                          //       e?.target?.value || "",
-                          //       filter.name.toLowerCase()
-                          //     )
-                          //   }
-                          // }
-                          // />
                           <SearchBox
                             key={index}
                             autoComplete="off"
@@ -328,7 +360,7 @@ const SearchFilters = ({
                     }
                   }
                 )}
-                {appSettings?.GroupsOn ? (
+                {showHideSettings?.GroupsOn ? (
                   <MultiSelect
                     // options={filterOptions}
                     // isMulti
@@ -343,7 +375,7 @@ const SearchFilters = ({
                   ""
                 )}
 
-                {parsedData?.SearchFiltersPrope && (
+                {settingData?.SearchFiltersPrope && (
                   <div
                     style={{
                       fontSize: "20px",
@@ -390,7 +422,12 @@ const SearchFilters = ({
           </div>
 
           <div style={{ display: "flex", gap: "20px" }}>
-          {appSettings?.SyncUserInfoFrom?.toLowerCase() != "importeduser"? parsedData?.SearchFiltersPrope && <Icon title="Non google User" iconName="AddGroup"  style={
+            {appSettings?.SyncUserInfoFrom?.toLowerCase() != "importeduser"
+              ? settingData?.SearchFiltersPrope && (
+                  <Icon
+                    title="Non google User"
+                    iconName="AddGroup"
+                    style={
                       view === "NonM365"
                         ? {
                             fontSize: "20px",
@@ -403,40 +440,33 @@ const SearchFilters = ({
                             color: "rgb(0, 112, 220)",
                             cursor: "pointer",
                           }
-                    } onClick={showNonM365} />:""}
-            {parsedData?.SearchFiltersPrope &&
-              allView
-                .filter(({ name }) => {
-                  if (name == "Grid" && !appSettings?.hideShowViews?.grid)
-                    return false;
-                  if (name == "List" && !appSettings?.hideShowViews?.list)
-                    return false;
-                  if (name == "Tile" && !appSettings?.hideShowViews?.tile)
-                    return false;
-              
-                  return true;
-                })
-                .map(({ title, iconName, name, onclick }) => (
-                  <span
-                    key={name}
-                    style={
-                      view === name
-                        ? {
-                            fontSize: "20px",
-                            color: "rgb(0, 112, 220)",
-                            borderBottom: "2px solid rgb(0, 112, 220)",
-                            cursor: "pointer",
-                          }
-                        : {
-                            fontSize: "20px",
-                            color: "rgb(0, 112, 220)",
-                            cursor: "pointer",
-                          }
                     }
-                  >
-                    <Icon title={title} onClick={onclick} iconName={iconName} />
-                  </span>
-                ))}
+                    onClick={showNonM365}
+                  />
+                )
+              : ""}
+            {settingData?.SearchFiltersPrope &&
+              availableView?.map(({ title, iconName, name, onclick }) => (
+                <span
+                  key={name}
+                  style={
+                    view === name
+                      ? {
+                          fontSize: "20px",
+                          color: "rgb(0, 112, 220)",
+                          borderBottom: "2px solid rgb(0, 112, 220)",
+                          cursor: "pointer",
+                        }
+                      : {
+                          fontSize: "20px",
+                          color: "rgb(0, 112, 220)",
+                          cursor: "pointer",
+                        }
+                  }
+                >
+                  <Icon title={title} onClick={onclick} iconName={iconName} />
+                </span>
+              ))}
           </div>
         </div>
       </div>

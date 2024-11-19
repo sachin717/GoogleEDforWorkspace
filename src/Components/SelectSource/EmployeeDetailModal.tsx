@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "../SCSS/EmployeeDetailModal.module.scss";
 import { Modal } from "@fluentui/react";
 import PronounsImg from "../assets/images/Pronouns1.jpg";
@@ -24,7 +24,6 @@ import DefaultImage from "../assets/images/DefaultImg1.png";
 import { gapi } from "gapi-script";
 import { style } from "./styles";
 import styled from "styled-components";
-import EditProfile from "./EditProfile";
 import useStore from "./store";
 import ModalOrgChart from "../OrgChart/ModalOrgChart";
 import "./Edp.scss";
@@ -35,13 +34,22 @@ import {
   formatDate,
   getCurrentUser,
   isUserAdmin,
-  updateSettingData,
+  isUserAdminCheck,
 } from "../Helpers/HelperFunctions";
 import MiniModals from "./MiniModals";
 import { useLanguage } from "../../Language/LanguageContext";
 import WeekTable from "./WeekTable";
 import { SweetAlerts } from "./Utils/SweetAlert";
-import { useFields } from "../../context/store";
+import { useFields, useLists } from "../../context/store";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import {
+  getSettingJson,
+  SETTING_LIST,
+  updateSettingJson,
+} from "../../api/storage";
+import { sendEmail } from "../../api/email";
+import UpdateUserForm from "../UpdateUserForm";
 const selectedDot: any = {
   height: "10px",
   width: "10px",
@@ -63,7 +71,9 @@ var managerof: any = [];
 var ownerof: any = [];
 
 const EmployeeDetailModal = (props: any) => {
+  console.log("props",props)
   const [user, setUser] = useState<any>(null);
+  const [pronouns, setPronouns] = useState<any>("");
   const [UserAdmin, setUserAdmin] = useState<any>(false);
   const [WFHText, setWFHText] = useState<any>("");
   const [showManager, setshowManager] = useState(false);
@@ -76,9 +86,7 @@ const EmployeeDetailModal = (props: any) => {
   const [ProfleIconUrl, setProfleIconUrl] = useState("");
   const [showWWTable, setShowWWTable] = useState<any>(false);
   const [message, setMessage] = React.useState("");
-  const { checkboxesChecked, userGridView, userArray, reRenderState } =
-    useStore();
-
+  const { checkboxesChecked, userGridView, userArray, reRenderState } = useStore();
   const { appSettings, setAppSettings } = useSttings();
   const { translation } = useLanguage();
   const [isExpanded, setIsExpanded] = React.useState(false);
@@ -86,30 +94,12 @@ const EmployeeDetailModal = (props: any) => {
 
   const [isPronounsModalOpen, openPronsModal] = useState(false);
   const [isOpenWFHModal, OpenWFHModal] = useState(false);
+  const [settingData, setSettingData] = useState<any>({});
   const [isPanelOpenWorkWeek, OpenPanelWorkWeek] = useState(false);
   const [isPronounsLoadMoreOpen, openPronsLoadMore] = useState(false);
-  const [isOpenCustomNM1, openPanelCustomNM1] = useState(false);
   const [isChartOpen, openChartModal] = useState(false);
-  /*
-   */
-
-  // const [
-  //   isPronounsModalOpen,
-  //   { setTrue: openPronsModal, setFalse: closePronsModal },
-  // ] = useBoolean(false);
-
-  // const [isOpenWFHModal, { setTrue: OpenWFHModal, setFalse: closeWFHModal }] =
-  //   useBoolean(false);
-
-  // const [
-  //   isPanelOpenWorkWeek,
-  //   { setTrue: OpenPanelWorkWeek, setFalse: closePanelWorkWeek },
-  // ] = useBoolean(false);
-
-  // const [
-  //   isPronounsLoadMoreOpen,
-  //   { setTrue: openPronsLoadMore, setFalse: closePronsLoadMore },
-  // ] = useBoolean(false);
+  const { imagesList } = useLists();
+  const { usersWithHiddenManager, usersWithHiddenPhoneNo , admins} = useFields();
 
   const [showMainPanel, setShowMainPanel] = React.useState(true);
   const {
@@ -129,19 +119,13 @@ const EmployeeDetailModal = (props: any) => {
     },
   };
 
-  // const [
-  //   isOpenCustomNM1,
-  //   { setTrue: openPanelCustomNM1, setFalse: dismissPanelCustomNM1 },
-  // ] = useBoolean(false);
-
-  // const [isChartOpen, { setTrue: openChartModal, setFalse: closeChartModal }] =
-  //   useBoolean(false);
-
   const { SweetAlert: SweetAlertEmpCard } = SweetAlerts("#empcard");
   const { SweetAlert: SweetAlertEditProfile } = SweetAlerts(
     "#editProfile",
     true
   );
+
+  const [managerModal, setManagerModal] = useState(false);
 
   React.useEffect(() => {
     if (props.isModalOpenTrans) {
@@ -172,26 +156,24 @@ const EmployeeDetailModal = (props: any) => {
         setWFHText("");
       }
     }
+    matchPronouns();
   }, [props?.user?.id]);
   React.useEffect(() => {
     console.log("SECOND USEEFFCT........");
     console.log(userArray, "userArray");
     setUserData(props.data);
-    isUserAdmin(props.user.email).then((isAdmin) => {
-      console.log("ad", isAdmin);
-      setUserAdmin(isAdmin);
-    });
+    setUserAdmin(appSettings.isCurrentUserAdmin);
   }, []);
 
   const [openReportModal, setOpenResportModal] = useState(false);
 
   // const entries = Object.entries(props.checkedValue);
-  const savePronous = () => {
+  const savePronous = async () => {
     // let pronounsStatus = {updatedProns}
     setloading(true);
     // setButtonSave("");
-    if (appSettings?.Pronouns) {
-      let pronouns = JSON.parse(decryptData(appSettings?.Pronouns));
+    if (settingData?.Pronouns) {
+      let pronouns = settingData?.Pronouns;
       console.log("decripttt", pronouns);
       let updatedPronous = pronouns.map((item) => {
         if (item?.email == user?.email) {
@@ -201,14 +183,15 @@ const EmployeeDetailModal = (props: any) => {
         }
       });
       console.log(updatedPronous, "updated");
-      updatedPronous = encryptData(JSON.stringify(updatedPronous));
+      // updatedPronous =
 
-      let temp = { ...appSettings, Pronouns: updatedPronous };
+      let temp = { ...settingData, Pronouns: updatedPronous };
       console.log(temp, "temp");
 
       setAppSettings(temp);
 
-      updateSettingData(temp);
+      await updateSettingJson(SETTING_LIST, temp);
+      matchPronouns();
       SweetAlertEmpCard("success", translation.SettingSaved);
     }
 
@@ -326,6 +309,9 @@ const EmployeeDetailModal = (props: any) => {
     return staffList;
   }
   async function getUserManager(userEmail: any) {
+    if(userEmail == ""){
+      return;
+    }
     let page: any = "";
     let staffList: any = [];
     page = await gapi.client.directory.users.get({
@@ -338,6 +324,10 @@ const EmployeeDetailModal = (props: any) => {
   }
 
   async function getAllUsersGrpInOrg(userEmail: any) {
+    if(userEmail === ""){
+      return;
+    }
+    
     let page: any = "";
     let pageToken = "";
     let staffList: any = [];
@@ -354,7 +344,7 @@ const EmployeeDetailModal = (props: any) => {
       pageToken = page.nextPageToken;
     } while (pageToken);
 
-    return staffList;
+    return staffList.filter((x)=>x !== undefined)
   }
   const GetOFields = () => {
     memberof = [];
@@ -362,6 +352,7 @@ const EmployeeDetailModal = (props: any) => {
     managerof = [];
     var returnObjectM = null;
     console.log();
+
     getAllUsersGrpInOrg(props?.user?.email).then((data: any) => {
       //console.log(data);
       if (data?.length) {
@@ -408,7 +399,17 @@ const EmployeeDetailModal = (props: any) => {
   const GetDataForModal = () => {
     var returnObject: any = null;
     var returnObjectMgr: any = null;
-    var mappedcustomcol = JSON.parse(props?.user?.mappedfields);
+
+    let mappedcustomcol = props?.user?.mappedfields ?? [];
+
+    try {
+      if (typeof mappedcustomcol === "string") {
+        mappedcustomcol = JSON.parse(mappedcustomcol);
+      }
+    } catch (error) {
+      console.log("Error parsing JSON:", error);
+      mappedcustomcol = [];
+    }
     console.log(mappedcustomcol, "col");
     var aboutme =
       mappedcustomcol?.length > 0
@@ -453,6 +454,7 @@ const EmployeeDetailModal = (props: any) => {
           )[0].ExternalList
         : "Date of Join";
     console.log("m a n g", props?.user);
+
     if (props?.user?.AdditionalManager) {
       props?.user?.AdditionalManager?.map((item) => {
         getUserManager(item).then((adManager) => {
@@ -489,7 +491,7 @@ const EmployeeDetailModal = (props: any) => {
         });
       });
     }
-    if (props?.user?.manager && props?.user?.manager != "") {
+    if (props?.user?.manager !== "") {
       getUserManager(props?.user?.manager).then((getuser) => {
         console.log("man-ger", getuser);
         if (getuser.length > 0) {
@@ -501,22 +503,9 @@ const EmployeeDetailModal = (props: any) => {
               initials += names[names.length - 1].substring(0, 1).toUpperCase();
             }
           }
-          const diffStyleMan = {
-            backgroundImage:
-              "url('" + getuser[0].hasOwnProperty("thumbnailPhotoUrl")
-                ? getuser[0].thumbnailPhotoUrl
-                : DefaultImage + "')",
-            backgroundRepeat: "no-repeat",
-            width: "56px",
-            height: "56px",
-            position: "absolute",
-            top: "0px",
-            borderRadius: "50%",
-            zIndex: 1,
-            backgroundPosition: "center",
-            backgroundSize: "cover",
-          };
+
           returnObjectMgr = {
+            isAdmin:getuser.isAdmin,
             firstName: getuser[0].name.givenName,
             lastName: getuser[0].name.familyName,
             initials: initials,
@@ -539,22 +528,10 @@ const EmployeeDetailModal = (props: any) => {
               : DefaultImage,
           };
           setId(returnObjectMgr.id);
-          /*    dataObj.push({
-            positionName: returnObjectMgr.name,
-            id: '1233',
-            parentId: '',
-            tags:returnObjectMgr.name,
-            name: returnObjectMgr.name,
-            area: returnObjectMgr.name,
-            imageUrl: returnObjectMgr.image,
-            isLoggedUser: true,
-            email:returnObjectMgr.email,
-          }) */
           console.log(returnObjectMgr, "manager");
 
           setUserMgr(returnObjectMgr);
           setshowManager(true);
-          console.log("");
           return returnObjectMgr;
         }
       });
@@ -621,6 +598,7 @@ const EmployeeDetailModal = (props: any) => {
       FloorSection: props.user.floorsection || "",
       Address: props.user.address || "",
       CostCenter: props.user.costcenter || "",
+      isAdmin:props.user.isAdmin,
     };
 
     diffStyle = {
@@ -659,22 +637,47 @@ const EmployeeDetailModal = (props: any) => {
     return returnObject;
   };
 
-  const handleRefreshAfterUpdate = () => {
-    console.log("handleRefreshAfterUpdate CLICKED.............");
-    openPanelCustomNM1(false);
-    props.blobCall();
-    reRenderState();
-  };
-  console.log("console from emp:", appSettings.ShowMemeberOf);
-  function matchPronouns() {
-    if (appSettings?.Pronouns) {
-      let data = JSON?.parse(decryptData(appSettings?.Pronouns));
+  async function matchPronouns() {
+    let settingData = await getSettingJson(SETTING_LIST);
+    setSettingData(settingData);
+
+    if (settingData?.Pronouns) {
+      let data = settingData?.Pronouns;
       let ans = data?.find((item) => {
-        return item?.email == user?.email;
+        return item?.email == props.user?.email;
       });
-      return ans?.pronouns || "";
+      if (ans?.pronouns?.length) {
+        setPronouns(ans?.pronouns);
+      } else {
+        setPronouns("Add Pronouns");
+      }
     }
   }
+  const printDocument = () => {
+    const input = document.getElementById("divToPrint");
+
+    html2canvas(input).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF();
+
+      // Calculate the image dimensions
+      const imgWidth = 190; // Width of the PDF page minus margins
+      const pageHeight = pdf.internal.pageSize.height;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save("OrgChart.pdf");
+    });
+  };
 
   const handlePronouns = (event) => {
     setMessage(event.target.value);
@@ -700,25 +703,31 @@ const EmployeeDetailModal = (props: any) => {
       return;
     }
 
-    const existingWFH = appSettings?.WFH || [];
+    const existingWFH = settingData?.WFH || [];
 
     const updatedWFH = [
       ...existingWFH,
       { email: user.email, WFHLocation: WFHText },
     ];
 
-    updateSettingData({ ...appSettings, WFH: updatedWFH });
-    setAppSettings({ ...appSettings, WFH: updatedWFH });
+    const tempSetting = { ...settingData, WFH: updatedWFH };
+    updateSettingJson(SETTING_LIST, tempSetting);
+    setAppSettings({ ...settingData, WFH: updatedWFH });
   }
   function handleShowWorkWeekTable() {
     setShowWWTable((prev) => !prev);
   }
+  const [remarkValue, setRemarkValue] = useState("");
 
-  // const showBrandLogo = showWWTable && appSettings.EmpInfoAlignment == "Center" || appSettings.EmpInfoAlignment !== "Right";
+  const handleEmailClick = () => {
+    const email = props.user.email;
+    const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      email
+    )}`;
+    window.open(mailtoLink, "_blank");
+  };
 
-  // console.log("showBrandLogo",{showBrandLogo,showWWTable,pos:appSettings.EmpInfoAlignment})
-
-  console.log("userrrrrrrr", user);
+  const [openUpdatePanel, setOpenUpdatePanel] = useState(false);
 
   return (
     <>
@@ -743,7 +752,7 @@ const EmployeeDetailModal = (props: any) => {
                 >
                   {appSettings?.EmpInfoAlignment == "Right" ? (
                     <img
-                      src={props.settingData?.BrandLogo}
+                      src={imagesList.BrandLogo}
                       alt=""
                       style={{
                         objectFit: "contain",
@@ -792,16 +801,13 @@ const EmployeeDetailModal = (props: any) => {
                         >
                           <>
                             <div className="empTitle">
-                              <span className="clpbrdspan">
-                                {user.name}
-                                {/* <Icon className={styles.clpbrdsicon} onClick={() =>  navigator.clipboard.writeText(user.name)} iconName="Copy"></Icon> */}
-                              </span>
-                              {appSettings?.HideShowPronouns &&
-                              appSettings?.Pronouns &&
-                              matchPronouns().trim() != "" ? (
+                              <span className="clpbrdspan">{user.name}</span>
+                              {settingData?.HideShowPronouns &&
+                              settingData?.Pronouns &&
+                              pronouns != "" ? (
                                 <span
                                   onClick={
-                                    UserAdmin
+                                    getCurrentUser().cu==props.user?.email
                                       ? () => openPronsModal(true)
                                       : undefined
                                   }
@@ -810,7 +816,7 @@ const EmployeeDetailModal = (props: any) => {
                                     cursor: `${UserAdmin ? "pointer" : ""}`,
                                   }}
                                 >
-                                  {matchPronouns() || "Add Pronounce"}
+                                  {pronouns}
                                 </span>
                               ) : null}
 
@@ -839,7 +845,7 @@ const EmployeeDetailModal = (props: any) => {
                               ) : (
                                 ""
                               )}
-                              {appSettings?.ShowWeekWorkStatus ? (
+                              {settingData?.ShowWeekWorkStatus ? (
                                 <span
                                   onClick={handleShowWorkWeekTable}
                                   style={{
@@ -875,9 +881,10 @@ const EmployeeDetailModal = (props: any) => {
                         </div>
 
                         <div className="empMainDetail">
-                          {user.jtitle ? (
+                          {console.log("title",checkboxesChecked?.Title,props.user.job)}
+                          {props.user.job && checkboxesChecked?.Title ? (
                             <>
-                              <span>{user.jtitle}</span> |{" "}
+                              <span>{props.user.job}</span> |{" "}
                             </>
                           ) : (
                             ""
@@ -890,26 +897,6 @@ const EmployeeDetailModal = (props: any) => {
                         ) : (
                           ""
                         )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div
-                        style={
-                          {
-                            // marginLeft: "auto",
-                            // marginRight: "10%",
-                            // width: "36%",
-                          }
-                        }
-                      >
-                        {/* <img
-                      // style={{ width: "40%" }}
-                      title={
-                        "Company Logo"
-                      }
-                      src={DefaultImage}
-                    /> */}
                       </div>
                     </div>
                   </div>
@@ -925,6 +912,7 @@ const EmployeeDetailModal = (props: any) => {
                       <Label>Work Week</Label>{" "}
                       <WeekTable
                         showWWTable={showWWTable}
+                        settingData={settingData}
                         user={user}
                         isPanelOpenWorkWeek={isPanelOpenWorkWeek}
                         OpenPanelWorkWeek={() => OpenPanelWorkWeek(true)}
@@ -980,14 +968,15 @@ const EmployeeDetailModal = (props: any) => {
                   appSettings?.EmpInfoAlignment == "Center" ||
                   appSettings?.EmpInfoAlignment == "Right" ? null : (
                     <img
-                      src={props.settingData?.BrandLogo}
+                      src={imagesList.BrandLogo}
+                      className="brandLogo"
                       alt=""
                       style={{
                         objectFit: "contain",
                         width: "200px",
                         height: "120px",
                         marginRight: "50px",
-                        display: !props.settingData?.BrandLogo && "none",
+                        display: !imagesList.BrandLogo && "none",
                       }}
                     />
                   )}
@@ -1005,7 +994,7 @@ const EmployeeDetailModal = (props: any) => {
                           //style={{ paddingLeft: "0px" }}
                           className="empDetailIcon"
                           // href={"mailto:" + user.email}
-                          href={`${Chat}:${user.email}`}
+                          href={`https://mail.google.com/chat/u/0/#chat/home`}
                           title={user.email}
                           target="_blank"
                         >
@@ -1017,10 +1006,8 @@ const EmployeeDetailModal = (props: any) => {
                       <div>
                         <a
                           className="empDetailIcon"
-                          href={"mailto:" + user.email}
-                          // href={`${}`}
                           title={user.email}
-                          target="_blank"
+                          onClick={handleEmailClick}
                         >
                           <Icon iconName="Mail"></Icon>
                         </a>
@@ -1030,8 +1017,8 @@ const EmployeeDetailModal = (props: any) => {
                       <div>
                         <a
                           className="empDetailIcon"
-                          // href={"tel:" + user.wphone}
-                          href={`${WorkPhone}:${user.wphone}`}
+                          href={"https://meet.google.com/new"}
+                          // href={`${WorkPhone}:${user.wphone}`}
                           title={user.wphone}
                           target="_blank"
                         >
@@ -1040,24 +1027,24 @@ const EmployeeDetailModal = (props: any) => {
                         </a>
                       </div>
                     )}
-                    {
-                      <div>
-                        <a
-                          className={"empDetailIcon"}
-                          title={"Organizational Chart"}
-                          //title="Organizational Chart"
-                          target="_blank"
-                          onClick={() => openChartModal(true)}
-                        >
-                          <Icon iconName="Org"></Icon>
-                        </a>
-                      </div>
-                    }
+
+                    <div>
+                      <a
+                        className={"empDetailIcon"}
+                        title={"Organizational Chart"}
+                        //title="Organizational Chart"
+                        target="_blank"
+                        onClick={() => openChartModal(true)}
+                      >
+                        <Icon iconName="Org"></Icon>
+                      </a>
+                    </div>
 
                     <div>
                       <a
                         className="empDetailIcon"
-                        //href={user.videoLink}
+                        // href={user.videoLink}
+                        href={"https://meet.google.com/new"}
                         title={"Video Call"}
                         target="_blank"
                       >
@@ -1065,23 +1052,28 @@ const EmployeeDetailModal = (props: any) => {
                       </a>
                     </div>
 
-                    <div>
-                      <a
-                        className="empDetailIcon"
-                        //href={user.videoLink}
-                        title={ProfleIconUrl}
-                        target="_blank"
-                      >
-                        <Icon
-                          style={{ fontSize: "20px" }}
-                          iconName={
-                            props.settingData?.profileIconName || "save"
-                          }
-                        ></Icon>
-                      </a>
-                    </div>
+                    {props.settingData?.profileIconName !== "" ? (
+                      <div>
+                        <a
+                          className="empDetailIcon"
+                          //href={user.videoLink}
+                          title={ProfleIconUrl}
+                          target="_blank"
+                        >
+                          <Icon
+                            style={{ fontSize: "20px" }}
+                            iconName={props.settingData?.profileIconName}
+                          ></Icon>
+                        </a>
+                      </div>
+                    ) : (
+                      ""
+                    )}
 
-                    <div style={{ position: "absolute", right: "0px" }}>
+                    <div
+                      className="rightsideiconProfileCard"
+                      style={{ position: "absolute", right: "0px" }}
+                    >
                       {visibleReportIncorrectIcon && (
                         <IconButton
                           style={{ fontSize: "20px", padding: "15px 15px" }}
@@ -1091,29 +1083,30 @@ const EmployeeDetailModal = (props: any) => {
                           onClick={() => setOpenResportModal(true)}
                         />
                       )}
-                      <IconButton
-                        style={{ fontSize: "20px", padding: "15px 15px" }}
-                        title="Edit profile"
-                        iconProps={{ iconName: "Edit" }}
-                        ariaLabel="Edit profile"
-                        onClick={() => openPanelCustomNM1(true)}
-                      />
+                      {!props.user.IsExternalUser ? (
+                        <IconButton
+                          style={{ fontSize: "20px", padding: "15px 15px" }}
+                          title="Edit profile"
+                          iconProps={{ iconName: "Edit" }}
+                          ariaLabel="Edit profile"
+                          onClick={() => setOpenUpdatePanel(true)}
+                        />
+                      ) : (
+                        ""
+                      )}
                     </div>
                   </div>
                   <div className="empMoreDetailsBlock">
                     {checkboxesChecked.Email && (
                       <div className="labelSpanStylesTemp">
-                        <label>{"Email"}</label>
-
+                        <label>Email</label>
                         <span className="clpbrdspan">
                           <a
-                            href={"mailto:" + user.email}
                             title={user.email}
-                            target="_blank"
+                            onClick={handleEmailClick}
                           >
                             {user.email}
                           </a>
-                          {/* <Icon  className={styles.clpbrdsicon} onClick={() => EmailTextCopy } iconName="Copy"></Icon> */}
                         </span>
                       </div>
                     )}
@@ -1128,7 +1121,9 @@ const EmployeeDetailModal = (props: any) => {
                             title={user.wphone}
                             target="_blank"
                           >
-                            {user.wphone}
+                            {!usersWithHiddenPhoneNo.includes(user.email) && (
+                              <>{user.wphone}</>
+                            )}
                           </a>
                           {/* <Icon className={styles.clpbrdsicon} onClick={() =>  navigator.clipboard.writeText(user.wphone)} iconName="Copy"></Icon> */}
                         </span>
@@ -1235,8 +1230,8 @@ const EmployeeDetailModal = (props: any) => {
                       .filter((item) => item.isCustomField === true)
                       .map((item) => (
                         <div className="personallabelSpanStyles">
-                          <label>{item.name}</label>
-                          <span>{user[item.nameAPI]}</span>
+                          <label>{item.nameAPI}</label>
+                          <span>{user[item.name]}</span>
                         </div>
                       ))}
 
@@ -1247,36 +1242,39 @@ const EmployeeDetailModal = (props: any) => {
                         gap: "10px",
                       }}
                     >
-                      {showManager && (
-                        <Stack className="empManagerStyle">
-                          <h4>{"Manager"}</h4>
-                          <Stack horizontal>
-                            <div style={{ cursor: "pointer" }}>
-                              <Persona
-                                imageUrl={userMgr?.image}
-                                imageInitials={userMgr?.initials}
-                                imageAlt={userMgr?.initials}
-                                presence={PersonaPresence.none}
-                                size={PersonaSize.size56}
-                                className="profilecardmanagerField"
-                                // style={{display:"block"}}
-                              />
-                            </div>
-                            <div style={{ margin: "0 10px" }}>
-                              <div className="managerNameDet">
-                                {userMgr?.name}
+                      {showManager &&
+                        !usersWithHiddenManager.includes(user.email) && (
+                          <Stack className="empManagerStyle">
+                            <h4>{"Manager"}</h4>
+                            <Stack horizontal>
+                              <div style={{ cursor: "pointer" }}>
+                                <Persona
+                                  imageUrl={userMgr?.image}
+                                  imageInitials={userMgr?.initials}
+                                  imageAlt={userMgr?.initials}
+                                  presence={PersonaPresence.none}
+                                  size={PersonaSize.size56}
+                                  className="profilecardmanagerField"
+                                  // style={{display:"block"}}
+                                />
                               </div>
-                              <div className="managerNameDet">
-                                {userMgr?.department}
+                              <div style={{ margin: "0 10px" }}>
+                                <div className="managerNameDet">
+                                  {userMgr?.name}
+                                </div>
+                                <div className="managerNameDet">
+                                  {userMgr?.department}
+                                </div>
+                                <div className="managerNameDet">
+                                  {userMgr?.job}
+                                </div>
                               </div>
-                              <div className="managerNameDet">
-                                {userMgr?.job}
-                              </div>
-                            </div>
+                            </Stack>
                           </Stack>
-                        </Stack>
-                      )}
+                        )}
+                        {(!showManager && additionalManager) ?<div style={{borderBottom:"1px solid #ddd",margin:"4px 0"}}></div>:""}
                       {additionalManager && (
+                        
                         // className="empManagerStyle"
                         <Stack
                           style={{
@@ -1327,21 +1325,6 @@ const EmployeeDetailModal = (props: any) => {
               </div>
             </div>
           )}
-          <Panel
-            type={PanelType.custom}
-            customWidth="650px"
-            headerText="Edit profile"
-            isOpen={isOpenCustomNM1}
-            onDismiss={handleRefreshAfterUpdate}
-            closeButtonAriaLabel={"Close"}
-          >
-            <div>
-              <EditProfile
-                SweetAlertEditProfile={SweetAlertEditProfile}
-                user={user}
-              />
-            </div>
-          </Panel>
 
           <Modal
             isOpen={isPronounsModalOpen}
@@ -1364,16 +1347,6 @@ const EmployeeDetailModal = (props: any) => {
             />
 
             <div style={{ margin: "20px" }} id="empcard">
-              {/* {saved ? (
-                              <SuccessMsg />
-                            ) : error ? (
-                              <ErrorMsg />
-                            ) : Alert ? (
-                              <AlertMsg />
-                            ) : (
-                              ""
-                            )} */}
-
               <div>
                 <h4 style={{ margin: "0px", fontSize: "15px" }}>
                   {translation.AddPronouns
@@ -1386,21 +1359,6 @@ const EmployeeDetailModal = (props: any) => {
                 {translation.PronounsText
                   ? translation.PronounsText
                   : "Include pronouns in your profile info to let others know how to refer to you. Your pronouns are available to people at your work or school when they use Google workspace."}
-                {/* <IconButton
-                                style={{
-                                  height: "17px",
-                                  marginLeft: "0px",
-                                  position: "relative",
-                                  top: "3px",
-                                }}
-                                id="targetButton"
-                                title={
-                                  translation.PronounToolTip
-                                    ? translation.PronounToolTip
-                                    : "Anyone that has an account at your work or school, including guest accounts, can see your pronouns."
-                                }
-                                iconProps={{ iconName: "Info" }}
-                              ></IconButton> */}
               </p>
             </div>
             <Stack
@@ -1533,7 +1491,7 @@ const EmployeeDetailModal = (props: any) => {
                         className={styles.pronounsButton1}
                         // onClick={openPronsModal}
                       >
-                        {matchPronouns()}
+                        {pronouns}
                       </DefaultButton>
                     </>
                   </div>
@@ -1867,7 +1825,7 @@ const EmployeeDetailModal = (props: any) => {
                   title={"Download OrgChart as PDF..."}
                   iconProps={{ iconName: "Print" }}
                   ariaLabel="Download OrgChart PDF"
-                  //onClick={OrgChartPdf}
+                  onClick={printDocument}
                 />
                 <IconButton
                   className={styles.iconBtn}
@@ -1878,10 +1836,11 @@ const EmployeeDetailModal = (props: any) => {
               </div>
             </div>
 
-            <div className={styles.orgChartContainer}>
+            <div className={styles.orgChartContainer} id="divToPrint">
               {<ModalOrgChart email={selectedUser} />}
             </div>
           </Modal>
+          <UpdateUserForm isOpen={openUpdatePanel} onDismiss={()=>setOpenUpdatePanel(false)} user={user}/>
 
           {openReportModal && (
             <MiniModals
@@ -1899,17 +1858,24 @@ const EmployeeDetailModal = (props: any) => {
                   gap: "10px",
                 }}
               >
-                <Label>Remarks</Label>
+                <Label>Any remarks you would like to add</Label>
                 <textarea
-                  style={{ resize: "vertical" }}
+                  value={remarkValue}
+                  onChange={(e) => setRemarkValue(e.target.value)}
+                  style={{ resize: "none", padding: "5px", outline: "none" }}
                   rows={5}
                   cols={65}
                   name="Remarks"
                   id="Remarks"
-                  placeholder="Remarks"
+                  placeholder="enter your remarks"
                 />
                 <PrimaryButton style={{ textAlign: "center" }}>
-                  Submit
+                  <a
+                    style={{ textDecoration: "none", color: "#ffff" }}
+                    href={`mailto:${appSettings.ReportEmails}?subject=Incorrect%20info%20report&body=${remarkValue}`}
+                  >
+                    Send Email
+                  </a>
                 </PrimaryButton>
               </div>
             </MiniModals>

@@ -13,6 +13,7 @@ import gmailLogo from ".././Components/assets/images/gmail.png";
 import gchat from ".././Components/assets/images/googleChatIcon.png";
 import { decryptData, formatDatesInArray } from "./Helpers/HelperFunctions";
 import styles from "./SCSS/Ed.module.scss";
+import { useLists } from "../context/store";
 
 let users: any = [
   {
@@ -168,10 +169,11 @@ function BirthdayAndAnniversary({
   showHomePage,
 }) {
   const { appSettings } = useSttings();
-  // users=appSettings?.SelectedUpcomingBirthAndAniv=="importedUser"? JSON?.parse(decryptData(appSettings?.Users)):users;
+
+  const {usersList,imagesList} = useLists();
+  users=appSettings?.SelectedUpcomingBirthAndAniv=="importedUser"? usersList?.Users:Users;
   // console.log("users==",users)
   users = formatDatesInArray(users);
-  // console.log("users->", users);
   const { translation } = useLanguage();
   const birthAndAnivFilter = appSettings?.BirthAndAnivFilter || {};
   const selectedFilter = Object.keys(birthAndAnivFilter).find(
@@ -185,7 +187,32 @@ function BirthdayAndAnniversary({
   useEffect(() => {
     // console.log("....");
     setFilter(selectedFilter);
+    console.log("filters",filter)
   }, [selectedFilter]);
+  useEffect(() => {
+    if (filter === "currentDay") {
+      setAnniversaries(getAnniversariesForCurrentDay(users));
+      setBirthdays(getBirthdaysForCurrentDay(users));
+    } else if (filter === "currentWeek") {
+      setAnniversaries(getAnniversariesForCurrentWeek(users));
+      setBirthdays(getBirthdaysForCurrentWeek(users));
+      console.log(
+        "getBirthdaysForCurrentWeek(users)",
+        getBirthdaysForCurrentWeek(users),
+        users
+      );
+    } else if (filter === "currentWeekAndNextWeek") {
+      setBirthdays(getBirthdaysForCurrentAndNextWeek(users));
+      setAnniversaries(getAnniversariesForCurrentAndNextWeek(users));
+    } else if (filter === "currentMonth") {
+      setAnniversaries(getCurrentMonthAnniversaries(users));
+      setBirthdays(getCurrentMonthBirthdays(users));
+      console.log("ann", getCurrentMonthAnniversaries(users));
+    }else if (filter == "currentMonthAndNextMonth") {
+      setBirthdays(getBirthdaysForCurrentAndNextMonth(users));
+      setAnniversaries(getAnniversaryForCurrentAndNextMonth(users));
+    }
+  }, []);
 
   useEffect(() => {
     if (filter === "currentDay") {
@@ -206,11 +233,9 @@ function BirthdayAndAnniversary({
       setAnniversaries(getCurrentMonthAnniversaries(users));
       setBirthdays(getCurrentMonthBirthdays(users));
       console.log("ann", getCurrentMonthAnniversaries(users));
-    } else if (filter === "upcomingMonth") {
-      setAnniversaries(getUpcomingAnniversaries(users, false));
-      setBirthdays(getUpcomingMonthBirthdays(users));
-    } else if (filter == "currentMonthAndNextMonth") {
-      getBirthdaysForCurrentAndNextMonth(users);
+    }else if (filter == "currentMonthAndNextMonth") {
+      setBirthdays(getBirthdaysForCurrentAndNextMonth(users));
+      setAnniversaries(getAnniversaryForCurrentAndNextMonth(users));
     }
   }, [filter]);
   function getBirthdaysForNextWeek(users) {
@@ -229,12 +254,11 @@ function BirthdayAndAnniversary({
     const endOfNextWeek = new Date(startOfNextWeek);
     endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
 
-    return users
-      .map((user) => {
-        const dob = new Date(user.DOB);
+    return users?.map((user) => {
+        const dob = new Date(user?.DOB);
 
         // Ensure the dob has the same year as the current year
-        dob.setFullYear(today.getFullYear());
+        dob?.setFullYear(today.getFullYear());
 
         // Check if the birthday falls within the next week
         if (dob >= startOfNextWeek && dob <= endOfNextWeek) {
@@ -258,12 +282,13 @@ function BirthdayAndAnniversary({
     );
     const endOfWeek = new Date(today.setDate(startOfWeek.getDate() + 6));
 
-    return users
-      .map((user) => {
-        const dob = new Date(user.DOB);
+    return users?.map((user) => {
+        const dob = new Date(user?.DOB);
         if (
-          dob.toLocaleDateString() >= startOfWeek.toLocaleDateString() &&
-          dob.toLocaleDateString() <= endOfWeek.toLocaleDateString()
+          // dob.toLocaleDateString() >= startOfWeek.toLocaleDateString() &&
+          // dob.toLocaleDateString() <= endOfWeek.toLocaleDateString()
+          dob >= startOfWeek && 
+          dob <= endOfWeek
         ) {
           const daysUntilBirthday = Math.ceil(
             (dob.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
@@ -275,8 +300,7 @@ function BirthdayAndAnniversary({
           };
         }
         return null;
-      })
-      .filter((user) => user !== null);
+      })?.filter((user) => user !== null);
   }
 
   function getAnniversariesForNextWeek(users) {
@@ -295,8 +319,7 @@ function BirthdayAndAnniversary({
     const endOfNextWeek = new Date(startOfNextWeek);
     endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const anniversaryDate = new Date(user.anniversaryDate);
 
         // Ensure the anniversaryDate has the same year as the current year
@@ -342,8 +365,7 @@ function BirthdayAndAnniversary({
     endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
 
     // Combine results for both weeks
-    const birthdays = users
-      .map((user) => {
+    const birthdays = users?.map((user) => {
         const dob = new Date(user.DOB);
 
         // Ensure dob has the same year as the current year
@@ -399,8 +421,7 @@ function BirthdayAndAnniversary({
     endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
 
     // Combine results for both weeks
-    const birthdays = users
-      .map((user) => {
+    const birthdays = users?.map((user) => {
         const dob = new Date(user.DOJ);
 
         // Ensure dob has the same year as the current year
@@ -440,8 +461,7 @@ function BirthdayAndAnniversary({
     const today = new Date();
     const todayMonthDay = `${today.getMonth() + 1}-${today.getDate()}`; // MM-DD format
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const doj = new Date(user.DOJ);
         const dojMonthDay = `${doj.getMonth() + 1}-${doj.getDate()}`; // MM-DD format
 
@@ -468,8 +488,7 @@ function BirthdayAndAnniversary({
     const today = new Date();
     const todayMonthDay = `${today.getMonth() + 1}-${today.getDate()}`;
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const dob = new Date(user.DOB);
         const dobMonthDay = `${dob.getMonth() + 1}-${dob.getDate()}`; // MM-DD format
 
@@ -496,8 +515,7 @@ function BirthdayAndAnniversary({
     );
     const endOfWeek = new Date(today.setDate(startOfWeek.getDate() + 6));
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const doj = new Date(user.DOJ);
         if (
           doj.toLocaleDateString() >= startOfWeek.toLocaleDateString() &&
@@ -524,8 +542,7 @@ function BirthdayAndAnniversary({
     const nextMonth = (currentMonth + 1) % 12;
     const nextYear = nextMonth === 0 ? currentYear + 1 : currentYear;
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const dob = new Date(user.DOB);
         const birthMonth = dob.getMonth();
         const birthDay = dob.getDate();
@@ -555,8 +572,7 @@ function BirthdayAndAnniversary({
       : (currentMonthIndex + 1) % 12;
     const targetYear = targetMonthIndex === 0 ? currentYear + 1 : currentYear;
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const doj = new Date(user.DOJ);
         const joinMonth = doj.getMonth();
         const joinDay = doj.getDate();
@@ -580,8 +596,7 @@ function BirthdayAndAnniversary({
     const today = new Date();
     const currentMonth = today.getMonth();
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const dob = new Date(user.DOB);
         const birthMonth = dob.getMonth();
         const birthDay = dob.getDate();
@@ -612,8 +627,7 @@ function BirthdayAndAnniversary({
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
 
-    return users
-      .map((user) => {
+    return users?.map((user) => {
         const doj = new Date(user.DOJ);
         const joinMonth = doj.getMonth();
         const joinDay = doj.getDate();
@@ -637,7 +651,92 @@ function BirthdayAndAnniversary({
       .filter((user) => user !== null)
       .sort((a, b) => a.daysUntilAnniversary - b.daysUntilAnniversary);
   }
+  // function getBirthdaysForCurrentAndNextMonth(users) {
+  //   const today: any = new Date();
+
+  //   function getMonthRange(monthOffset) {
+  //     const startOfMonth = new Date(
+  //       today.getFullYear(),
+  //       today.getMonth() + monthOffset,
+  //       1
+  //     );
+  //     const endOfMonth = new Date(
+  //       today.getFullYear(),
+  //       today.getMonth() + monthOffset + 1,
+  //       0
+  //     );
+  //     return { startOfMonth, endOfMonth };
+  //   }
+
+  //   const { startOfMonth: startOfCurrentMonth, endOfMonth: endOfCurrentMonth } =
+  //     getMonthRange(0);
+  //   const { startOfMonth: startOfNextMonth, endOfMonth: endOfNextMonth } =
+  //     getMonthRange(1);
+
+  //   return users?.map((user) => {
+  //       const dob = new Date(user.DOB);
+  //       const nextBirthday: any = new Date(dob);
+  //       nextBirthday.setFullYear(today.getFullYear());
+
+  //       if (nextBirthday < today) {
+  //         nextBirthday.setFullYear(today.getFullYear() + 1);
+  //       }
+
+  //       return {
+  //         ...user,
+  //         upcomingBirthday: nextBirthday,
+  //         daysUntilBirthday: Math.ceil(
+  //           (nextBirthday - today) / (1000 * 60 * 60 * 24)
+  //         ),
+  //       };
+  //     })
+  //     .filter((user) => {
+  //       const { upcomingBirthday } = user;
+  //       return (
+  //         (upcomingBirthday >= startOfCurrentMonth &&
+  //           upcomingBirthday <= endOfCurrentMonth) ||
+  //         (upcomingBirthday >= startOfNextMonth &&
+  //           upcomingBirthday <= endOfNextMonth)
+  //       );
+  //     });
+  // }
   function getBirthdaysForCurrentAndNextMonth(users) {
+    const today :any= new Date();
+  
+    function getMonthRange(monthOffset) {
+      const startOfMonth = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() + monthOffset + 1, 0);
+      return { startOfMonth, endOfMonth };
+    }
+  
+    const { startOfMonth: startOfCurrentMonth, endOfMonth: endOfCurrentMonth } = getMonthRange(0);
+    const { startOfMonth: startOfNextMonth, endOfMonth: endOfNextMonth } = getMonthRange(1);
+  
+    return users?.map((user) => {
+      const dob = new Date(user.DOB);
+      const nextBirthday:any = new Date(dob);
+      nextBirthday.setFullYear(today.getFullYear());
+  
+      // if (nextBirthday < today) {
+      //   nextBirthday.setFullYear(today.getFullYear() + 1);
+      // }
+  
+      return {
+        ...user,
+        upcomingBirthday: nextBirthday,
+        daysUntilBirthday: Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24)),
+      };
+    })
+    .filter((user) => {
+      const { upcomingBirthday } = user;
+      return (
+        (upcomingBirthday >= startOfCurrentMonth && upcomingBirthday <= endOfCurrentMonth) ||
+        (upcomingBirthday >= startOfNextMonth && upcomingBirthday <= endOfNextMonth)
+      );
+    });
+  }
+  
+  function getAnniversaryForCurrentAndNextMonth(users) {
     const today: any = new Date();
 
     function getMonthRange(monthOffset) {
@@ -659,10 +758,9 @@ function BirthdayAndAnniversary({
     const { startOfMonth: startOfNextMonth, endOfMonth: endOfNextMonth } =
       getMonthRange(1);
 
-    return users
-      .map((user) => {
-        const dob = new Date(user.DOB);
-        const nextBirthday: any = new Date(dob);
+    return users?.map((user) => {
+        const doj = new Date(user.DOJ);
+        const nextBirthday: any = new Date(doj);
         nextBirthday.setFullYear(today.getFullYear());
 
         if (nextBirthday < today) {
@@ -735,11 +833,11 @@ function BirthdayAndAnniversary({
               ? translation.UpcomingBirthdays
               : "Upcoming Birthdays and Anniversaries"}
           </h1>
-          {appSettings?.BirthdayAndAnniversaryImage && (
+          {imagesList.BirthdayAndAnniversaryImage && (
             <img
               width={"auto"}
               height={120}
-              src={appSettings?.BirthdayAndAnniversaryImage}
+              src={imagesList.BirthdayAndAnniversaryImage}
               alt=""
             />
           )}
@@ -788,7 +886,7 @@ function BirthdayAndAnniversary({
                 <Label>{"Links"}</Label>
               </div>
             )}
-            {birthdays.length > 0 ? (
+            {birthdays?.length > 0 ? (
               <div
                 style={{
                   display: "flex",
@@ -796,7 +894,7 @@ function BirthdayAndAnniversary({
                   gap: "10px",
                 }}
               >
-                {birthdays.map((user, index) => (
+                {birthdays?.map((user, index) => (
                   <div key={index} className="user-item">
                     <Persona
                       imageUrl={user.image}
@@ -846,7 +944,7 @@ function BirthdayAndAnniversary({
                 ? translation.DayOfAnniversary
                 : "Anniversaries"}
             </h3>
-            {anniversaries.length > 0 ? (
+            {anniversaries?.length > 0 ? (
               <div
                 style={{
                   display: "flex",

@@ -14,48 +14,17 @@ import {
 import   "./Styles.scss";
 import { useBoolean } from "@fluentui/react-hooks";
 import { Buffer } from 'buffer';
-import { BlobServiceClient } from "@azure/storage-blob";
-
 import * as XLSX from 'xlsx';
 import Excel from "exceljs";
-//const bdayLogo:any = require("../../assets/two.png");
-import  DragDropImage from ".././assets/images/AttachmentAreaBGImage.png"
 import { CommandBarButton, GetGroupCount } from "@fluentui/react";
 import useStore, { useSttings } from "./store";
-import { gapi } from "gapi-script";
 import { useLanguage } from "../../Language/LanguageContext";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import DragDrop from "./Utils/DragDrop";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
-var exclname = "";
-const messageBarWarningStyles = {
-  root:{
-    backgroundColor: 'rgb(255, 244, 206)',
-  }
-};
-const messageBarInfoStyles = {
-  root:{
-    backgroundColor: 'rgb(243, 242, 241)',
-  }
-};
-const messageBarErrorStyles = {
-  root:{
-    backgroundColor: 'rgb(253, 231, 233)',
-  }
-};
-const messageBarSuccessStyles = {
-  root:{
-    backgroundColor: 'rgb(223, 246, 221)',
-  }
-};
-interface IRichText {
- 
-  description: string;
-}
-var dataAPI: any = "";
-var parsedData: any = "";
+
 const KEY_NAME4 = "ExcludeUsersBulk";
-var containerClient: any;
+
 function ExcludeCSV(props){
     const {changeExcludeUsersBulk} = useStore();
     const {translation}=useLanguage();
@@ -112,7 +81,7 @@ function ExcludeCSV(props){
 
  
       const onAttachmentChange = (ev:any) => {
-        if (ev.target.files.length > 0) {
+        if (ev.target.files?.length > 0) {
           setattachFile1(ev.target.files);
         } else {
           setattachFile1(null);
@@ -178,13 +147,20 @@ const processData = async (e: any) => {
 
 
 const saveData = ()=>{
+  let data=[];
+  if(appSettings?.ExcludeUsersBulk){
 
-  let data=[...appSettings?.ExcludeUsersBulk,...updateDataArray.slice(1)]
+    data=[...appSettings?.ExcludeUsersBulk,...updateDataArray.slice(1)]
+  }else{
+    data=[...updateDataArray.slice(1)]
+
+  }
+
 
     const updatedParsedData = { ...appSettings, [KEY_NAME4]: data};
     console.log(data,'padatarse')
     //console.log(parsedData,'listview settings')
-      updateSettingData(updatedParsedData);
+      updateSettingJson(SETTING_LIST,updatedParsedData);
       setAppSettings(updatedParsedData);
       props.SweetAlertCsvPanel("success",translation.SettingSaved);
     
@@ -212,19 +188,24 @@ const saveData = ()=>{
             </div> */}
           <div className={"uploadCSVblkStyles"}> 
           <Stack>
-          <DefaultButton className={"downloadButton"} 
+          <div className={"downloadButton"} 
           style={{
             color: "#333",
             borderRadius: "20px",
             marginBottom: "2%",
+            padding:"6px",
+            backgroundColor:"#fff",
+            border:"1px solid #000",
+            cursor:"pointer",
+            textAlign: "center",
             maxWidth: "200px"
           }}
           onClick={() => downloadTemplate(data, "user_detail-" + getFormattedTime(), "A")} >
             {/* <CSVLink {...csvReport}>
               <CommandBarButton text={props.langcode.sett10?props.langcode.sett10:"Download sample file"} />
               </CSVLink> */}  
-                <CommandBarButton text={"Download sample file"} />
-          </DefaultButton>
+              Download sample file
+          </div>
           </Stack>
           <div className={"importCSVFileBlk"}>
           <div className={"importCSVFile"}>

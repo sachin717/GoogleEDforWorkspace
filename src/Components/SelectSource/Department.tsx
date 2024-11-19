@@ -1,19 +1,21 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import ReactSelect from "react-select";
 import { Icon } from "office-ui-fabric-react";
-import useStore from "./store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
+import useStore, { useSttings } from "./store";
 import { useLanguage } from "../../Language/LanguageContext";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
+import { useLists } from "../../context/store";
 
-const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, departmentFields }) => {
+const Department = ({SweetAlertExcludeDept, departmentFields }) => {
     const { translation } = useLanguage();
+    const { appSettings, setAppSettings } = useSttings();
     const { excludeByDomain, changeExcludeByDomain } = useStore();
-    
+    const { usersList} = useLists();
     const [excludedValues, setExcludedValues] = useState([]);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [excludedDept, setExcludedDept] = useState([]);
+    const [excludedDept, setExcludedDept] = useState<any>([]);
     const [showButton, setShowButton] = useState(appSettings?.ExcludeByDepartment?.length > 0);
     
     const KEY_NAME3 = "ExcludeByDepartment";
@@ -22,8 +24,14 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
     const searchBoxRef = useRef(null);
 
     useEffect(() => {
+        setShowButton(true)
         setExcludedDept(appSettings?.ExcludeByDepartment || []);
-    }, [appSettings]);
+    }, []);
+    useEffect(() => {
+        setShowButton(true)
+        setExcludedDept(appSettings?.ExcludeByDepartment || []);
+    }, [excludedDept?.length]);
+ 
 
     const handleDeptChange = (e, value) => {
         const updatedDept = excludedDept.map(dept => 
@@ -54,7 +62,7 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
         const updatedExcludeByDept = appSettings?.ExcludeByDepartment.filter(dept => !selectedDept.includes(dept.value));
         const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedExcludeByDept };
         
-        updateSettingData(updatedParsedData);
+        updateSettingJson(SETTING_LIST,updatedParsedData);
         setAppSettings(updatedParsedData);
         setExcludedDept(updatedExcludeByDept);
         SweetAlertExcludeDept("success", translation.SettingSaved);
@@ -86,13 +94,14 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
                 const updatedExcluded = [...currentExcluded, ...excludedValues];
                 const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedExcluded };
                 
-                updateSettingData(updatedParsedData);
+                setShowButton(true);
+                setExcludedDept(updatedExcluded);
+                updateSettingJson(SETTING_LIST,updatedParsedData);
                 setAppSettings(updatedParsedData);
                 SweetAlertExcludeDept("success", translation.SettingSaved);
             }
 
             setExcludedValues([]);
-            setShowButton(true);
         } else {
             SweetAlertExcludeDept("info", "Please select domain(s)");
         }
@@ -101,11 +110,16 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
     return (
         <div className="tabMainDiv" id="excludeDept">
             <div style={{ padding: "0%" }}>
-                <Label>Select department(s) to exclude</Label>
+                <Label>{translation.SelectDepartmentsToExclude||"Select department(s) to exclude"}</Label>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "end", gap: "8px" }}>
                         <ReactSelect
-                            options={departmentFields}
+                            options={appSettings?.SyncUserInfoFrom === "importedUser"
+                            ? usersList?.Users.map(item => ({
+                                value: item?.department,
+                                label: item?.department
+                              })) ?? []
+                            : departmentFields}
                             onChange={(value:any)=>setExcludedValues(value)}
                             value={excludedValues}
                             isMulti
@@ -115,7 +129,7 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
                         />
                         {excludedValues.length > 0 && (
                             <PrimaryButton
-                                text="Exclude"
+                               text={translation.Exclude||"Exclude"}
                                 onClick={excludeDept}
                             />
                         )}
@@ -139,7 +153,7 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
                                     setExcludedDept([...allItems]);
                                     setShowButton(allItems.length > 0);
                                 }}
-                                placeholder="Search"
+                                placeholder={translation.search||"Search"}
                                 iconProps={{ iconName: "search" }}
                             />
                         </div>
@@ -158,9 +172,9 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
                 <table className="excludeTable">
                     <thead>
                         <tr>
-                            <th>Action</th>
-                            <th>Department</th>
-                            <th>Status</th>
+                            <th>{translation.Action||"Action"}</th>
+                            <th>{translation.Department||"Department"}</th>
+                            <th>{translation.Status||"Status"}</th>
                         </tr>
                     </thead>
                     {showButton ? (
@@ -182,7 +196,7 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
                     ) : (
                         <tbody>
                             <tr>
-                                <td colSpan={3}>No Records Found</td>
+                                <td colSpan={3}>{translation.NoRecordsFound||"No Records Found"}</td>
                             </tr>
                         </tbody>
                     )}
@@ -190,7 +204,7 @@ const Department = ({ appSettings, setAppSettings, SweetAlertExcludeDept, depart
             </div>
             {excludedDept.length > 0 && (
                 <div>
-                    <PrimaryButton text="Include" onClick={include} />
+                    <PrimaryButton text={translation?.Include||"Include"} onClick={include} />
                 </div>
             )}
         </div>

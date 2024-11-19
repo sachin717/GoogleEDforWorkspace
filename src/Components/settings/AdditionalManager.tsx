@@ -16,7 +16,8 @@ import { useLanguage } from "../../Language/LanguageContext";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
 import getschemasfields from "../SelectSource/getCustomSchema";
 import { useSttings } from "../SelectSource/store";
-import { removeDuplicatesFromObject, updateSettingData } from "../Helpers/HelperFunctions";
+import { removeDuplicatesFromObject } from "../Helpers/HelperFunctions";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const AdditionalManager = ({ isOpen, onDismiss }) => {
   // edit-panel
@@ -24,9 +25,9 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
     "#ExecutiveAssistant",
     true
   );
-  const { SweetAlert: EditAlert } = SweetAlerts("#edit-panel",true);
+  const { SweetAlert: EditAlert } = SweetAlerts("#edit-panel", true);
 
-  const {additionalManagers} = useFields()
+  const { FormatedUserData, additionalManagers } = useFields();
   const { appSettings, setAppSettings } = useSttings();
   const { translation } = useLanguage();
   const [selectedEmail, setSelectedEmail] = useState<string | number>("");
@@ -35,25 +36,34 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
 
   const [openEditPanel, setEditOpenPanel] = useState(false);
   const [editItem, setEditItem] = useState<any>({});
-  const [customFields, setCustomFields] = useState(null);
-
-  useEffect(() => {
-    const ListData = async () => {
-      try {
-        const list = await getschemasfields();
-        const fieldNames = list.map((item) => ({
-          key: item.fieldName,
-          text: item.displayname,
-        }));
-        console.log(fieldNames, "field names");
-        setCustomFields(fieldNames);
-      } catch (error) {
-        console.error("Error fetching list data:", error);
-      }
-    };
-    ListData();
-    setUsersWithAssistant(additionalManagers)
-  }, []);
+  const [customFields, setCustomFields] = useState([]);
+  // useEffect(() => {
+    useEffect(() => {
+      let FilteredOptions = FormatedUserData.flatMap((item) => {
+        return Object.keys(item).map((key) => ({ key, text: key }));
+      });
+      let res = removeDuplicatesFromObject(FilteredOptions, "key");
+      setCustomFields(res);
+    }, [FormatedUserData]);
+    useEffect(() => {
+   setUsersWithAssistant(appSettings?.AdditionalManagerData??[])
+    }, []);
+  //   const ListData = async () => {
+  //     try {
+  //       const list = await getschemasfields();
+  //       const fieldNames = list?.map((item) => ({
+  //         key: item.fieldName,
+  //         text: item.displayname,
+  //       }));
+  //       console.log(fieldNames, "field names");
+  //       setCustomFields(fieldNames);
+  //     } catch (error) {
+  //       console.error("Error fetching list data:", error);
+  //     }
+  //   };
+  //   ListData();
+  //   setUsersWithAssistant(additionalManagers)
+  // }, []);
 
   const handelEdit = (item: any) => {
     setEditItem(item);
@@ -61,45 +71,49 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
   };
 
   const handleUpadte = () => {
-    if(editItem.email){
-    const KEY = "AdditionalManagerData";
-    const index = userWithAssistant.findIndex(
-      (x) => x.email === editItem.email
-    );
-    userWithAssistant[index] = editItem;
+    if (editItem.email) {
+      const KEY = "AdditionalManagerData";
+      const index = userWithAssistant.findIndex(
+        (x) => x.email === editItem.email
+      );
+      userWithAssistant[index] = editItem;
 
-    const setting ={...appSettings,[KEY]:userWithAssistant}
-    updateSettingData(setting);
-    setAppSettings(setting)
-    setUsersWithAssistant(userWithAssistant);
-    EditAlert("success",translation.SettingSaved)
-  }else{
-    SweetAlertExecutiveAssistant("info", "Please select property");
-  }
+      const setting = { ...appSettings, [KEY]: userWithAssistant };
+      updateSettingJson(SETTING_LIST, setting);
+      setAppSettings(setting);
+      setUsersWithAssistant(userWithAssistant);
+      EditAlert("success", translation.SettingSaved);
+    } else {
+      SweetAlertExecutiveAssistant("info", "Please select property");
+    }
   };
 
-
   const handleSubmit = () => {
-    if(selectedEmail){
-    const KEY = "AdditionalManagerData";
-    const x = removeDuplicatesFromObject([...userWithAssistant,{ email: selectedEmail, displayName: displayName }],"email")
+    if (selectedEmail) {
+      const KEY = "AdditionalManagerData";
+      const x = removeDuplicatesFromObject(
+        [
+          ...userWithAssistant,
+          { email: selectedEmail, displayName: displayName },
+        ],
+        "email"
+      );
 
-    
-    setUsersWithAssistant(x);
-    const setting ={
-      ...appSettings,
-      [KEY]:x,
+      setUsersWithAssistant(x);
+      const setting = {
+        ...appSettings,
+        [KEY]: x,
+      };
+
+      updateSettingJson(SETTING_LIST, setting);
+      setAppSettings(setting);
+
+      setSelectedEmail("");
+      setDisplayName("");
+      SweetAlertExecutiveAssistant("success", translation.SettingSaved);
+    } else {
+      SweetAlertExecutiveAssistant("info", "Please select property");
     }
-
-    updateSettingData(setting);
-    setAppSettings(setting)
-
-    setSelectedEmail("");
-    setDisplayName("");
-    SweetAlertExecutiveAssistant("success", translation.SettingSaved);
-  }else{
-    SweetAlertExecutiveAssistant("info", "Please select property");
-  }
   };
 
   return (
@@ -120,8 +134,12 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
                     style={{ display: "flex", gap: "20px", margin: "10px 0px" }}
                   >
                     <Dropdown
-                      label={translation.GoogleProperties ?? "Google Properties"}
-                      placeholder={translation.Selectanoption ?? "Select an option"}
+                      label={
+                        translation.GoogleProperties ?? "Google Properties"
+                      }
+                      placeholder={
+                        translation.Selectanoption ?? "Select an option"
+                      }
                       styles={{ root: { width: "50%" } }}
                       options={customFields}
                       selectedKey={selectedEmail}
@@ -135,21 +153,33 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
                     />
                   </div>
                   <div style={{ marginTop: "10px" }}>
-                    <PrimaryButton onClick={handleSubmit}>{translation.Submit ?? "Submit"}</PrimaryButton>
+                    <PrimaryButton onClick={handleSubmit}>
+                      {translation.Submit ?? "Submit"}
+                    </PrimaryButton>
                   </div>
                 </div>
                 <div>
                   <table className={"excludeTable"}>
                     <thead>
                       <tr>
-                      <th>{translation.Action?translation.Action:"Action"}</th>
-            <th>{translation.PropertyName?translation.PropertyName:"Property Name"}</th>
-            <th>{translation.Displayname?translation.Displayname:"Display name"}</th>
+                        <th>
+                          {translation.Action ? translation.Action : "Action"}
+                        </th>
+                        <th>
+                          {translation.PropertyName
+                            ? translation.PropertyName
+                            : "Property Name"}
+                        </th>
+                        <th>
+                          {translation.Displayname
+                            ? translation.Displayname
+                            : "Display name"}
+                        </th>
                       </tr>
                     </thead>
                     {userWithAssistant?.length ? (
                       <tbody>
-                        {userWithAssistant.map((x, i) => {
+                        {userWithAssistant?.map((x, i) => {
                           return (
                             <tr key={i}>
                               <td>
@@ -167,7 +197,11 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
                     ) : (
                       <tbody>
                         <tr>
-                          <td colSpan={3}>{translation.NoRecordsFound?translation.NoRecordsFound:"No Records Found"}</td>
+                          <td colSpan={3}>
+                            {translation.NoRecordsFound
+                              ? translation.NoRecordsFound
+                              : "No Records Found"}
+                          </td>
                         </tr>
                       </tbody>
                     )}
@@ -192,7 +226,10 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
         onDismiss={() => setEditOpenPanel(false)}
       >
         <div>
-          <div id="edit-panel" style={{ display: "flex", gap: "20px", margin: "10px 0px" }}>
+          <div
+            id="edit-panel"
+            style={{ display: "flex", gap: "20px", margin: "10px 0px" }}
+          >
             <Dropdown
               label="Google Properties"
               placeholder="Select an option"
@@ -224,10 +261,10 @@ const AdditionalManager = ({ isOpen, onDismiss }) => {
   );
 };
 
-const Delete = ({ userWithAssistant, setUsersWithAssistant,translation }) => {
+const Delete = ({ userWithAssistant, setUsersWithAssistant, translation }) => {
   const [selectedEmails, setSelectedEmails] = useState<any>([]);
   const { appSettings, setAppSettings } = useSttings();
-  const {SweetAlert:deleteSweetAlert} =  SweetAlerts("#delete-panel",true);
+  const { SweetAlert: deleteSweetAlert } = SweetAlerts("#delete-panel", true);
 
   const handelSelectEmail = (checked: boolean, email: string) => {
     if (checked) {
@@ -239,21 +276,21 @@ const Delete = ({ userWithAssistant, setUsersWithAssistant,translation }) => {
   };
 
   const handleDelete = () => {
-    if(selectedEmails?.length){
-    const KEY = "AdditionalManagerData";
-    const deleted = userWithAssistant.filter((x) => {
-      if (!selectedEmails.includes(x.email)) {
-        return x;
-      }
-    });
-    const setting = {...appSettings,[KEY]:deleted};
-    updateSettingData(setting);
-    setAppSettings(setting)
-    setUsersWithAssistant(deleted);
-    deleteSweetAlert("success",translation.SettingSaved)
-  }else{
-    deleteSweetAlert("info", "Please select property");
-  }
+    if (selectedEmails?.length) {
+      const KEY = "AdditionalManagerData";
+      const deleted = userWithAssistant.filter((x) => {
+        if (!selectedEmails.includes(x.email)) {
+          return x;
+        }
+      });
+      const setting = { ...appSettings, [KEY]: deleted };
+      updateSettingJson(SETTING_LIST, setting);
+      setAppSettings(setting);
+      setUsersWithAssistant(deleted);
+      deleteSweetAlert("success", translation.SettingSaved);
+    } else {
+      deleteSweetAlert("info", "Please select property");
+    }
   };
 
   return (
@@ -261,14 +298,22 @@ const Delete = ({ userWithAssistant, setUsersWithAssistant,translation }) => {
       <table className={"excludeTable"}>
         <thead>
           <tr>
-            <th>{translation.Action?translation.Action:"Action"}</th>
-            <th>{translation.PropertyName?translation.PropertyName:"Property Name"}</th>
-            <th>{translation.Displayname?translation.Displayname:"Display name"}</th>
+            <th>{translation.Action ? translation.Action : "Action"}</th>
+            <th>
+              {translation.PropertyName
+                ? translation.PropertyName
+                : "Property Name"}
+            </th>
+            <th>
+              {translation.Displayname
+                ? translation.Displayname
+                : "Display name"}
+            </th>
           </tr>
         </thead>
         {userWithAssistant?.length ? (
           <tbody>
-            {userWithAssistant.map((x, i) => {
+            {userWithAssistant?.map((x, i) => {
               return (
                 <tr key={i}>
                   <td>
@@ -287,14 +332,20 @@ const Delete = ({ userWithAssistant, setUsersWithAssistant,translation }) => {
         ) : (
           <tbody>
             <tr>
-              <td colSpan={3}>{translation.NoRecordsFound?translation.NoRecordsFound:"No Records Found"}</td>
+              <td colSpan={3}>
+                {translation.NoRecordsFound
+                  ? translation.NoRecordsFound
+                  : "No Records Found"}
+              </td>
             </tr>
           </tbody>
         )}
       </table>
-      <div>
-        <PrimaryButton onClick={handleDelete}>{translation.delete?translation.delete:"Delete"}</PrimaryButton>
-      </div>
+     { userWithAssistant?.length?<div>
+        <PrimaryButton onClick={handleDelete}>
+          {translation.delete ? translation.delete : "Delete"}
+        </PrimaryButton>
+      </div>:""}
     </div>
   );
 };

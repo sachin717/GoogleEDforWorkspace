@@ -4,27 +4,30 @@ import OrgChart from "react-orgchart";
 import "react-orgchart/index.css";
 import styles from "./ModalOrgChart.module.scss";
 import "./modal.css";
-import { useFields } from "../../context/store";
+import { useFields, useLists } from "../../context/store";
 
 function ModalOrgChart({ email }) {
   const [chartData, setChartData] = useState<any>({});
   const [additionalManagers, setAdditionalManagers] = useState<any>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { allUsers } = useFields();
+  const { usersList } = useLists();
+  const Users = usersList?.Users ?? [];
 
   const getChartData = (email: string) => {
-    const user = allUsers.find((x) => x.email == email);
-    const manager = allUsers.find((x) => user.manager === x.email);
+    let data: any = [...allUsers, ...Users];
+    const user = data?.find((x:any) => x.email == email);
+    const manager = data?.find((x:any) => user.manager === x.email);
 
-    const reportees = allUsers.filter((x) => {
-      if (x.manager == user.email) {
+    const reportees = data?.filter((x) => {
+      if (x?.manager == user?.email) {
         return {
-          name: x.name,
-          department: x.name,
-          jobTitle: x.job,
-          location: x.location,
-          image: x.image,
-          initials: x.initials,
+          name: x?.name ?? "",
+          department: x?.department ?? "",
+          jobTitle: x?.job ?? "",
+          location: x?.location ?? "",
+          image: x?.image ?? "",
+          initials: x?.initials ?? "",
         };
       }
     });
@@ -43,28 +46,28 @@ function ModalOrgChart({ email }) {
       return;
     }
 
-    const additionalManager = allUsers.filter((x) => {
-      if (user.AdditionalManager.includes(x.email)) {
+    const additionalManager = allUsers?.filter((x) => {
+      if (user?.AdditionalManager?.includes(x.email)) {
         return x;
       }
     });
 
     let additionalManagerTree = [];
-    for (let i = 0; i < additionalManager.length; i++) {
+    for (let i = 0; i < additionalManager?.length; i++) {
       additionalManagerTree.push({
-        name: additionalManager[i].name,
-        department: additionalManager[i].name,
-        jobTitle: additionalManager[i].job,
-        location: additionalManager[i].location,
-        image: additionalManager[i].image,
-        initials: additionalManager[i].initials,
+        name: additionalManager[i]?.name,
+        department: additionalManager[i]?.name,
+        jobTitle: additionalManager[i]?.job,
+        location: additionalManager[i]?.location,
+        image: additionalManager[i]?.image,
+        initials: additionalManager[i]?.initials,
         children: [],
       });
     }
     setAdditionalManagers(additionalManagerTree);
     const tree = {
       name: manager.name,
-      department: manager.name,
+      department: manager.department,
       jobTitle: manager.job,
       location: manager.location,
       image: manager.image,
@@ -82,6 +85,7 @@ function ModalOrgChart({ email }) {
       ],
     };
     setChartData(tree);
+    console.log("treee", tree);
   };
 
   useEffect(() => {
@@ -122,13 +126,19 @@ function ModalOrgChart({ email }) {
 
 const Node = ({ node }) => {
   return (
-    <div>
+    <div id="mail" style={{display:"flex", flexDirection:"column", alignItems:"center"}}>
       <div className={styles.topbar}></div>
       <div className={styles.warpper}>
         <Persona
           imageInitials={node.initials}
+          imageAlt={node.initials}
           imageUrl={node.image}
           size={PersonaSize.size72}
+          styles={{
+            root:{
+              display:"block"
+            }
+          }}
         />
         <div className={styles.textContainer}>
           <div className={styles.name}>{node.name}</div>

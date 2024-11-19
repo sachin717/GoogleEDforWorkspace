@@ -12,6 +12,7 @@
   overflow-x: visible !important;
   page-break-before: auto;
   page-break-after: auto;
+  overflow: auto;
 
 }
 .App-logo {
@@ -96,3 +97,6 @@
   color:red;
 }
 
+.orgNodeChildGroup{
+  margin: 0px 10px !important;
+}

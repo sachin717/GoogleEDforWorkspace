@@ -23,16 +23,28 @@
 .bold {
   background-color: rgb(0, 120, 212);
   color: #fff;
+  &:hover{
+    background-color: rgb(0, 120, 212);
+    color: #fff;
+  }
 }
 
 .italic {
   background-color: rgb(0, 120, 212);
   color: #fff;
+  &:hover{
+    background-color: rgb(0, 120, 212);
+    color: #fff;
+  }
 }
 
 .underline {
   background-color: rgb(0, 120, 212);
   color: #fff;
+  &:hover{
+    background-color: rgb(0, 120, 212);
+    color: #fff;
+  }
 }
 
 .fontStylesGroup{

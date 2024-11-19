@@ -19,8 +19,8 @@ import { IIconProps } from "@fluentui/react/lib/Icon";
 import { gapi } from "gapi-script";
 import { Buffer } from "buffer";
 import { useLanguage } from "../../Language/LanguageContext";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { Icon } from "office-ui-fabric-react";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 const filterIcon: IIconProps = { iconName: "Filter" };
 
 
@@ -125,7 +125,6 @@ function Users(props) {
   //         );
   //         const updatedParsedData = { ...props.appSettings, [KEY_NAME4]: updatedExcludeByCustomList };
   //         if(Object.keys(props.appSettings)?.length >0){
-  //         // updateSettingData(updatedParsedData);
   //         // props.setAppSettings(props?.appSettings?.ExcludeUsersBulk);
   //         console.log("[]",updatedExcludeByCustomList)
   //         setusers(props?.appSettings?.ExcludeUsersBulk);
@@ -161,7 +160,7 @@ function Users(props) {
     };
   
     if (Object.keys(props.appSettings).length > 0) {
-      updateSettingData(updatedParsedData);
+      updateSettingJson(SETTING_LIST,updatedParsedData);
       props.setAppSettings(updatedParsedData);
       setusers(updatedExcludeByCustomList);
       allItems=updatedExcludeByCustomList;

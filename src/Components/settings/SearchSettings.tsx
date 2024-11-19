@@ -6,6 +6,7 @@ const SearchSettings = ({
   openBdayAnniTemplt,
   openPanelUpldLogo,
   setShowCollaborationPanel,
+  setOpenEmailNotificationPanel,
   setShowFilterAttributeModal,
   openPanelHomeCustm,
   openPanel3,
@@ -17,46 +18,25 @@ const SearchSettings = ({
   openPanelRecordLoad,
   openPanelRolePermission,
   openPanelSearchFltr,
-  setIshowHideModuleOpen,
   OpenEmpInfoAlignModal,
-  OpenPanelBdayAnniImg,
-  OpenPanelClearAlphaFilter,
   openPanelDashboardFeaturePanel,
-  openPanelDfltViews,
   openPanelWidthCustm,
-  openPanelHideMngr,
-  openPanelHideMobNo,
   openPanelImgPrfTag,
   setLabelModal,
-  openPanelDefaultMobViews,
   setViewsSHMPanel,
   openPanelShortBy,
-  openPanelUserPrtiesGV,
-  openPanelUserPrtiesLV,
-  openPanelUserPrtiesPCV,
   openModalViews,
-  OpenExcludeDomain,
-  openPanelExcldDept,
   openPanel2,
-  openPanelExcldJtitle,
-  openPanelExcldName,
-  OpenExcludeLoc,
-  openPanelExcldCSV,
-  OpenExcludeEmail,
-  OpenExcludeContains,
   OpenAutoLoad,
   openPanelCustomField,
   setTopBarModalVisible,
   setOpenExecutiveAssistantRelationship,
-  OpenFilterBirthAndAniv,
   openPronouns,
   openImportUsers,
   isOpenShowGrp,
-  setIshowHideModuleOpenAdvance,
   OpenUpcomingBithAndAnivAdv,
   setShowOrgChart,
   setShowHomePage,
-  filterByLetter,
   OpenSyncUserFrom,
   openExcludeUserContainsListPanel,
   openPanel5,
@@ -65,7 +45,9 @@ const SearchSettings = ({
   setOpenCustomFunctionPanel,
   setOpenAdditionalManagerSetting,
   openExcludeUserListPanel,
-  setRestrictedPanel
+  setRestrictedPanel,
+  setHideManagerPanel,
+  setHideMobile
 }) => {
   const { translation } = useLanguage();
   const [search, setSearch] = useState("");
@@ -102,8 +84,8 @@ const SearchSettings = ({
     },
     {
       iconName: "Home",
-      translateKey: "Customlink",
-      label: "Home page custom url",
+      translateKey: "CustomIconHome",
+      label: "Home page custom icon",
       onClick: openPanelHomeCustm,
     },
     {
@@ -132,7 +114,7 @@ const SearchSettings = ({
     },
     {
       iconName: "ContactCard",
-      translateKey: "CustomIcon",
+      translateKey: "profilecardcustomicon",
       label: "Profile card custom url icon",
       onClick: openPanelProfileCustomUrlIcon,
     },
@@ -154,12 +136,7 @@ const SearchSettings = ({
       label: "Search filters",
       onClick: openPanelSearchFltr,
     },
-    {
-      iconName: "View",
-      translateKey: "HideShowText",
-      label: "Show or hide modules",
-      onClick: () => setIshowHideModuleOpen(true),
-    },
+ 
   ];
 
   const ViewList = [
@@ -187,12 +164,7 @@ const SearchSettings = ({
       label: "Dashboard feature",
       onClick: openPanelDashboardFeaturePanel,
     },
-    {
-      iconName: "ThisPC",
-      translateKey: "Desktopdefaultview",
-      label: "Desktop default view",
-      onClick: openPanelDfltViews,
-    },
+  
     {
       iconName: "LargeGrid",
       translateKey: "Gridwidth",
@@ -203,13 +175,13 @@ const SearchSettings = ({
       iconName: "Hide3",
       translateKey: "hidemanager",
       label: "Hide manager of specific users",
-      onClick: openPanelHideMngr,
+      onClick: ()=>setHideManagerPanel(true),
     },
     {
       iconName: "Hide3",
       translateKey: "Hidemobile",
       label: "Hide mobile numbers of specific users",
-      onClick: openPanelHideMobNo,
+      onClick: ()=>setHideMobile(true),
     },
     {
       iconName: "Contact",
@@ -223,12 +195,12 @@ const SearchSettings = ({
       label: "Labels",
       onClick: () => setLabelModal(true),
     },
-    {
-      iconName: "CellPhone",
-      translateKey: "Mobiledefaultview",
-      label: "Mobile default view",
-      onClick: openPanelDefaultMobViews,
-    },
+    // {
+    //   iconName: "CellPhone",
+    //   translateKey: "Mobiledefaultview",
+    //   label: "Mobile default view",
+    //   onClick: openPanelDefaultMobViews,
+    // },
     {
       iconName: "View",
       translateKey: "HideShowText",
@@ -241,24 +213,7 @@ const SearchSettings = ({
       label: "Sort by",
       onClick: openPanelShortBy,
     },
-    {
-      iconName: "GridViewMedium",
-      translateKey: "Userprogrid",
-      label: "User properties in grid view",
-      onClick: openPanelUserPrtiesGV,
-    },
-    {
-      iconName: "BulletedList",
-      translateKey: "Userprolist",
-      label: "User properties in list view",
-      onClick: openPanelUserPrtiesLV,
-    },
-    {
-      iconName: "ContactCard",
-      translateKey: "Userprocard",
-      label: "User properties in profile card",
-      onClick: openPanelUserPrtiesPCV,
-    },
+    
     {
       iconName: "View",
       translateKey: "Views",
@@ -285,7 +240,7 @@ const SearchSettings = ({
       label: "Exclude user by job title",
       translateKey: "ExcludeUserByJobTitle",
       onClick: openPanel3,
-    },
+    },                               
     {
       iconName: "UserOptional",
       label: "Exclude user by name",
@@ -368,12 +323,12 @@ const SearchSettings = ({
       translateKey: "importuserspronouns",
       onClick: openPronouns,
     },
-    // {
-    //   iconName: "Lock",
-    //   label: "Restricted access",
-    //   translateKey: "RestrictedAccess",
-    //   onClick: ()=>setRestrictedPanel(true),
-    // },
+    {
+      iconName: "Lock",
+      label: "Restricted access",
+      translateKey: "RestrictedAccess",
+      onClick: ()=>setRestrictedPanel(true),
+    },
     {
       iconName: "Import",
       label: "Import users",
@@ -386,29 +341,35 @@ const SearchSettings = ({
       translateKey: "SyncUsersInfo",
       onClick: OpenSyncUserFrom,
     },
-    {
-      iconName: "Group",
-      label: "Show groups",
-      translateKey: "showgroups",
-      onClick: isOpenShowGrp,
-    },
-    {
-      iconName: "View",
-      label: "Show or hide modules",
-      translateKey: "HideShowText",
-      onClick: () => setIshowHideModuleOpenAdvance(true),
-    },
+    // {
+    //   iconName: "Group",
+    //   label: "Show groups",
+    //   translateKey: "showgroups",
+    //   onClick: isOpenShowGrp,
+    // },
+    // {
+    //   iconName: "View",
+    //   label: "Show or hide modules",
+    //   translateKey: "HideShowText",
+    //   onClick: () => setIshowHideModuleOpenAdvance(true),
+    // },
     {
       iconName: "Group",
       label: "Birthdays & work anniversaries",
       translateKey: "BirthdaysAndAnniv",
       onClick: OpenUpcomingBithAndAnivAdv,
     },
+    {
+      iconName: "MailAlert",
+      label: "Birthday and anniversary notification",
+      translateKey: "BirthdayAnniversaryNotification",
+      onClick: ()=>setOpenEmailNotificationPanel(true),
+    },
   ];
 
   const filterList = (list: any, searchTerm: string) => {
     return list.filter((item: any) =>
-      item.label.toLowerCase().includes(searchTerm.toLowerCase())
+      item.label.toLowerCase().includes(searchTerm.trim().toLowerCase())
     );
   };
 
@@ -430,7 +391,7 @@ const SearchSettings = ({
         }}
       >
         <SearchBox
-          placeholder="Search setting"
+          placeholder="Search settings..."
           iconProps={{ iconName: "Search" }}
           styles={{ root: { width: "45%" } }}
           value={search}
@@ -452,7 +413,8 @@ const SearchSettings = ({
             onClick={() => {
               setShowOrgChart(false);
               setShowHomePage(true);
-              filterByLetter("ALL");
+              document.getElementById(`letter-ALL`).click();
+              // filterByLetter('ALL');
             }}
           />
         </div>
@@ -461,7 +423,7 @@ const SearchSettings = ({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr 1fr",
+          gridTemplateColumns: "repeat(4, 1fr)",
           gap: "5px",
         }}
       >
@@ -509,6 +471,7 @@ const header: React.CSSProperties = {
   padding: "0px 0px 5px 10px",
   borderBottom: "1px solid #cacaca",
   margin: "10px 0px 0px 0px",
+  color:"rgb(0,120,212)",
 };
 
 const list: React.CSSProperties = {
@@ -528,7 +491,7 @@ const GeneralSetting = ({ GeneralList, translation }) => {
       <div style={{ padding: "10px 10px" }}>
         {GeneralList.map((x: any, i: number) => (
           <li key={i} style={list} onClick={x.onClick}>
-            <Icon iconName={x.iconName} />
+            <Icon style={{color:"rgb(0,120,212)"}} iconName={x.iconName} />
             <span style={{ marginLeft: "5px" }}>
               {translation[x.translateKey]}
             </span>
@@ -548,7 +511,7 @@ const ViewSetting = ({ ViewList, translation }) => {
       <div style={{ padding: "10px 10px" }}>
         {ViewList.map((x: any, i: number) => (
           <li key={i} style={list} onClick={x.onClick}>
-            <Icon iconName={x.iconName} />
+            <Icon style={{color:"rgb(0,120,212)"}} iconName={x.iconName} />
             <span style={{ marginLeft: "5px" }}>
               {translation[x.translateKey]}
             </span>
@@ -568,7 +531,7 @@ const ExcludeSetting = ({ ExcludeList, translation }) => {
       <div style={{ padding: "10px 10px" }}>
         {ExcludeList.map((x: any, i: number) => (
           <li key={i} style={list} onClick={x.onClick}>
-            <Icon iconName={x.iconName} />
+            <Icon style={{color:"rgb(0,120,212)"}} iconName={x.iconName} />
             <span style={{ marginLeft: "5px" }}>
               {translation[x.translateKey]}
             </span>
@@ -588,7 +551,7 @@ const AdvanceSetting = ({ AdvanceList, translation }) => {
       <div style={{ padding: "10px 10px" }}>
         {AdvanceList.map((x: any, i: number) => (
           <li key={i} style={list} onClick={x.onClick}>
-            <Icon iconName={x.iconName} />
+            <Icon style={{color:"rgb(0,120,212)"}} iconName={x.iconName} />
             <span style={{ marginLeft: "5px" }}>
               {translation[x.translateKey]}
             </span>

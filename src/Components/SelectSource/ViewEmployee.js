@@ -100,33 +100,21 @@ function ViewEmployee(props) {
             employees={props.employees}
             DynWidth={props.DynWidth}
             settingData={props.settingData}
-            blobCall={props.blobCall}
             users={props.users}
             setUsers={props.setUser}
           />
         )}
         {
-          props.NonM365?.length == 0 ? (
-            <MessageBar
-              messageBarType={MessageBarType.info}
-              isMultiline={false}
-              styles={messageBarInfoStyles}
-              dismissButtonAriaLabel={"Close"}
-              style={{ justifyContent: "center" }}
-            >
-              {"No Records Found"}
-            </MessageBar>
-          ) :
-         props.isImportedUser && (
+          
+          (appSettings?.SyncUserInfoFrom== "Google & Imported User"  && props.isImportedUser)? (
           <NonGoogleUsers
             employees={props.NonM365}
             DynWidth={props.DynWidth}
             settingData={props.settingData}
-            blobCall={props.blobCall}
             users={props.users}
             setUsers={props.setUser}
           />
-        )}
+        ):""}
         {props.isList && <DetailsListView employees={props.employees} />}
         {props.isTile && <TileView employees={props.employees} />}
       </div>

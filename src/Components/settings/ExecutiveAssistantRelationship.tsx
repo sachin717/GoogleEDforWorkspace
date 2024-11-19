@@ -17,9 +17,10 @@ import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
 import getschemasfields from "../SelectSource/getCustomSchema";
 import {
   removeDuplicatesFromObject,
-  updateSettingData,
+
 } from "../Helpers/HelperFunctions";
 import { useSttings } from "../SelectSource/store";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const ExecutiveAssistantRelationship = ({ isOpen, onDismiss }) => {
   const { SweetAlert: SweetAlertExecutiveAssistant } = SweetAlerts(
@@ -44,23 +45,25 @@ const ExecutiveAssistantRelationship = ({ isOpen, onDismiss }) => {
   });
   const [customFields, setCustomFields] = useState<any>([]);
   const { appSettings, setAppSettings } = useSttings();
-  useEffect(() => {
-    const ListData = async () => {
-      try {
-        const list = await getschemasfields();
-        const fieldNames = list.map((item) => ({
-          key: item.fieldName,
-          text: item.displayname,
-        }));
-        console.log(fieldNames, "field names");
-        setCustomFields(fieldNames);
-      } catch (error) {
-        console.error("Error fetching list data:", error);
-      }
-    };
-    setUsersWithAssistant(assistant);
-    ListData();
-  }, []);
+
+  // useEffect(() => {
+  //   const ListData = async () => {
+  //     try {
+  //       const list = await getschemasfields();
+  //       const fieldNames = list.map((item) => ({
+  //         key: item.fieldName,
+  //         text: item.displayname,
+  //       }));
+  //       console.log(fieldNames, "field names");
+  //       setCustomFields(fieldNames);
+  //     } catch (error) {
+  //       console.error("Error fetching list data:", error);
+  //     }
+  //   };
+  //   setUsersWithAssistant(assistant);
+  //   ListData();
+  // }, []);
+
   const handelEdit = (item: any) => {
     setEditItem(item);
     setEditOpenPanel(true);
@@ -76,7 +79,7 @@ const ExecutiveAssistantRelationship = ({ isOpen, onDismiss }) => {
       );
       userWithAssistant[index] = editItem;
       const setting = { ...appSettings, [KEY]: userWithAssistant };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
       setUsersWithAssistant(userWithAssistant);
       SweetAlertEditPanel("success", translation.SettingSaved);
@@ -100,7 +103,7 @@ const ExecutiveAssistantRelationship = ({ isOpen, onDismiss }) => {
         [KEY]: x,
       };
 
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
 
       setSelectedEmail("");
@@ -122,7 +125,7 @@ const ExecutiveAssistantRelationship = ({ isOpen, onDismiss }) => {
       >
         <div>
           <div id="ExecutiveAssistant">
-            <p>
+            {/* <p>
               A custom column can be used to add the assistant's email ID to
               build the assistant's association with executives. Once a custom
               column is defined, Open each executive's mailbox from{" "}
@@ -133,7 +136,7 @@ const ExecutiveAssistantRelationship = ({ isOpen, onDismiss }) => {
                 https://admin.exchange.microsoft.com/#/mailboxes
               </Link>{" "}
               and use the same custom column to add the assistant's email ID.
-            </p>
+            </p> */}
           </div>
           <div>
             <Pivot>
@@ -272,7 +275,7 @@ const Delete = ({ userWithAssistant, setUsersWithAssistant }) => {
         }
       });
       const setting = { ...appSettings, [KEY]: deleted };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST,setting);
       setAppSettings(setting);
       setUsersWithAssistant(deleted);
       SweetAlertExecutiveAssistantDelete("success", translation.SettingSaved);

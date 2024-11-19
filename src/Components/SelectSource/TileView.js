@@ -40,85 +40,69 @@ const TileView = (props) => {
 
   return (
     <>
-        <div>
-          <div className="tileView">
-            {props.employees.map((item) => {
-              const examplePersona = {
-                //imageUrl: item.img,
-                imageInitials: item.initials,
-              };
-              var diffStyle;
-
-              diffStyle = {
-                backgroundImage: "url('" + item.image + "')",
-                backgroundRepeat: "no-repeat",
-                width: "72px",
-                height: "72px",
-                position: "absolute",
-                top: "5px",
-                borderRadius: "50%",
-                zIndex: 1,
-                backgroundPosition: "center",
-                backgroundSize: "cover",
-              };
-
-              return (
-                <div className="empView">
-                  <div className="makeCenterStyles">
-                    <div
-                      style={diffStyle}
-                      onClick={() => openPanelForUser(item)}
-                    ></div>
-                    <Persona
-                      {...examplePersona}
-                      coinSize={72}
-                      // presenceTitle={item.presence}
-                      size={PersonaSize.size72}
-                      //  initialsColor={item.personaColor}
-                      // presence={presence}
-                      //style={{ flexDirection: "column" }}
-                    />
-                  </div>
-
-                  <div className="nameStyles">
-                    {variable === "familyName"
-                      ? `${item.lastName} ${item.firstName}`
-                      : `${item.firstName} ${item.lastName}`}
-                  </div>
-
-                  <div className="logos">
-                    <a href={"https://chat.google.com"}>
-                      <img
-                        className="logo"
-                        src={googleChat}
-                        alt="Google Chat"
-                        style={{ cursor: "pointer" }}
-                      />
-                    </a>
-                    <a
-                      href={"https://mail.google.com"}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <img
-                        className="logo"
-                        src={gmailLogo}
-                        alt="Gmail"
-                        style={{ cursor: "pointer" }}
-                      />
-                    </a>
-                  </div>
+      <div>
+        <div className="tileView">
+          {props.employees.map((item, i) => {
+            return (
+              <div key={i} className="empView">
+                <div className="makeCenterStyles">
+                  <Persona
+                    coinSize={72}
+                    size={PersonaSize.size72}
+                    imageUrl={item.imageUrl}
+                    imageInitials={item.initials}
+                    onClick={()=>openPanelForUser(item)}
+                  />
                 </div>
-              );
-            })}
-          </div>
-          <div>
-            <UserModal
-              userModalCard={userModalCard}
-              isModalOpen={isModalOpen}
-              setIsModalOpen={setIsModalOpen}
-            />
-          </div>
+
+                <div className="nameStyles">
+                  {variable === "familyName"
+                    ? `${item.lastName} ${item.firstName}`
+                    : `${item.firstName} ${item.lastName}`}
+                </div>
+
+                <div className="logos">
+                  <a
+                    href={"https://chat.google.com"}
+                    target="_blank"
+                  >
+                    <img
+                      className="logo"
+                      src={googleChat}
+                      alt="Google Chat"
+                      style={{ cursor: "pointer" }}
+                    />
+                  </a>
+                  <a
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      const email = item.email;
+                      const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+                        email
+                      )}`;
+                      window.open(mailtoLink, "_blank");
+                    }}
+                  >
+                    <img
+                      className="logo"
+                      src={gmailLogo}
+                      alt="Gmail"
+                      style={{ cursor: "pointer" }}
+                    />
+                  </a>
+                </div>
+              </div>
+            );
+          })}
         </div>
+        <div>
+          <UserModal
+            userModalCard={userModalCard}
+            isModalOpen={isModalOpen}
+            setIsModalOpen={setIsModalOpen}
+          />
+        </div>
+      </div>
     </>
   );
 };

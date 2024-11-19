@@ -8,9 +8,9 @@ import {
 import { ChangeEvent, useEffect, useState } from "react";
 import styles from "../SCSS/Ed.module.scss";
 import { useLanguage } from "../../Language/LanguageContext";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { useSttings } from "../SelectSource/store";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
+import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const Collaboration = ({ isOpen, onDismiss }) => {
   const { SweetAlert: SweetAlertCollaboration } = SweetAlerts(
@@ -69,25 +69,30 @@ const Collaboration = ({ isOpen, onDismiss }) => {
       },
     };
 
-    updateSettingData({ ...appSettings, CollaborationSettings });
+    updateSettingJson(SETTING_LIST, { ...appSettings, CollaborationSettings })
     setAppSettings({ ...appSettings, CollaborationSettings });
     SweetAlertCollaboration("success", translation.SettingSaved);
   };
 
   useEffect(() => {
-    setSelectedWorkPhone(appSettings.CollaborationSettings.WorkPhone);
-    setSelectedMobile(appSettings.CollaborationSettings.Mobile);
-    setSelectedChat(appSettings.CollaborationSettings.Chat);
-    setSelectedActionIcon(appSettings.CollaborationSettings.ActionIcon.value);
-    setClassicFormData(
-      appSettings.CollaborationSettings.ActionIcon.fields.Classic
-    );
-    setModernFromData(
-      appSettings.CollaborationSettings.ActionIcon.fields.Modern
-    );
-    setMSTeamsFromDate(
-      appSettings.CollaborationSettings.ActionIcon.fields.MSTeams
-    );
+
+    const getSettingData = async()=>{
+      const data = await getSettingJson(SETTING_LIST);
+      setSelectedWorkPhone(data.CollaborationSettings.WorkPhone || false);
+      setSelectedMobile(data.CollaborationSettings.Mobile || false);
+      setSelectedChat(data.CollaborationSettings.Chat || false);
+      setSelectedActionIcon(data.CollaborationSettings.ActionIcon.value || false);
+      setClassicFormData(
+        data.CollaborationSettings.ActionIcon.fields.Classic
+      );
+      setModernFromData(
+        data.CollaborationSettings.ActionIcon.fields.Modern
+      );
+      setMSTeamsFromDate(
+        data.CollaborationSettings.ActionIcon.fields.MSTeams
+      );
+    }
+    getSettingData();
   }, []);
 
   return (

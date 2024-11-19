@@ -15,7 +15,8 @@ import { useLanguage } from "../../Language/LanguageContext";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
 import getschemasfields from "../SelectSource/getCustomSchema";
 import { useSttings } from "../SelectSource/store";
-import { removeDuplicatesFromObject, updateSettingData } from "../Helpers/HelperFunctions";
+import { removeDuplicatesFromObject} from "../Helpers/HelperFunctions";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 
 const CustomFunction = ({
   isOpen,
@@ -51,7 +52,6 @@ const CustomFunction = ({
     };
     setData(appSettings?.CustomFunctionData)
     ListData();
-    // setData();
   }, []);
 
   useEffect(() => {
@@ -76,7 +76,7 @@ const CustomFunction = ({
       if (index !== -1) {
         data[index] = editItem;
         const setting = { ...appSettings, [KEY]: data };
-        updateSettingData(setting);
+        updateSettingJson(SETTING_LIST, setting);
         setAppSettings(setting);
         setData(data);
         EditAlert("success", translation.SettingSaved);
@@ -96,7 +96,7 @@ const CustomFunction = ({
       );
       setData(updatedList);
       const setting = { ...appSettings, [KEY]: updatedList };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
       setCustomFunction("");
       setFetchedValue("");
@@ -129,7 +129,7 @@ const CustomFunction = ({
                     onChange={(e:any, option:any) => setCustomFunction(option.key)}
                   />
                   <TextField
-                    label={translation.PropertyName ?? "Property Name"}
+                    label={"Fetched text value"}
                     styles={{ root: { width: "50%" } }}
                     value={fetchedValue}
                     onChange={(e:any) => setFetchedValue(e.target.value)}
@@ -145,7 +145,7 @@ const CustomFunction = ({
                     <tr>
                       <th>{translation.Action ?? "Action"}</th>
                       <th>{translation.PropertyName ?? "Property Name"}</th>
-                      <th>{translation.fetchedValue ?? "Display name"}</th>
+                      <th>{"Fetched text value"}</th>
                     </tr>
                   </thead>
                   {data.length ? (
@@ -192,8 +192,8 @@ const CustomFunction = ({
         <div>
           <div id="edit-panel" style={{ display: "flex", gap: "20px", margin: "10px 0px" }}>
             <Dropdown
-              label="Google Properties"
-              placeholder="Select an option"
+              label={translation.GoogleProperties||"Google Properties"}
+              placeholder={translation.Selectanoption||"Select an option"}
               styles={{ root: { width: "50%" } }}
               options={options}
               selectedKey={editItem.property}
@@ -202,16 +202,16 @@ const CustomFunction = ({
               }
             />
             <TextField
-              label="Display name"
+              label={translation.Fetchedtextvalue||"Fetched text value"}
               styles={{ root: { width: "50%" } }}
               value={editItem.fetchedValue}
               onChange={(e:any) =>
-                setEditItem((prev) => ({ ...prev, fetchedValue: e.target.value }))
+                setEditItem((prev) => ({ ...prev, value: e.target.value }))
               }
             />
           </div>
           <div style={{ marginTop: "10px" }}>
-            <PrimaryButton onClick={handleUpdate}>Update</PrimaryButton>
+            <PrimaryButton onClick={handleUpdate} text={translation.Update||"Update"} />
           </div>
         </div>
       </Panel>
@@ -233,9 +233,9 @@ const Delete = ({ data, setData, translation }) => {
   const handleDelete = () => {
     if (customFunctions.length) {
       const KEY = "CustomFunctionData";
-      const deleted = data.filter((x) => !customFunctions.includes(x.property));
+      const deleted = data?.filter((x) => !customFunctions.includes(x.property));
       const setting = { ...appSettings, [KEY]: deleted };
-      updateSettingData(setting);
+      updateSettingJson(SETTING_LIST, setting);
       setAppSettings(setting);
       setData(deleted);
       deleteSweetAlert("success", translation.SettingSaved);
@@ -251,20 +251,20 @@ const Delete = ({ data, setData, translation }) => {
           <tr>
             <th>{translation.Action ?? "Action"}</th>
             <th>{translation.PropertyName ?? "Property Name"}</th>
-            <th>{translation.fetchedValue ?? "Display name"}</th>
+            <th>{translation.Fetchedtextvalue||"Fetched text value"}</th>
           </tr>
         </thead>
-        {data.length ? (
+        {data?.length ? (
           <tbody>
-            {data.map((x:any, i:number) => (
+            {data?.map((x:any, i:number) => (
               <tr key={i}>
                 <td>
                   <Checkbox
                     onChange={(e, checked) => handleSelectEmail(checked, x.property)}
                   />
                 </td>
-                <td>{x.property}</td>
-                <td>{x.value}</td>
+                <td>{x?.property}</td>
+                <td>{x?.value}</td>
               </tr>
             ))}
           </tbody>
@@ -277,7 +277,7 @@ const Delete = ({ data, setData, translation }) => {
         )}
       </table>
       <div>
-        <PrimaryButton onClick={handleDelete}>{translation.delete ?? "Delete"}</PrimaryButton>
+       {data?.length ?<PrimaryButton onClick={handleDelete}>{translation.delete ?? "Delete"}</PrimaryButton>:""}
       </div>
     </div>
   );

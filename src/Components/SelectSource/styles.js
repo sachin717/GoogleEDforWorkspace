@@ -724,6 +724,7 @@ const style = () => css`
 }
   .empDetailsView {
     width: 100%;
+   
   }
   #ViewDiv {
     display: block !important;
@@ -921,12 +922,7 @@ const style = () => css`
     padding: 5px 5px 0px 5px;
     font-size: 13px;
   }
-  .tileView {
-    width: 100%;
-    float: left;
-    margin-top: 1%;
-    margin-bottom: 5%;
-  }
+
 
   .tileView .makeCenterStyles {
     width: 66%;

@@ -2,10 +2,10 @@ import { PrimaryButton } from "@fluentui/react";
 import { Checkbox, Label, SearchBox } from "@fluentui/react";
 import React, { useEffect, useRef, useState } from "react";
 import useStore, { useSttings } from "./store";
-import { updateSettingData } from "../Helpers/HelperFunctions";
 import { useLanguage } from "../../Language/LanguageContext";
 import { Icon } from "office-ui-fabric-react";
 import ReactSelect from "react-select";
+import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 var allItems = [];
 let settingsData:any;
 function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}) {
@@ -43,14 +43,14 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
       const searchItems = (text: string) => {
         if (text == "") {
           setExcludedByEmail([...allItems]);
-          setShowButton(allItems.length > 0 ? true : false);
+          setShowButton(allItems?.length > 0 ? true : false);
           return;
         }
         const newArray = [...excludedByEmail].filter(
           (x) => x.value.toLowerCase().indexOf(text) > -1
         );
         setExcludedByEmail(newArray);
-        if (newArray.length == 0) {
+        if (newArray?.length == 0) {
           setShowButton(false);
         } else {
           setShowButton(true);
@@ -64,7 +64,7 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
           .map((y) => {
             return y.value;
           });
-          if(updatedEmails.length==0)
+          if(updatedEmails?.length==0)
           {
             SweetAlertEmail("Please select Email!");
            
@@ -77,8 +77,8 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
           setExcludedByEmail(updatedexcludeByEmails);
           
           const updatedParsedData = { ...appSettings, [KEY_NAME3]: updatedexcludeByEmails };
-          if(Object.keys(appSettings).length >0){
-            updateSettingData(updatedParsedData);
+          if(Object.keys(appSettings)?.length >0){
+            updateSettingJson(SETTING_LIST,updatedParsedData);
             setAppSettings(updatedParsedData)
            
           setExcludedByEmail(updatedParsedData?.ExcludedByEmail)
@@ -102,8 +102,8 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
             const data = { ...appSettings, ExcludedByEmail: updatedExcludedEmails };
              setExcludedByEmail(updatedExcludedEmails);
              setShowButton(true);
-            if (Object.keys(data).length > 0) {
-              updateSettingData(data);
+            if (Object.keys(data)?.length > 0) {
+              updateSettingJson(SETTING_LIST,data);
               setAppSettings(data);
               SweetAlertEmail("success", translation.SettingSaved);
             }
@@ -119,7 +119,7 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
 <div className={"tabMainDiv"} id="excludedEmail">
      
       <div style={{ padding: "0%" }}>
-                <Label>Select emails(s) to exclude</Label>
+                <Label>S{translation.SelectEmailsToExclude||"elect emails(s) to exclude"}</Label>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "end", gap: "8px" }}>
                         <ReactSelect
@@ -131,9 +131,9 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
                             menuPosition="fixed"
                             maxMenuHeight={150}
                         />
-                        {excludedValues.length > 0 ? (
+                        {excludedValues?.length > 0 ? (
                             <PrimaryButton
-                                text="Exclude"
+                            text={translation.Exclude||"Exclude"}
                                 onClick={handleExcludeEmail}
                             />
                         ):""}
@@ -155,9 +155,9 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
                                 onChange={(e, newValue) => searchItems(newValue)}
                                 onClear={() => {
                                     setExcludedByEmail([...allItems]);
-                                    setShowButton(allItems.length > 0);
+                                    setShowButton(allItems?.length > 0);
                                 }}
-                                placeholder="Search"
+                                placeholder={translation.search||"Search"}
                                 iconProps={{ iconName: "search" }}
                             />
                         </div>
@@ -176,9 +176,9 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
         <table className={"excludeTable"}>
           <thead>
             <tr>
-              <th>{"Action"}</th>
-              <th>{"Email"}</th>
-              <th>{"Status"}</th>
+              <th>{translation.Action||"Action"}</th>
+              <th>{translation.Email||"Email"}</th>
+              <th>{translation.Status||"Status"}</th>
             </tr>
           </thead>
           {showButton ? (
@@ -204,7 +204,7 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
               <tr>
                 <td colSpan={3}>
                  
-                   {"No Records Found"}
+                {translation.NoRecordsFound||"No Records Found"}
                  
                 </td>
               </tr>
@@ -212,7 +212,7 @@ function ExcludedEmail({appSettings,EmailOptions,setAppSettings,SweetAlertEmail}
           )}
         </table>
       </div>
-      {excludedByEmail?.length ? <div><PrimaryButton text={"Include"} onClick={include} /></div>:""}
+      {excludedByEmail?.length ? <div><PrimaryButton text={translation?.Include||"Include"} onClick={include} /></div>:""}
     </div>
 </>
   )

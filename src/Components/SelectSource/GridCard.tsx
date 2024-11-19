@@ -1,6 +1,6 @@
 import { Icon, IconButton, Label, Persona, PersonaSize } from "@fluentui/react";
 import { Modal } from "@fluentui/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./Edp.scss";
 import { useSttings } from "./store";
 import googleChat from "../assets/images/googleChatIcon.png";
@@ -18,6 +18,9 @@ import { gapi } from "gapi-script";
 import { useLanguage } from "../../Language/LanguageContext";
 import ModalOrgChart from "../OrgChart/ModalOrgChart";
 import GetQRCode from "../GetQRCode";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import { useFields } from "../../context/store";
 
 const modalPropsStyles = {
   main: {
@@ -34,9 +37,11 @@ function GridCard({
   users,
   item,
   userGridView,
+  diffStyle,
   ISStartLastname,
   openPanelForUser,
 }) {
+  
   const { translation } = useLanguage();
   const [backgroundColor, setBackgroundColor] = useState("");
   const [isAdmin, setIsUserAdmin] = useState(false);
@@ -48,16 +53,15 @@ function GridCard({
   const [isChartOpen, openChartModal] = useState(false);
   const [labelValue, setLabelValue] = useState<any>();
   const [isQROpen, setIsQROpen] = useState(false);
+  const [hiddenMobile, setHiddenMobile] = useState([]);
   const { appSettings } = useSttings();
-  const {
-    CollaborationSettings: { Chat, Mobile, WorkPhone },
-    ShowHideViewModules: { ShowJoyfulAnimation },
-  } = appSettings;
+  const { usersWithHiddenManager, usersWithHiddenPhoneNo, admins } = useFields();
+
   const buttonRef = useRef(null);
 
   useEffect(() => {
     // let text1 = localStorage.getItem("cardcolor");
-    let text1= appSettings?.ImageProfileTagData
+    let text1 = appSettings?.ImageProfileTagData;
     if (text1?.length) {
       let imageTagValues = text1?.split("^");
       setLabelValueLength(item[imageTagValues[0]]?.length);
@@ -69,10 +73,12 @@ function GridCard({
       );
       setFontColor(imageTagValues[2]);
     }
+  
+    console.log("item details",diffStyle)
     // getManagerDetails();
-    isUserAdmin(item.email).then((isAdmin) => {
-      setIsUserAdmin(isAdmin);
-    });
+    // isUserAdmin(item.email).then((isAdmin) => {
+    //   setIsUserAdmin(isAdmin);
+    // });
     //  }
   }, []);
   function getManagerDetails() {
@@ -147,7 +153,7 @@ function GridCard({
         <div style={{ padding: "0 10px" }}>
           <div style={{ display: "flex" }}>
             <div style={{ width: "80px", padding: "8px 0" }}>
-              
+            {/* <div style={diffStyle}></div> */}
               <Persona
                 imageInitials={item.initials}
                 size={PersonaSize.size72}
@@ -225,7 +231,7 @@ function GridCard({
                 </a>
               </div>
             )}
-            {item.email && (
+            {item?.email?.length > 1 && (
               <div>
                 <a
                   className="empDetailIcon"
@@ -266,7 +272,7 @@ function GridCard({
 
   const onRenderExpandedCard: any = (item: any): JSX.Element => {
     return (
-      <div style={{ padding: "5px 10px" }}>
+      <div style={{ padding: "5px 8px", height: "180px" }}>
         {managerDetails?.email || managerDetails?.initials ? (
           <>
             {" "}
@@ -276,9 +282,11 @@ function GridCard({
                 display: "flex",
                 borderBottom: "1px solid #ddd",
                 borderTop: "1px solid #ddd",
+                alignItems:"center"
               }}
             >
               <div style={{ width: "80px", padding: "8px 0" }}>
+              {/* <div style={diffStyle}></div> */}
                 <Persona
                   imageInitials={managerDetails?.initials}
                   size={PersonaSize.size72}
@@ -310,23 +318,31 @@ function GridCard({
 
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Label style={{ width: "20%" }}>About:</Label>
+            <Label style={{ width: "20%", whiteSpace: "nowrap" }}>About:</Label>
             <span>{item?.About_Me}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Label style={{ width: "20%" }}>School:</Label>
+            <Label style={{ width: "20%", whiteSpace: "nowrap" }}>
+              School:
+            </Label>
             <span>{item?.Schools || ""}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Label style={{ width: "20%" }}>Projects:</Label>
+            <Label style={{ width: "20%", whiteSpace: "nowrap" }}>
+              Projects:
+            </Label>
             <span>{item?.Projects}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Label style={{ width: "20%" }}>Skills:</Label>
+            <Label style={{ width: "20%", whiteSpace: "nowrap" }}>
+              Skills:
+            </Label>
             <span>{item?.Skills}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <Label style={{ width: "20%" }}>Hobbies:</Label>
+            <Label style={{ width: "20%", whiteSpace: "nowrap" }}>
+              Hobbies:
+            </Label>
             <span>{item?.Hobbies}</span>
           </div>
         </div>
@@ -338,14 +354,13 @@ function GridCard({
     let BGcolor = "";
     if (textlength <= 3) {
       BGcolor =
-       "linear-gradient(to bottom left,rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0)," +
+        "linear-gradient(to bottom left,rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0)," +
         bgColor +
         "," +
-        bgColor 
-    } 
-   else if (textlength <= 6) {
+        bgColor;
+    } else if (textlength <= 6) {
       BGcolor =
-        "linear-gradient(to bottom left,rgba(255,0,0,0)," +
+        "linear-gradient(to bottom left,rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0),rgba(255,0,0,0)," +
         bgColor +
         "," +
         bgColor +
@@ -447,9 +462,34 @@ function GridCard({
     return staffList;
   }
 
+  const printDocument = () => {
+    const input = document.getElementById("OrgChart");
+
+    html2canvas(input).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF();
+      const imgWidth = 190;
+      const pageHeight = pdf.internal.pageSize.height;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save("OrgChart.pdf");
+    });
+  };
+
   return (
     <>
-      {((ShowJoyfulAnimation && today == userDOB) ||
+      {((appSettings?.ShowHideViewModules?.ShowJoyfulAnimation &&
+        today == userDOB) ||
         today == userAniversary) && (
         <img
           onClick={(): any => {
@@ -459,11 +499,15 @@ function GridCard({
           src={FarraAnimationGif}
         />
       )}
-      {
-        isQROpen && <GetQRCode user={item} isOpen={isQROpen} onDismiss={setIsQROpen}/>
-      }
+      {isQROpen && (
+        <GetQRCode user={item} isOpen={isQROpen} onDismiss={setIsQROpen} />
+      )}
 
-      <IconButton style={{position:"absolute", top:"0px", left:"0px"}} onClick={()=>setIsQROpen(true)} iconProps={{iconName:"QRCode"}}/>
+      <IconButton
+        style={{ position: "absolute", top: "0px", left: "0px" }}
+        onClick={() => setIsQROpen(true)}
+        iconProps={{ iconName: "QRCode" }}
+      />
       <Modal
         isOpen={isChartOpen}
         onDismiss={() => openChartModal(false)}
@@ -483,7 +527,7 @@ function GridCard({
               title={"Download OrgChart as PDF..."}
               iconProps={{ iconName: "Print" }}
               ariaLabel="Download OrgChart PDF"
-              //onClick={OrgChartPdf}
+              onClick={printDocument}
             />
             <IconButton
               className={chart.iconBtn}
@@ -494,12 +538,12 @@ function GridCard({
           </div>
         </div>
 
-        <div className={chart.orgChartContainer}>
+        <div className={chart.orgChartContainer} id="OrgChart">
           {<ModalOrgChart email={item?.email} />}
         </div>
       </Modal>
 
-      {(isAdmin || getCurrentUser().cu === item?.email) && appSettings?.ShowWFH
+      {(isAdmin || getCurrentUser().cu === item?.email || admins.includes(getCurrentUser().cu)) && appSettings?.ShowWFH
         ? showWFHOrWFOIcon()
         : ""}
 
@@ -518,6 +562,7 @@ function GridCard({
           columnKeyForHoverCard="image"
         >
           <div style={{ position: "relative" }}>
+          {/* <div style={diffStyle}></div> */}
             <Persona
               imageInitials={item.initials}
               size={PersonaSize.size100}
@@ -585,6 +630,7 @@ function GridCard({
       </div>
 
       <div className="newclass" style={{ marginBottom: "20px" }}>
+      
         {userGridView &&
           userGridView.map((item1, index) => {
             if (
@@ -604,29 +650,42 @@ function GridCard({
                     </div>
                   )}
 
-                  {item1.name === "location" && (
+                  {item1.name === "location" && item[item1.name]?.trim()?.length ? (
+                    
                     <div className="card">
                       <Icon iconName="Location" />
                       <p>{item[item1.name]}</p>
                     </div>
+                  ) : (
+                    ""
                   )}
 
-                  {item1.name === "email" && (
+                  {item1.name === "email" && item[item1.name]?.length ? (
                     <div className="card">
                       <p className="link">
-                        <a href={`${Chat}:${item[item1.name]}`}>
+                        <a
+                          href={`${appSettings?.CollaborationSettings?.Chat}:${
+                            item[item1.name]
+                          }`}
+                        >
                           {" "}
                           <Icon iconName="mail" />
                           {item[item1.name]}
                         </a>
                       </p>
                     </div>
+                  ) : (
+                    ""
                   )}
 
-                  {item1.name === "workphone" && item.workphone !== "" && (
+                  {item1.name === "workphone" && item.workphone !== "" && !usersWithHiddenPhoneNo.includes(item.email) &&(
                     <div className="card">
                       <p className="link">
-                        <a href={`${Mobile}:${item[item1.name]}`}>
+                        <a
+                          href={`${
+                            appSettings?.CollaborationSettings?.Mobile
+                          }:${item[item1.name]}`}
+                        >
                           <Icon iconName="Phone" />
                           {item[item1.name]}
                         </a>
@@ -658,55 +717,55 @@ function GridCard({
           })}
       </div>
 
-      {ShowJoyfulAnimation && today == userDOB && (
-        <div className={styles.bdayStyles}>
-          <div className={styles.cubeFaceFont}>
-            <span className={styles.clr1}>H</span>
-            <span className={styles.clr2}>A</span>
-            <span className={styles.clr3}>P</span>
-            <span className={styles.clr4}>P</span>
-            <span className={styles.clr5}>Y</span>
-            <div>
-              <span className={styles.clr1}>B</span>
-              <span className={styles.clr2}>I</span>
-              <span className={styles.clr3}>R</span>
-              <span className={styles.clr4}>T</span>
-              <span className={styles.clr5}>H</span>
-              <span className={styles.clr4}>D</span>
-              <span className={styles.clr3}>A</span>
-              <span className={styles.clr2}>Y</span>
+      {appSettings?.ShowHideViewModules?.ShowJoyfulAnimation &&
+        today == userDOB && (
+          <div className={styles.bdayStyles}>
+            <div className={styles.cubeFaceFont}>
+              <span className={styles.clr1}>H</span>
+              <span className={styles.clr2}>A</span>
+              <span className={styles.clr3}>P</span>
+              <span className={styles.clr4}>P</span>
+              <span className={styles.clr5}>Y</span>
+              <div>
+                <span className={styles.clr1}>B</span>
+                <span className={styles.clr2}>I</span>
+                <span className={styles.clr3}>R</span>
+                <span className={styles.clr4}>T</span>
+                <span className={styles.clr5}>H</span>
+                <span className={styles.clr4}>D</span>
+                <span className={styles.clr3}>A</span>
+                <span className={styles.clr2}>Y</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {ShowJoyfulAnimation && today == userAniversary && (
-        <div className={styles.bdayStyles}>
-          <div className={styles.cubeFaceFont}>
-            <span className={styles.clr1}>H</span>
-            <span className={styles.clr2}>A</span>
-            <span className={styles.clr3}>P</span>
-            <span className={styles.clr4}>P</span>
-            <span className={styles.clr5}>Y</span>
-            <div>
-              <span className={styles.clr1}>A</span>
-              <span className={styles.clr2}>N</span>
-              <span className={styles.clr3}>N</span>
-              <span className={styles.clr4}>I</span>
-              <span className={styles.clr5}>V</span>
-              <span className={styles.clr4}>E</span>
-              <span className={styles.clr3}>R</span>
-              <span className={styles.clr2}>S</span>
-              <span className={styles.clr1}>A</span>
-              <span className={styles.clr2}>R</span>
-              <span className={styles.clr3}>Y</span>
+      {appSettings?.ShowHideViewModules?.ShowJoyfulAnimation &&
+        today == userAniversary && (
+          <div className={styles.bdayStyles}>
+            <div className={styles.cubeFaceFont}>
+              <span className={styles.clr1}>H</span>
+              <span className={styles.clr2}>A</span>
+              <span className={styles.clr3}>P</span>
+              <span className={styles.clr4}>P</span>
+              <span className={styles.clr5}>Y</span>
+              <div>
+                <span className={styles.clr1}>A</span>
+                <span className={styles.clr2}>N</span>
+                <span className={styles.clr3}>N</span>
+                <span className={styles.clr4}>I</span>
+                <span className={styles.clr5}>V</span>
+                <span className={styles.clr4}>E</span>
+                <span className={styles.clr3}>R</span>
+                <span className={styles.clr2}>S</span>
+                <span className={styles.clr1}>A</span>
+                <span className={styles.clr2}>R</span>
+                <span className={styles.clr3}>Y</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      <div>
-
-      </div>
+        )}
+      <div></div>
 
       <div
         style={{
@@ -725,9 +784,12 @@ function GridCard({
           />
         </a>
         <a
-          href={`mailto:${item.email}`}
           style={{ cursor: "pointer" }}
-          target="_blank"
+          onClick={() => {
+            const email = item.email;
+            const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}`;
+            window.open(mailtoLink, '_blank');
+          }}
         >
           <img
             className="logo"
