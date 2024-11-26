@@ -13,6 +13,7 @@ import { useFields } from "../../context/store";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
 import { useSttings } from "../SelectSource/store";
 import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
+import { defaultSettingList } from "../../api/defaultSettings";
 
 const KEY = "UsersWithHiddenManager";
 
@@ -25,7 +26,7 @@ const HideManager = ({ isOpen, onDismiss }) => {
 
   useEffect(() => {
     const getSettingData = async()=>{
-      const data = await getSettingJson(SETTING_LIST)
+      const data = await getSettingJson(SETTING_LIST)||defaultSettingList;
       setUsersWithHiddenManager(data[KEY] || []);
     }
     getSettingData();

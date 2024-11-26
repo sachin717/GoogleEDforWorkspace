@@ -69,7 +69,7 @@ export const getSettingJson = async (listName: string) => {
 
     const jsonResponse = await response.json();
 
-    if (jsonResponse?.error?.code == 404) {
+    if (jsonResponse?.error?.code == 404||jsonResponse?.error?.code == 403) {
       console.log("setting list does not exists");
       if (listName === USER_LIST) {
         createSettingJson(USER_LIST, defaultUserList);

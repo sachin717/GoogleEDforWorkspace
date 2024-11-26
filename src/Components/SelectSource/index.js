@@ -357,39 +357,45 @@ const GoogleEmployeeDirectory = () => {
     // updateSettingJson(USER_LIST, {});
     // return;
     setshowProgress(true);
-    const settingJson = await getSettingJson(SETTING_LIST);
-    const imagesJson = await getSettingJson(IMAGES_LIST);
-    const usersJson = await getSettingJson(USER_LIST);
-
-    console.log("usersJson.........", usersJson);
-
-    if (Object.keys(imagesJson).length) {
-      setImagesList(imagesJson);
-    } else {
+    let settingJson = await getSettingJson(SETTING_LIST);
+    let imagesJson = await getSettingJson(IMAGES_LIST);
+    let usersJson = await getSettingJson(USER_LIST);
+    if(!settingJson){
+      updateSettingJson(SETTING_LIST, defaultSettingList);
+      setAppSettings(defaultSettingList);
+      settingJson=defaultSettingList;
+    }
+    if(!imagesJson){
       updateSettingJson(IMAGES_LIST, defaultImagesList);
       setImagesList(defaultImagesList);
+      imagesJson=defaultImagesList;
     }
-
-    if (Object?.keys(usersJson)?.length) {
-      setUsersList(usersJson);
-    } else {
+     if(!usersJson){
       updateSettingJson(
         USER_LIST,
         encryptData(JSON.stringify(defaultUserList))
       );
       setUsersList(defaultUserList);
+      usersJson=defaultUserList;
     }
 
-    if (Object.keys(settingJson).length) {
+    console.log("usersJson.........", usersJson);
+
+    if (imagesJson && Object?.keys(imagesJson)?.length) {
+      setImagesList(imagesJson);
+    }
+
+    if (usersJson && Object?.keys(usersJson)?.length) {
+      setUsersList(usersJson);
+    }
+
+    if (settingJson && Object?.keys(settingJson)?.length) {
       setAppSettings(settingJson);
       setSettingList(settingJson);
       setShowHideSettings({GroupsOn:settingJson?.GroupsOn??false})
-    } else {
-      updateSettingJson(SETTING_LIST, defaultSettingList);
-      setAppSettings(defaultSettingList);
     }
 
-    if (Object.keys(settingJson)?.length) {
+    if ( settingJson && Object?.keys(settingJson)?.length) {
       parsedData = settingJson;
       setSettingData(settingJson);
       let data = {

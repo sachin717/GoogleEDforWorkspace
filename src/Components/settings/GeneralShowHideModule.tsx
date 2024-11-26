@@ -24,6 +24,7 @@ import {
   updateSettingJson,
 } from "../../api/storage";
 import { useFields, useLists } from "../../context/store";
+import { defaultSettingList } from "../../api/defaultSettings";
 
 const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
                        
@@ -132,12 +133,13 @@ const GeneralShowHideModule = ({ isOpen, onDismiss }) => {
     removeFavicon();
   }
   async function getSettingsData() {
-    let data = await getSettingJson(SETTING_LIST);
+    let data = await getSettingJson(SETTING_LIST)||defaultSettingList;
     return data;
 }
 
   useEffect(() => {
-  
+    
+ 
     getSettingsData().then((data)=>{
 
       setSettingData(data)

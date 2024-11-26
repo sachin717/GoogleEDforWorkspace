@@ -11,6 +11,7 @@ import { useLanguage } from "../../Language/LanguageContext";
 import { useSttings } from "../SelectSource/store";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
 import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
+import { defaultSettingList } from "../../api/defaultSettings";
 
 const Collaboration = ({ isOpen, onDismiss }) => {
   const { SweetAlert: SweetAlertCollaboration } = SweetAlerts(
@@ -77,7 +78,7 @@ const Collaboration = ({ isOpen, onDismiss }) => {
   useEffect(() => {
 
     const getSettingData = async()=>{
-      const data = await getSettingJson(SETTING_LIST);
+      const data = await getSettingJson(SETTING_LIST)||defaultSettingList;
       setSelectedWorkPhone(data.CollaborationSettings.WorkPhone || false);
       setSelectedMobile(data.CollaborationSettings.Mobile || false);
       setSelectedChat(data.CollaborationSettings.Chat || false);

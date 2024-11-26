@@ -13,6 +13,7 @@ import { useSttings } from "../SelectSource/store";
 import { SweetAlerts } from "../SelectSource/Utils/SweetAlert";
 import UserSearchBox from "../SelectSource/UserSearchBox";
 import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
+import { defaultSettingList } from "../../api/defaultSettings";
 
 const KEY = "UserWithHiddenMobileNumber";
 
@@ -24,7 +25,8 @@ const HideMobileNumber = ({ isOpen, onDismiss }) => {
 
   useEffect(() => {
     const getSettingData = async()=>{
-      const data = await getSettingJson(SETTING_LIST)
+      const data = await getSettingJson(SETTING_LIST)||defaultSettingList;
+      
       setUsersWithHiddenMobile(data[KEY] || []);
     }
     getSettingData();

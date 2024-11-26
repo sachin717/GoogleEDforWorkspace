@@ -6,6 +6,7 @@ import { useFields } from "../../context/store";
 import UserSearchBox from "../SelectSource/UserSearchBox";
 import { useSttings } from "../SelectSource/store";
 import { getSettingJson, SETTING_LIST, updateSettingJson } from "../../api/storage";
+import { defaultSettingList } from "../../api/defaultSettings";
 
 const KEY = "RolesAndPermisstions";
 
@@ -64,7 +65,7 @@ function RolesAndPermisstions(props: any) {
 
   useEffect(() => {
     const getSettingData = async()=>{
-      const data = await getSettingJson(SETTING_LIST)
+      const data = await getSettingJson(SETTING_LIST)||defaultSettingList;
       setAdmins(data[KEY] ?? []);
     }
     getSettingData();

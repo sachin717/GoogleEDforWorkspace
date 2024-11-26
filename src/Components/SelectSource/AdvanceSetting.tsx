@@ -99,6 +99,7 @@ import {
 } from "../../api/storage";
 import HideManager from "../settings/HideManager";
 import HideMobileNumber from "../settings/HideMobileNumber";
+import { defaultImagesList, defaultSettingList, defaultUserList } from "../../api/defaultSettings";
 
 let departmentList: { label: any; value: any }[] = [];
 let jobTitleList: { label: any; value: any }[] = [];
@@ -1339,10 +1340,22 @@ const AdvanceSetting = (props: any) => {
   };
 
   async function GetSettingData() {
-    const settingJson = await getSettingJson(SETTING_LIST);
-    const usersJson = await getSettingJson(USER_LIST);
-    const imageJson = await getSettingJson(IMAGES_LIST);
+    let settingJson = await getSettingJson(SETTING_LIST);
+    let usersJson = await getSettingJson(USER_LIST);
+    let imageJson = await getSettingJson(IMAGES_LIST);
     console.log("settingData", settingJson);
+    if(!settingJson){
+     
+      settingJson=defaultSettingList;
+    }
+    if(!imageJson){
+    
+      imageJson=defaultImagesList;
+    }
+     if(!usersJson){
+    
+      usersJson=defaultUserList;
+    }
 
     if (Object.keys(usersJson)?.length) {
       setUsersList(usersJson);
