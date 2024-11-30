@@ -50,7 +50,7 @@ export const LanguageProvider = ({ children }) => {
         return;
       }
       
-      const bucketName = process.env.REACT_APP_BUCKET_NAME;
+      const bucketName = process.env.REACT_APP_BUCKET_NAME || 'gedstoragev2';
       const token = gapi.client.getToken().access_token;
       const domain = gapi.auth2
         .getAuthInstance()
