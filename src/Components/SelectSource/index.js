@@ -282,6 +282,9 @@ const GoogleEmployeeDirectory = () => {
     let staffList = [];
   
     do {
+      try{
+
+      
       const page = await gapi.client.directory.users.list({
         customer: "my_customer",
         projection: "full",
@@ -301,6 +304,11 @@ const GoogleEmployeeDirectory = () => {
   
       // Update the pageToken for the next iteration
       pageToken = page.result.nextPageToken;
+    }
+    catch(err){
+      console.log(err)
+
+    }
     } while (pageToken); // Continue until there are no more pages
   
     console.log("getAllUsersInOrg users", staffList);
