@@ -14,7 +14,7 @@ export const IMAGES_LIST: string = "images";
 
 export const createSettingJson = async (listName: string, jsonData: any) => {
   try {
-    const bucketName = process.env.REACT_APP_BUCKET_NAME || 'gedstoragev2';
+    const bucketName = process.env.REACT_APP_BUCKET_NAME || 'ed365';
     const token = gapi.client.getToken().access_token;
     const domain = gapi.auth2
       .getAuthInstance()
@@ -51,7 +51,7 @@ export const createSettingJson = async (listName: string, jsonData: any) => {
 
 export const getSettingJson = async (listName: string) => {
   try {
-    const bucketName = process.env.REACT_APP_BUCKET_NAME || 'gedstoragev2';
+    const bucketName = process.env.REACT_APP_BUCKET_NAME || 'ed365';
     const token = gapi.client.getToken().access_token;
     const domain = gapi.auth2
       .getAuthInstance()
@@ -133,7 +133,7 @@ export const updateSettingJson = async (listName: string, jsonData: any) => {
       return;
     }
 
-    const bucketName = process.env.REACT_APP_BUCKET_NAME || 'gedstoragev2';
+    const bucketName = process.env.REACT_APP_BUCKET_NAME || 'ed365';
     const token = gapi.client.getToken().access_token;
     const domain = gapi.auth2
       .getAuthInstance()
