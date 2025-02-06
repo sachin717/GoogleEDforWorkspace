@@ -1,8 +1,6 @@
 // import * as jquery from "jquery";
 import { TeachingBubble } from "@fluentui/react/lib/TeachingBubble";
 import { useBoolean } from "@fluentui/react-hooks";
-import { BlobServiceClient } from "@azure/storage-blob";
-import { Buffer } from "buffer";
 import {
   Checkbox,
   DefaultButton,

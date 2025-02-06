@@ -26,6 +26,7 @@
     "jsx": "react-jsx",
     "noUnusedLocals": false,
     "noUnusedParameters": false,
+    "strict": false
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/Components/SelectSource/PdfDownlaod.jsx"]
 }

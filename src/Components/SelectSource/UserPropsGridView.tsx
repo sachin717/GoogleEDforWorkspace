@@ -13,9 +13,9 @@ import {
 import { useState, useRef, useEffect } from "react";
 //import {changeUserGridView} from "./store";
 import useStore, { useSttings } from "./store";
-import { BlobServiceClient } from "@azure/storage-blob";
+// import { BlobServiceClient } from "@azure/storage-blob";
 import { gapi } from "gapi-script";
-import { Buffer } from "buffer";
+// import { Buffer } from "buffer";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { position } from "html2canvas/dist/types/css/property-descriptors/position";
 import Department from "./Department";

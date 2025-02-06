@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@azure/identity": "^1.0.3",
-    "@azure/storage-blob": "^12.2.0-preview.1",
+  
     "@fluentui/react": "^8.114.3",
     "@fluentui/react-components": "^9.45.0",
     "@fluentui/web-components": "^2.5.16",
@@ -63,7 +62,6 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "prune --production":"react-scripts start",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

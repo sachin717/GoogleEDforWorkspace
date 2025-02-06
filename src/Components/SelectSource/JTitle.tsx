@@ -12,7 +12,7 @@ import { Stack } from "@fluentui/react/lib/Stack";
 import { TextField } from "@fluentui/react";
 import { Label } from "@fluentui/react/lib/Label";
 import   "./Styles.scss";
-import { BlobServiceClient } from "@azure/storage-blob";
+// import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from "buffer";
 
 //import styles from "../Edp.module.scss";

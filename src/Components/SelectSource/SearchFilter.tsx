@@ -9,7 +9,7 @@ import {
 import { useState, useRef, useEffect } from "react";
 //import {changeUserGridView} from "./store";
 import useStore, { useSttings } from "./store";
-import { BlobServiceClient } from "@azure/storage-blob";
+// import { BlobServiceClient } from "@azure/storage-blob";
 import { gapi } from "gapi-script";
 import { Buffer } from "buffer";
 import { useLanguage } from "../../Language/LanguageContext";
@@ -88,79 +88,79 @@ export function SearchFilter(props) {
     dragOverItem.current = null;
   };
 
-  async function GetSettingData() {
-    var domain = gapi.auth2
-      .getAuthInstance()
-      .currentUser.le.wt.cu.split("@")[1];
-    //console.log(domain);
-    var _domain = domain.replace(/\./g, "_");
-    var storagedetails =
-      '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-      _domain +
-      '.json"}]';
-    var mappedcustomcol = JSON.parse(storagedetails);
-    const sasToken =
-      "sv=2022-11-02&ss=b&srt=sco&sp=rwdlaciytfx&se=2028-02-28T12:24:45Z&st=2024-02-29T04:24:45Z&spr=https&sig=FrbdvHpW929m3xVikmm5HiBL6Q00lHjk0a5CPuw1H2U%3D";
-    const blobStorageClient = new BlobServiceClient(
-      // this is the blob endpoint of your storage acccount. Available from the portal
-      // they follow this format: <accountname>.blob.core.windows.net for Azure global
-      // the endpoints may be slightly different from national clouds like US Gov or Azure China
-      "https://" +
-        mappedcustomcol[0].storageaccount +
-        ".blob.core.windows.net?" +
-        sasToken
-      //   ,
-      // null
-      //new InteractiveBrowserCredential(signInOptions)
-    );
-    containerClient = blobStorageClient.getContainerClient(
-      mappedcustomcol[0].containername
-    );
-    const blobClient = containerClient.getBlobClient(
-      mappedcustomcol[0].blobfilename
-    );
-    const exists = await blobClient.exists();
+  // async function GetSettingData() {
+  //   var domain = gapi.auth2
+  //     .getAuthInstance()
+  //     .currentUser.le.wt.cu.split("@")[1];
+  //   //console.log(domain);
+  //   var _domain = domain.replace(/\./g, "_");
+  //   var storagedetails =
+  //     '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
+  //     _domain +
+  //     '.json"}]';
+  //   var mappedcustomcol = JSON.parse(storagedetails);
+  //   const sasToken =
+  //     "sv=2022-11-02&ss=b&srt=sco&sp=rwdlaciytfx&se=2028-02-28T12:24:45Z&st=2024-02-29T04:24:45Z&spr=https&sig=FrbdvHpW929m3xVikmm5HiBL6Q00lHjk0a5CPuw1H2U%3D";
+  //   const blobStorageClient = new BlobServiceClient(
+  //     // this is the blob endpoint of your storage acccount. Available from the portal
+  //     // they follow this format: <accountname>.blob.core.windows.net for Azure global
+  //     // the endpoints may be slightly different from national clouds like US Gov or Azure China
+  //     "https://" +
+  //       mappedcustomcol[0].storageaccount +
+  //       ".blob.core.windows.net?" +
+  //       sasToken
+  //     //   ,
+  //     // null
+  //     //new InteractiveBrowserCredential(signInOptions)
+  //   );
+  //   containerClient = blobStorageClient.getContainerClient(
+  //     mappedcustomcol[0].containername
+  //   );
+  //   const blobClient = containerClient.getBlobClient(
+  //     mappedcustomcol[0].blobfilename
+  //   );
+  //   const exists = await blobClient.exists();
 
-    if (exists) {
-      const downloadBlockBlobResponse = await blobClient.download();
-      const downloaded: any = await blobToString(
-        await downloadBlockBlobResponse.blobBody
-      );
-      //console.log("Downloaded blob content11", downloaded,'2');
-      // const jsonData = downloadBlockBlobResponse.toString();
-      // Parse the JSON data
-      //const buf = new ArrayBuffer(downloaded.maxByteLength);
-      const decoder = new TextDecoder();
-      const str = decoder.decode(downloaded);
-      //_parsedData=str;
-      parsedData = JSON.parse(str);
-      // logic for profileview checkboxes
-      if (parsedData?.SearchFiltersPrope) {
-        console.log(parsedData?.SearchFiltersPrope, "data");
-        const updatedPeople = parsedData?.SearchFiltersPrope?.map((person) => {
-          const updatedPerson = parsedData[KEY_NAME].find(
-            (data) => data.id === person.id
-          );
-          if (updatedPerson) {
-            return {
-              ...person,
-              checkbox: updatedPerson.checkbox,
-            };
-          }
-          console.log(updatedPerson, " filters");
-          return person;
-        });
-        console.log(updatedPeople, "update");
-        sortedPeopleFilter = updatedPeople.sort((a, b) => a.id - b.id);
-        console.log(sortedPeopleFilter, "search filters");
-        setPeopleFilter(sortedPeopleFilter);
-      } else {
-        setPeopleFilter(peopleFilter);
-      }
-    } else {
-      setPeopleFilter(peopleFilter);
-    }
-  }
+  //   if (exists) {
+  //     const downloadBlockBlobResponse = await blobClient.download();
+  //     const downloaded: any = await blobToString(
+  //       await downloadBlockBlobResponse.blobBody
+  //     );
+  //     //console.log("Downloaded blob content11", downloaded,'2');
+  //     // const jsonData = downloadBlockBlobResponse.toString();
+  //     // Parse the JSON data
+  //     //const buf = new ArrayBuffer(downloaded.maxByteLength);
+  //     const decoder = new TextDecoder();
+  //     const str = decoder.decode(downloaded);
+  //     //_parsedData=str;
+  //     parsedData = JSON.parse(str);
+  //     // logic for profileview checkboxes
+  //     if (parsedData?.SearchFiltersPrope) {
+  //       console.log(parsedData?.SearchFiltersPrope, "data");
+  //       const updatedPeople = parsedData?.SearchFiltersPrope?.map((person) => {
+  //         const updatedPerson = parsedData[KEY_NAME].find(
+  //           (data) => data.id === person.id
+  //         );
+  //         if (updatedPerson) {
+  //           return {
+  //             ...person,
+  //             checkbox: updatedPerson.checkbox,
+  //           };
+  //         }
+  //         console.log(updatedPerson, " filters");
+  //         return person;
+  //       });
+  //       console.log(updatedPeople, "update");
+  //       sortedPeopleFilter = updatedPeople.sort((a, b) => a.id - b.id);
+  //       console.log(sortedPeopleFilter, "search filters");
+  //       setPeopleFilter(sortedPeopleFilter);
+  //     } else {
+  //       setPeopleFilter(peopleFilter);
+  //     }
+  //   } else {
+  //     setPeopleFilter(peopleFilter);
+  //   }
+  // }
 
   async function blobToString(blob: any) {
     const fileReader = new FileReader();

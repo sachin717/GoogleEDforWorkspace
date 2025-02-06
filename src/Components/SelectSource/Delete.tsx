@@ -21,7 +21,7 @@ import { Icon } from "@fluentui/react/lib/Icon";
 import { Label } from "@fluentui/react/lib/Label";
 
 import { useBoolean } from "@fluentui/react-hooks";
-import { BlobServiceClient } from "@azure/storage-blob";
+
 const NewDocumentWrapper = styled.div`
   ${style}
 `;
@@ -50,9 +50,9 @@ var parsedData: any = "";
 var containerClient: any;
 function Delete(props: any) {
   let allItems: any = [];
-  React.useEffect(() => {
-    GetSettingData();
-  }, [allItems.length]);
+  // React.useEffect(() => {
+  //   // GetSettingData();
+  // }, [allItems.length]);
 
   const [addroles, setaddroles] = React.useState([]);
   const [users, setusers] = React.useState<any>([]);
@@ -73,107 +73,107 @@ function Delete(props: any) {
       fileReader.readAsArrayBuffer(blob);
     });
   }
-  async function GetSettingData() {
-    var domain = gapi.auth2
-      .getAuthInstance()
-      .currentUser.le.wt.cu.split("@")[1];
-    //console.log(domain);
-    var _domain = domain.replace(/\./g, "_");
-    var storagedetails =
-      '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
-      _domain +
-      '.json"}]';
-    var mappedcustomcol = JSON.parse(storagedetails);
-    const sasToken =
-      "sv=2022-11-02&ss=b&srt=sco&sp=rwdlaciytfx&se=2028-02-28T12:24:45Z&st=2024-02-29T04:24:45Z&spr=https&sig=FrbdvHpW929m3xVikmm5HiBL6Q00lHjk0a5CPuw1H2U%3D";
-    const blobStorageClient = new BlobServiceClient(
-      // this is the blob endpoint of your storage acccount. Available from the portal
-      // they follow this format: <accountname>.blob.core.windows.net for Azure global
-      // the endpoints may be slightly different from national clouds like US Gov or Azure China
-      "https://" +
-        mappedcustomcol[0].storageaccount +
-        ".blob.core.windows.net?" +
-        sasToken
-      //   ,
-      // null
-      //new InteractiveBrowserCredential(signInOptions)
-    );
-    containerClient = blobStorageClient.getContainerClient(
-      mappedcustomcol[0].containername
-    );
-    const blobClient = containerClient.getBlobClient(
-      mappedcustomcol[0].blobfilename
-    );
-    const exists = await blobClient.exists();
+  // async function GetSettingData() {
+  //   var domain = gapi.auth2
+  //     .getAuthInstance()
+  //     .currentUser.le.wt.cu.split("@")[1];
+  //   //console.log(domain);
+  //   var _domain = domain.replace(/\./g, "_");
+  //   var storagedetails =
+  //     '[{"storageaccount":"mystorageaccountparj","containername":"parjinder1","blobfilename":"' +
+  //     _domain +
+  //     '.json"}]';
+  //   var mappedcustomcol = JSON.parse(storagedetails);
+  //   const sasToken =
+  //     "sv=2022-11-02&ss=b&srt=sco&sp=rwdlaciytfx&se=2028-02-28T12:24:45Z&st=2024-02-29T04:24:45Z&spr=https&sig=FrbdvHpW929m3xVikmm5HiBL6Q00lHjk0a5CPuw1H2U%3D";
+  //   const blobStorageClient = new BlobServiceClient(
+  //     // this is the blob endpoint of your storage acccount. Available from the portal
+  //     // they follow this format: <accountname>.blob.core.windows.net for Azure global
+  //     // the endpoints may be slightly different from national clouds like US Gov or Azure China
+  //     "https://" +
+  //       mappedcustomcol[0].storageaccount +
+  //       ".blob.core.windows.net?" +
+  //       sasToken
+  //     //   ,
+  //     // null
+  //     //new InteractiveBrowserCredential(signInOptions)
+  //   );
+  //   containerClient = blobStorageClient.getContainerClient(
+  //     mappedcustomcol[0].containername
+  //   );
+  //   const blobClient = containerClient.getBlobClient(
+  //     mappedcustomcol[0].blobfilename
+  //   );
+  //   const exists = await blobClient.exists();
 
-    if (exists) {
-      const downloadBlockBlobResponse = await blobClient.download();
-      const downloaded: any = await blobToString(
-        await downloadBlockBlobResponse.blobBody
-      );
-      console.log("Downloaded blob content", downloaded);
-      // const jsonData = downloadBlockBlobResponse.toString();
-      // Parse the JSON data
-      //const buf = new ArrayBuffer(downloaded.maxByteLength);
-      const decoder = new TextDecoder();
-      const str = decoder.decode(downloaded);
-      //_parsedData=str;
-      parsedData = JSON.parse(str);
-      empisadmin = parsedData.IsAdmin;
-      //console.log(parsedData);
-      if(empisadmin!="" && empisadmin != undefined){
-      if (empisadmin.indexOf(";") > -1) {
-        var _anthsplit = empisadmin.split(";");
-        for (var y = 0; y < _anthsplit.length; y++) {
-          var _frst = _anthsplit[y]
-            .split("-")[0]
-            .replace("#%#", ",")
-            .replace("#%%#", "-");
-          var _second = _anthsplit[y].split("-")[1];
-          allItems.push({
-            checked: false,
-            empname: _frst,
-            empemail: _second,
-            emprole: "Admin",
-          });
-        }
-      } else {
-        if (empisadmin.indexOf(",") > -1) {
-          empisadmin = empisadmin.replace(/,/g, ";");
-          if (empisadmin.indexOf(";") > -1) {
-            var _anthsplit = empisadmin.split(";");
-            for (var y = 0; y < _anthsplit.length; y++) {
-              var _frst = _anthsplit[y]
-                .split("-")[0]
-                .replace("#%#", ",")
-                .replace("#%%#", "-");
-              var _second = _anthsplit[y].split("-")[1];
-              allItems.push({
-                checked: false,
-                empname: _frst,
-                empemail: _second,
-                emprole: "Admin",
-              });
-            }
-          }
-        } else {
-          var _frst = empisadmin
-            .split("-")[0]
-            .replace("#%#", ",")
-            .replace("#%%#", "-");
-          var _second = empisadmin.split("-")[1];
-          allItems.push({
-            checked: false,
-            empname: _frst,
-            empemail: _second,
-            emprole: "Admin",
-          });
-        }
-      }
-    }
-      setaddroles(allItems);
-    }
-  }
+  //   if (exists) {
+  //     const downloadBlockBlobResponse = await blobClient.download();
+  //     const downloaded: any = await blobToString(
+  //       await downloadBlockBlobResponse.blobBody
+  //     );
+  //     console.log("Downloaded blob content", downloaded);
+  //     // const jsonData = downloadBlockBlobResponse.toString();
+  //     // Parse the JSON data
+  //     //const buf = new ArrayBuffer(downloaded.maxByteLength);
+  //     const decoder = new TextDecoder();
+  //     const str = decoder.decode(downloaded);
+  //     //_parsedData=str;
+  //     parsedData = JSON.parse(str);
+  //     empisadmin = parsedData.IsAdmin;
+  //     //console.log(parsedData);
+  //     if(empisadmin!="" && empisadmin != undefined){
+  //     if (empisadmin.indexOf(";") > -1) {
+  //       var _anthsplit = empisadmin.split(";");
+  //       for (var y = 0; y < _anthsplit.length; y++) {
+  //         var _frst = _anthsplit[y]
+  //           .split("-")[0]
+  //           .replace("#%#", ",")
+  //           .replace("#%%#", "-");
+  //         var _second = _anthsplit[y].split("-")[1];
+  //         allItems.push({
+  //           checked: false,
+  //           empname: _frst,
+  //           empemail: _second,
+  //           emprole: "Admin",
+  //         });
+  //       }
+  //     } else {
+  //       if (empisadmin.indexOf(",") > -1) {
+  //         empisadmin = empisadmin.replace(/,/g, ";");
+  //         if (empisadmin.indexOf(";") > -1) {
+  //           var _anthsplit = empisadmin.split(";");
+  //           for (var y = 0; y < _anthsplit.length; y++) {
+  //             var _frst = _anthsplit[y]
+  //               .split("-")[0]
+  //               .replace("#%#", ",")
+  //               .replace("#%%#", "-");
+  //             var _second = _anthsplit[y].split("-")[1];
+  //             allItems.push({
+  //               checked: false,
+  //               empname: _frst,
+  //               empemail: _second,
+  //               emprole: "Admin",
+  //             });
+  //           }
+  //         }
+  //       } else {
+  //         var _frst = empisadmin
+  //           .split("-")[0]
+  //           .replace("#%#", ",")
+  //           .replace("#%%#", "-");
+  //         var _second = empisadmin.split("-")[1];
+  //         allItems.push({
+  //           checked: false,
+  //           empname: _frst,
+  //           empemail: _second,
+  //           emprole: "Admin",
+  //         });
+  //       }
+  //     }
+  //   }
+  //     setaddroles(allItems);
+  //   }
+  // }
   async function includedelete() {
     var displayname = gapi.auth2.getAuthInstance().currentUser.le.wt.Ad;
     let roledelarray = [];

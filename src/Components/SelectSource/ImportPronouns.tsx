@@ -3,13 +3,13 @@ import { DefaultButton, Icon, IconButton, Label, MessageBar, MessageBarType, Mod
 import "./Styles.scss";
 import { useBoolean } from "@fluentui/react-hooks";
 import { Buffer } from 'buffer';
-import { BlobServiceClient } from "@azure/storage-blob";
+// import { BlobServiceClient } from "@azure/storage-blob";
 import * as XLSX from 'xlsx';
 import Excel from "exceljs";
 import { CommandBarButton, GetGroupCount } from "@fluentui/react";
 import useStore, { useSttings } from "./store";
 import { gapi } from "gapi-script";
-import { encryptData, GetSettingValues } from "../Helpers/HelperFunctions";
+import { encryptData } from "../Helpers/HelperFunctions";
 import { useLanguage } from "../../Language/LanguageContext";
 import { SETTING_LIST, updateSettingJson } from "../../api/storage";
 

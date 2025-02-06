@@ -11,8 +11,8 @@ import {
 import { Stack } from "@fluentui/react/lib/Stack";
 import { TextField } from "@fluentui/react";
 import { Label } from "@fluentui/react/lib/Label";
-import { BlobServiceClient } from "@azure/storage-blob";
-import { themeRulesStandardCreator } from "@fluentui/react";
+// import { BlobServiceClient } from "@azure/storage-blob";
+// import { themeRulesStandardCreator } from "@fluentui/react";
 import   "./Styles.scss";
 import { SearchBox } from "@fluentui/react/lib/SearchBox";
 import { IIconProps } from "@fluentui/react/lib/Icon";
