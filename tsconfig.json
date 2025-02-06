@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES6",
     "lib": [
-      "es5",
       "dom",
-      "es6",
+      "ES6",
       "es2015.collection",
       "es2015.promise",
       "es2017",
@@ -24,7 +23,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/Components/SelectSource/PdfDownlaod.jsx"]
 }
