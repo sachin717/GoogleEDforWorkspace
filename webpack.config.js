@@ -1,16 +1,18 @@
 module.exports = {
-    // ... existing configuration
     module: {
       rules: [
-        // ... existing rules
         {
-          test: /\.js$/,
-          enforce: 'pre',
-          use: ['source-map-loader'],
-          exclude: [
-            /node_modules\/@fluentui\/react-window-provider/
-          ],
-        },
-      ],
-    },
+          test: /\.(js|jsx|ts|tsx)$/,
+          exclude: /node_modules/,
+          use: {
+            loader: "babel-loader",
+            options: {
+              presets: ["@babel/preset-env", "@babel/preset-react", "@babel/preset-typescript"],
+              plugins: ["@babel/plugin-proposal-private-property-in-object"]
+            }
+          }
+        }
+      ]
+    }
   };
+  
