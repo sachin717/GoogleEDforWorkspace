@@ -20,6 +20,16 @@ module.exports = function override(config, env) {
             Buffer: ['buffer', 'Buffer'],
         }),
     );
+    const babelLoader = config.module.rules.find(
+        (rule) => rule.loader && rule.loader.includes('babel-loader')
+    );
+
+    if (babelLoader && babelLoader.options) {
+        babelLoader.options.plugins = [
+            ...babelLoader.options.plugins,
+            '@babel/plugin-proposal-private-property-in-object',
+        ];
+    }
 
     return config;
 }
