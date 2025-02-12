@@ -57,7 +57,8 @@
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.69",
     "@types/react": "^17.0.80",
-    "@types/react-dom": "^17.0.25"
+    "@types/react-dom": "^17.0.25",
+    "babel-preset-react-app": "^10.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
